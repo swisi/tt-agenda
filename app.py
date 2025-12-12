@@ -66,7 +66,15 @@ def edit_training(id):
         db.session.commit()
         return redirect(url_for('edit_training', id=id))
     activities = Activity.query.filter_by(training_id=id).order_by(Activity.order_index).all()
-    return render_template('training_edit.html', training=training, activities=activities, weekdays=WEEKDAYS, position_groups=POSITION_GROUPS)
+    activities_json = [{
+        'id': a.id,
+        'activity_type': a.activity_type,
+        'duration': a.duration,
+        'position_groups': a.position_groups,
+        'topic': a.topic,
+        'topics_json': a.topics_json
+    } for a in activities]
+    return render_template('training_edit.html', training=training, activities=activities, activities_json=json.dumps(activities_json), weekdays=WEEKDAYS, position_groups=POSITION_GROUPS)
 
 @app.route('/training/<int:id>/delete', methods=['POST'])
 def delete_training(id):
@@ -83,7 +91,12 @@ def add_activity():
     max_order = db.session.query(db.func.max(Activity.order_index)).filter_by(training_id=data['training_id']).scalar() or -1
 
     if max_order == -1:
-        start_time = training.start_time
+        if data['activity_type'] == 'prepractice':
+            start_datetime = datetime.combine(datetime.today(), training.start_time)
+            start_datetime -= timedelta(minutes=int(data['duration']))
+            start_time = start_datetime.time()
+        else:
+            start_time = training.start_time
     else:
         last_activity = Activity.query.filter_by(training_id=data['training_id']).order_by(Activity.order_index.desc()).first()
         start_datetime = datetime.combine(datetime.today(), last_activity.start_time)
@@ -108,7 +121,32 @@ def add_activity():
     )
     db.session.add(activity)
     db.session.commit()
+
+    recalculate_times(data['training_id'])
+
     return jsonify({'id': activity.id, 'success': True})
+
+@app.route('/activity/<int:id>/update', methods=['POST'])
+def update_activity(id):
+    activity = Activity.query.get_or_404(id)
+    data = request.json
+
+    activity.activity_type = data['activity_type']
+    activity.duration = int(data['duration'])
+    activity.position_groups = json.dumps(data['position_groups'])
+    activity.topic = data.get('topic', '')
+
+    topics_json = None
+    if data['activity_type'] == 'individual':
+        topics_json = json.dumps(data.get('topics_per_group', {}))
+    elif data['activity_type'] == 'group':
+        topics_json = json.dumps(data.get('group_combinations', []))
+    activity.topics_json = topics_json
+
+    db.session.commit()
+    recalculate_times(activity.training_id)
+
+    return jsonify({'success': True})
 
 @app.route('/activity/<int:id>/delete', methods=['POST'])
 def delete_activity(id):
@@ -143,12 +181,28 @@ def recalculate_times(training_id):
     training = Training.query.get(training_id)
     activities = Activity.query.filter_by(training_id=training_id).order_by(Activity.order_index).all()
 
-    current_time = training.start_time
-    for activity in activities:
-        activity.start_time = current_time
-        current_datetime = datetime.combine(datetime.today(), current_time)
-        current_datetime += timedelta(minutes=activity.duration)
-        current_time = current_datetime.time()
+    if not activities:
+        return
+
+    first_activity = activities[0]
+    if first_activity.activity_type == 'prepractice':
+        start_datetime = datetime.combine(datetime.today(), training.start_time)
+        start_datetime -= timedelta(minutes=first_activity.duration)
+        first_activity.start_time = start_datetime.time()
+
+        current_datetime = datetime.combine(datetime.today(), first_activity.start_time)
+        current_datetime += timedelta(minutes=first_activity.duration)
+
+        for activity in activities[1:]:
+            activity.start_time = current_datetime.time()
+            current_datetime += timedelta(minutes=activity.duration)
+    else:
+        current_time = training.start_time
+        for activity in activities:
+            activity.start_time = current_time
+            current_datetime = datetime.combine(datetime.today(), current_time)
+            current_datetime += timedelta(minutes=activity.duration)
+            current_time = current_datetime.time()
 
     db.session.commit()
 
@@ -169,6 +223,113 @@ def parse_groups(groups_json):
         return json.loads(groups_json)
     except:
         return []
+
+@app.template_filter('build_group_cells')
+def build_group_cells(activity):
+    all_groups = ['OL', 'DL', 'LB', 'RB', 'DB', 'WR', 'TE', 'QB']
+    cells = []
+
+    if activity.activity_type in ['team', 'prepractice']:
+        cells.append({
+            'colspan': 7,
+            'class': 'table-success text-center',
+            'content': activity.topic or ''
+        })
+    elif activity.activity_type == 'individual':
+        topics = json.loads(activity.topics_json) if activity.topics_json else {}
+        for group in all_groups:
+            if group == 'WR':
+                cells.append({
+                    'colspan': 1,
+                    'class': 'table-success',
+                    'content': topics.get('WR', topics.get('TE', ''))
+                })
+            elif group == 'TE':
+                continue
+            else:
+                cells.append({
+                    'colspan': 1,
+                    'class': 'table-success',
+                    'content': topics.get(group, '')
+                })
+    elif activity.activity_type == 'group':
+        combinations = json.loads(activity.topics_json) if activity.topics_json else []
+        group_to_combo = {}
+        for combo in combinations:
+            for g in combo['groups']:
+                group_to_combo[g] = combo
+
+        rendered = set()
+        for group in all_groups:
+            if group in rendered:
+                continue
+
+            if group == 'TE':
+                continue
+
+            if group == 'WR':
+                wr_combo = group_to_combo.get('WR')
+                te_combo = group_to_combo.get('TE')
+                if wr_combo and te_combo and wr_combo == te_combo:
+                    cells.append({
+                        'colspan': 1,
+                        'class': 'table-success' if wr_combo else '',
+                        'content': wr_combo['topic'] if wr_combo else ''
+                    })
+                    rendered.add('WR')
+                    rendered.add('TE')
+                elif wr_combo or te_combo:
+                    combo = wr_combo or te_combo
+                    cells.append({
+                        'colspan': 1,
+                        'class': 'table-success' if combo else '',
+                        'content': combo['topic'] if combo else ''
+                    })
+                    rendered.add('WR')
+                    rendered.add('TE')
+                else:
+                    cells.append({
+                        'colspan': 1,
+                        'class': '',
+                        'content': ''
+                    })
+                    rendered.add('WR')
+                    rendered.add('TE')
+                continue
+
+            combo = group_to_combo.get(group)
+            if combo:
+                combo_groups = combo['groups']
+                consecutive_groups = [group]
+                rendered.add(group)
+
+                next_idx = all_groups.index(group) + 1
+                while next_idx < len(all_groups):
+                    next_group = all_groups[next_idx]
+                    if next_group == 'TE':
+                        next_idx += 1
+                        continue
+                    if next_group in combo_groups and next_group not in rendered:
+                        consecutive_groups.append(next_group)
+                        rendered.add(next_group)
+                        next_idx += 1
+                    else:
+                        break
+
+                cells.append({
+                    'colspan': len(consecutive_groups),
+                    'class': 'table-success',
+                    'content': combo['topic']
+                })
+            else:
+                cells.append({
+                    'colspan': 1,
+                    'class': '',
+                    'content': ''
+                })
+                rendered.add(group)
+
+    return cells
 
 if __name__ == '__main__':
     with app.app_context():
