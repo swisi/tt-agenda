@@ -1,0 +1,410 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Training bearbeiten: {{ training.name }}</h1>
+
+<form method="POST" class="mb-4">
+    <div class="mb-3">
+        <label class="form-label">Name</label>
+        <input type="text" name="name" class="form-control" value="{{ training.name }}" required>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Wochentag</label>
+        <select name="weekday" class="form-select" required>
+            {% for i in range(7) %}
+            <option value="{{ i }}" {% if training.weekday == i %}selected{% endif %}>{{ weekdays[i] }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Startdatum</label>
+            <input type="date" name="start_date" class="form-control" value="{{ training.start_date }}" required>
+        </div>
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Enddatum</label>
+            <input type="date" name="end_date" class="form-control" value="{{ training.end_date }}" required>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Startzeit</label>
+            <input type="time" name="start_time" class="form-control" value="{{ training.start_time.strftime('%H:%M') }}" required>
+        </div>
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Prepractice Dauer (Min)</label>
+            <input type="number" name="prepractice_duration" class="form-control" value="{{ training.prepractice_duration }}">
+        </div>
+    </div>
+    <button type="submit" class="btn btn-primary">Speichern</button>
+    <a href="{{ url_for('index') }}" class="btn btn-secondary">Zurück</a>
+</form>
+
+<hr>
+
+<h3>Aktivitäten</h3>
+<div id="activities-list">
+    {% for activity in activities %}
+    <div class="card activity-card mb-2" data-activity-id="{{ activity.id }}" draggable="true">
+        <div class="card-body">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-grip-vertical me-2" style="cursor: move;"></i>
+                <div class="flex-grow-1">
+                    <h5>{{ activity.activity_type }}</h5>
+                    <p class="mb-1"><strong>Zeit:</strong> {{ activity.start_time.strftime('%H:%M') }} ({{ activity.duration }} Min)</p>
+                    <p class="mb-1"><strong>Gruppen:</strong> 
+                        {% for group in activity.position_groups|parse_groups %}
+                        <span class="badge bg-secondary">{{ group }}</span>
+                        {% endfor %}
+                    </p>
+                    {% if activity.activity_type == 'team' and activity.topic %}
+                    <p class="mb-0"><strong>Thema:</strong> {{ activity.topic }}</p>
+                    {% elif activity.activity_type == 'prepractice' and activity.topic %}
+                    <p class="mb-0"><strong>Thema:</strong> {{ activity.topic }}</p>
+                    {% elif activity.activity_type == 'individual' and activity.topics_json %}
+                    <p class="mb-0"><strong>Themen:</strong></p>
+                    <ul class="mb-0">
+                        {% set topics = activity.topics_json|parse_groups %}
+                        {% for group, topic in topics.items() %}
+                        <li>{{ group }}: {{ topic }}</li>
+                        {% endfor %}
+                    </ul>
+                    {% elif activity.activity_type == 'group' and activity.topics_json %}
+                    <p class="mb-0"><strong>Gruppen-Kombinationen:</strong></p>
+                    <ul class="mb-0">
+                        {% set combinations = activity.topics_json|parse_groups %}
+                        {% for combo in combinations %}
+                        <li>{{ combo.groups|join(' & ') }}: {{ combo.topic }}</li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                </div>
+                <button class="btn btn-sm btn-danger delete-activity-btn" data-activity-id="{{ activity.id }}">Löschen</button>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#activityModal">
+    <i class="bi bi-plus-circle"></i> Aktivität hinzufügen
+</button>
+
+<div class="modal fade" id="activityModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Neue Aktivität</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Typ</label>
+                    <select id="activity_type" class="form-select" onchange="updateGroupSelection()">
+                        <option value="team" selected>Team</option>
+                        <option value="prepractice">Prepractice</option>
+                        <option value="individual">Individual</option>
+                        <option value="group">Group</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Dauer (Min)</label>
+                    <input type="number" id="duration" class="form-control" value="60">
+                </div>
+                
+                <div class="mb-3" id="topic_section">
+                    <label class="form-label">Thema</label>
+                    <input type="text" id="topic" class="form-control">
+                </div>
+                
+                <div id="individual_section" style="display: none;">
+                    <div class="mb-3">
+                        <label class="form-label">Themen pro Gruppe</label>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="individual_mode" id="individual_same" value="same" checked onchange="updateIndividualMode()">
+                            <label class="form-check-label" for="individual_same">
+                                Gleiches Thema für alle Gruppen
+                            </label>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="radio" name="individual_mode" id="individual_different" value="different" onchange="updateIndividualMode()">
+                            <label class="form-check-label" for="individual_different">
+                                Unterschiedliche Themen pro Gruppe
+                            </label>
+                        </div>
+                        <div id="individual_same_topic" class="mb-3">
+                            <input type="text" id="individual_common_topic" class="form-control" placeholder="Thema für alle Gruppen">
+                        </div>
+                        <div id="individual_topics_list" style="display: none;">
+                            {% for group in position_groups %}
+                            <div class="mb-2">
+                                <label class="form-label">{{ group }}</label>
+                                <input type="text" class="form-control individual-topic" data-group="{{ group }}" placeholder="Thema für {{ group }}">
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="group_section" style="display: none;">
+                    <div class="mb-3">
+                        <label class="form-label">Gruppen-Kombinationen</label>
+                        <div id="group_combinations_list"></div>
+                        <button type="button" class="btn btn-sm btn-secondary" onclick="addGroupCombination()">
+                            <i class="bi bi-plus"></i> Kombination hinzufügen
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
+                <button type="button" class="btn btn-primary" onclick="saveActivity()">Speichern</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const POSITION_GROUPS = {{ position_groups|tojson }};
+const TRAINING_ID = {{ training.id }};
+const ADD_ACTIVITY_URL = '{{ url_for("add_activity") }}';
+const REORDER_ACTIVITIES_URL = '{{ url_for("reorder_activities") }}';
+
+let draggedElement = null;
+let groupCombinationCounter = 0;
+
+function updateGroupSelection() {
+    const type = document.getElementById('activity_type').value;
+    const topicSection = document.getElementById('topic_section');
+    const individualSection = document.getElementById('individual_section');
+    const groupSection = document.getElementById('group_section');
+
+    topicSection.style.display = 'none';
+    individualSection.style.display = 'none';
+    groupSection.style.display = 'none';
+
+    if (type === 'team') {
+        topicSection.style.display = 'block';
+    } else if (type === 'prepractice') {
+        topicSection.style.display = 'block';
+    } else if (type === 'individual') {
+        individualSection.style.display = 'block';
+    } else if (type === 'group') {
+        groupSection.style.display = 'block';
+    }
+}
+
+function updateIndividualMode() {
+    const mode = document.querySelector('input[name="individual_mode"]:checked').value;
+    const sameTopic = document.getElementById('individual_same_topic');
+    const topicsList = document.getElementById('individual_topics_list');
+    
+    if (mode === 'same') {
+        sameTopic.style.display = 'block';
+        topicsList.style.display = 'none';
+    } else {
+        sameTopic.style.display = 'none';
+        topicsList.style.display = 'block';
+    }
+}
+
+function addGroupCombination() {
+    const container = document.getElementById('group_combinations_list');
+    const id = groupCombinationCounter++;
+    
+    const html = `
+        <div class="card mb-2" id="combo_${id}">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-2">
+                        <label class="form-label">Gruppen</label>
+                        <div class="group-checkboxes">
+                            {% for group in position_groups %}
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input combo-group" type="checkbox" value="{{ group }}" id="combo_${id}_{{ group }}">
+                                <label class="form-check-label" for="combo_${id}_{{ group }}">{{ group }}</label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="col-md-5 mb-2">
+                        <label class="form-label">Thema</label>
+                        <input type="text" class="form-control combo-topic" placeholder="Thema für diese Kombination">
+                    </div>
+                    <div class="col-md-1 mb-2 d-flex align-items-end">
+                        <button type="button" class="btn btn-sm btn-danger" onclick="removeGroupCombination(${id})">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    container.insertAdjacentHTML('beforeend', html);
+}
+
+function removeGroupCombination(id) {
+    document.getElementById(`combo_${id}`).remove();
+}
+
+function saveActivity() {
+    const type = document.getElementById('activity_type').value;
+    const duration = document.getElementById('duration').value;
+
+    let groups = [];
+    let topic = '';
+    let topicsPerGroup = {};
+    let groupCombinations = [];
+
+    if (type === 'team') {
+        groups = POSITION_GROUPS;
+        topic = document.getElementById('topic').value;
+    } else if (type === 'prepractice') {
+        groups = POSITION_GROUPS;
+        topic = document.getElementById('topic').value;
+    } else if (type === 'individual') {
+        groups = POSITION_GROUPS;
+
+        const mode = document.querySelector('input[name="individual_mode"]:checked').value;
+        if (mode === 'same') {
+            const commonTopic = document.getElementById('individual_common_topic').value;
+            groups.forEach(group => {
+                topicsPerGroup[group] = commonTopic;
+            });
+        } else {
+            document.querySelectorAll('.individual-topic').forEach(input => {
+                const group = input.dataset.group;
+                topicsPerGroup[group] = input.value;
+            });
+        }
+    } else if (type === 'group') {
+        const allGroups = new Set();
+        document.querySelectorAll('#group_combinations_list .card').forEach(card => {
+            const selectedGroups = [];
+            card.querySelectorAll('.combo-group:checked').forEach(cb => {
+                selectedGroups.push(cb.value);
+                allGroups.add(cb.value);
+            });
+            const comboTopic = card.querySelector('.combo-topic').value;
+
+            if (selectedGroups.length > 0) {
+                groupCombinations.push({
+                    groups: selectedGroups,
+                    topic: comboTopic
+                });
+            }
+        });
+        groups = Array.from(allGroups);
+    }
+
+    fetch(ADD_ACTIVITY_URL, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            training_id: TRAINING_ID,
+            activity_type: type,
+            duration: duration,
+            position_groups: groups,
+            topic: topic,
+            topics_per_group: topicsPerGroup,
+            group_combinations: groupCombinations
+        })
+    }).then(response => response.json())
+      .then(data => {
+          if (data.success) {
+              location.reload();
+          }
+      });
+}
+
+function deleteActivity(id) {
+    if (!confirm('Wirklich löschen?')) return;
+    
+    fetch(`/activity/${id}/delete`, {
+        method: 'POST'
+    }).then(response => response.json())
+      .then(data => {
+          if (data.success) {
+              location.reload();
+          }
+      });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.delete-activity-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            deleteActivity(this.dataset.activityId);
+        });
+    });
+
+    const activitiesList = document.getElementById('activities-list');
+    const activityCards = activitiesList.querySelectorAll('.activity-card');
+    
+    activityCards.forEach(card => {
+        card.addEventListener('dragstart', function(e) {
+            draggedElement = this;
+            this.style.opacity = '0.5';
+        });
+        
+        card.addEventListener('dragend', function(e) {
+            this.style.opacity = '1';
+        });
+        
+        card.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            const afterElement = getDragAfterElement(activitiesList, e.clientY);
+            if (afterElement == null) {
+                activitiesList.appendChild(draggedElement);
+            } else {
+                activitiesList.insertBefore(draggedElement, afterElement);
+            }
+        });
+    });
+    
+    activitiesList.addEventListener('drop', function(e) {
+        e.preventDefault();
+        saveOrder();
+    });
+});
+
+function getDragAfterElement(container, y) {
+    const draggableElements = [...container.querySelectorAll('.activity-card:not(.dragging)')];
+    
+    return draggableElements.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = y - box.top - box.height / 2;
+        
+        if (offset < 0 && offset > closest.offset) {
+            return { offset: offset, element: child };
+        } else {
+            return closest;
+        }
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
+
+function saveOrder() {
+    const activityIds = [];
+    document.querySelectorAll('.activity-card').forEach(card => {
+        activityIds.push(parseInt(card.dataset.activityId));
+    });
+
+    fetch(REORDER_ACTIVITIES_URL, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            training_id: TRAINING_ID,
+            activity_ids: activityIds
+        })
+    }).then(response => response.json())
+      .then(data => {
+          if (data.success) {
+              location.reload();
+          }
+      });
+}
+
+updateGroupSelection();
+</script>
+{% endblock %}

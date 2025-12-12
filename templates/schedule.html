@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Zeitplan: {{ training.name }}</h1>
+<a href="{{ url_for('edit_training', id=training.id) }}" class="btn btn-secondary mb-3">Zurück</a>
+
+<div class="table-responsive">
+    <table class="table table-bordered schedule-table">
+        <thead class="table-dark">
+            <tr>
+                <th>From</th>
+                <th>To</th>
+                <th>min</th>
+                <th>Activity</th>
+                <th>OL</th>
+                <th>DL</th>
+                <th>LB</th>
+                <th>RB</th>
+                <th>DB</th>
+                <th>WR/TE</th>
+                <th>QB</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% set activities = training.activities|sort(attribute='order_index') %}
+            {% for activity in activities %}
+            {% set start_datetime = activity.start_time %}
+            {% set end_time_minutes = (activity.start_time.hour * 60 + activity.start_time.minute + activity.duration) %}
+            {% set end_hour = (end_time_minutes // 60) %}
+            {% set end_min = (end_time_minutes % 60) %}
+            {% set groups = activity.position_groups|parse_groups %}
+            
+            <tr>
+                <td>{{ activity.start_time.strftime('%H:%M') }}</td>
+                <td>{{ '%02d:%02d'|format(end_hour, end_min) }}</td>
+                <td>{{ activity.duration }}</td>
+                <td>
+                    <strong>{{ activity.activity_type|title }}</strong>
+                    {% if activity.activity_type == 'team' and activity.topic %}
+                    <br><small>{{ activity.topic }}</small>
+                    {% elif activity.activity_type == 'prepractice' and activity.topic %}
+                    <br><small>{{ activity.topic }}</small>
+                    {% elif activity.activity_type == 'individual' and activity.topics_json %}
+                    {% set topics = activity.topics_json|parse_groups %}
+                    {% for group, topic in topics.items() %}
+                    <br><small>{{ group }}: {{ topic }}</small>
+                    {% endfor %}
+                    {% elif activity.activity_type == 'group' and activity.topics_json %}
+                    {% set combinations = activity.topics_json|parse_groups %}
+                    {% for combo in combinations %}
+                    <br><small>{{ combo.groups|join(' & ') }}: {{ combo.topic }}</small>
+                    {% endfor %}
+                    {% endif %}
+                </td>
+                
+                <td class="{% if 'OL' in groups %}table-success{% endif %}">
+                    {% if 'OL' in groups %}
+                        {% if activity.activity_type == 'individual' and activity.topics_json %}
+                        {% set topics = activity.topics_json|parse_groups %}
+                        {{ topics.get('OL', '') }}
+                        {% elif activity.activity_type == 'group' and activity.topics_json %}
+                        {% set combinations = activity.topics_json|parse_groups %}
+                        {% for combo in combinations %}
+                            {% if 'OL' in combo.groups %}
+                            {{ combo.topic }}
+                            {% endif %}
+                        {% endfor %}
+                        {% endif %}
+                    {% endif %}
+                </td>
+                
+                <td class="{% if 'DL' in groups %}table-success{% endif %}">
+                    {% if 'DL' in groups %}
+                        {% if activity.activity_type == 'individual' and activity.topics_json %}
+                        {% set topics = activity.topics_json|parse_groups %}
+                        {{ topics.get('DL', '') }}
+                        {% elif activity.activity_type == 'group' and activity.topics_json %}
+                        {% set combinations = activity.topics_json|parse_groups %}
+                        {% for combo in combinations %}
+                            {% if 'DL' in combo.groups %}
+                            {{ combo.topic }}
+                            {% endif %}
+                        {% endfor %}
+                        {% endif %}
+                    {% endif %}
+                </td>
+                
+                <td class="{% if 'LB' in groups %}table-success{% endif %}">
+                    {% if 'LB' in groups %}
+                        {% if activity.activity_type == 'individual' and activity.topics_json %}
+                        {% set topics = activity.topics_json|parse_groups %}
+                        {{ topics.get('LB', '') }}
+                        {% elif activity.activity_type == 'group' and activity.topics_json %}
+                        {% set combinations = activity.topics_json|parse_groups %}
+                        {% for combo in combinations %}
+                            {% if 'LB' in combo.groups %}
+                            {{ combo.topic }}
+                            {% endif %}
+                        {% endfor %}
+                        {% endif %}
+                    {% endif %}
+                </td>
+                
+                <td class="{% if 'RB' in groups %}table-success{% endif %}">
+                    {% if 'RB' in groups %}
+                        {% if activity.activity_type == 'individual' and activity.topics_json %}
+                        {% set topics = activity.topics_json|parse_groups %}
+                        {{ topics.get('RB', '') }}
+                        {% elif activity.activity_type == 'group' and activity.topics_json %}
+                        {% set combinations = activity.topics_json|parse_groups %}
+                        {% for combo in combinations %}
+                            {% if 'RB' in combo.groups %}
+                            {{ combo.topic }}
+                            {% endif %}
+                        {% endfor %}
+                        {% endif %}
+                    {% endif %}
+                </td>
+                
+                <td class="{% if 'DB' in groups %}table-success{% endif %}">
+                    {% if 'DB' in groups %}
+                        {% if activity.activity_type == 'individual' and activity.topics_json %}
+                        {% set topics = activity.topics_json|parse_groups %}
+                        {{ topics.get('DB', '') }}
+                        {% elif activity.activity_type == 'group' and activity.topics_json %}
+                        {% set combinations = activity.topics_json|parse_groups %}
+                        {% for combo in combinations %}
+                            {% if 'DB' in combo.groups %}
+                            {{ combo.topic }}
+                            {% endif %}
+                        {% endfor %}
+                        {% endif %}
+                    {% endif %}
+                </td>
+                
+                <td class="{% if 'WR' in groups or 'TE' in groups %}table-success{% endif %}">
+                    {% if 'WR' in groups or 'TE' in groups %}
+                        {% if activity.activity_type == 'individual' and activity.topics_json %}
+                        {% set topics = activity.topics_json|parse_groups %}
+                        {{ topics.get('WR', topics.get('TE', '')) }}
+                        {% elif activity.activity_type == 'group' and activity.topics_json %}
+                        {% set combinations = activity.topics_json|parse_groups %}
+                        {% for combo in combinations %}
+                            {% if 'WR' in combo.groups or 'TE' in combo.groups %}
+                            {{ combo.topic }}
+                            {% endif %}
+                        {% endfor %}
+                        {% endif %}
+                    {% endif %}
+                </td>
+                
+                <td class="{% if 'QB' in groups %}table-success{% endif %}">
+                    {% if 'QB' in groups %}
+                        {% if activity.activity_type == 'individual' and activity.topics_json %}
+                        {% set topics = activity.topics_json|parse_groups %}
+                        {{ topics.get('QB', '') }}
+                        {% elif activity.activity_type == 'group' and activity.topics_json %}
+                        {% set combinations = activity.topics_json|parse_groups %}
+                        {% for combo in combinations %}
+                            {% if 'QB' in combo.groups %}
+                            {{ combo.topic }}
+                            {% endif %}
+                        {% endfor %}
+                        {% endif %}
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<style>
+.schedule-table td {
+    vertical-align: middle;
+    text-align: center;
+}
+.schedule-table td:nth-child(4) {
+    text-align: left;
+}
+.schedule-table .table-success {
+    background-color: #90EE90 !important;
+}
+</style>
+{% endblock %}

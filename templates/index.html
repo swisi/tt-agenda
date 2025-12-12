@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Trainings Übersicht</h1>
+<a href="{{ url_for('new_training') }}" class="btn btn-primary mb-3">
+    <i class="bi bi-plus-circle"></i> Neues Training
+</a>
+
+<div class="row">
+    {% for training in trainings %}
+    <div class="col-md-6 mb-3">
+        <div class="card">
+            <div class="card-header">
+                <h5>{{ training.name }}</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Wochentag:</strong> {{ weekdays[training.weekday] }}</p>
+                <p><strong>Zeitraum:</strong> {{ training.start_date.strftime('%d.%m.%Y') }} - {{ training.end_date.strftime('%d.%m.%Y') }}</p>
+                <p><strong>Startzeit:</strong> {{ training.start_time.strftime('%H:%M') }}</p>
+                <p><strong>Prepractice:</strong> {{ training.prepractice_duration }} Min</p>
+                <p><strong>Aktivitäten:</strong> {{ training.activities|length }}</p>
+                <a href="{{ url_for('edit_training', id=training.id) }}" class="btn btn-sm btn-primary">Bearbeiten</a>
+                <a href="{{ url_for('training_schedule', id=training.id) }}" class="btn btn-sm btn-success">Zeitplan</a>
+                <form method="POST" action="{{ url_for('delete_training', id=training.id) }}" style="display:inline;">
+                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Wirklich löschen?')">Löschen</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
