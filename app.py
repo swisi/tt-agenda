@@ -45,7 +45,7 @@ class User(db.Model):
         return check_password_hash(self.password_hash, password)
 
 WEEKDAYS = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag']
-POSITION_GROUPS = ['OL', 'DL', 'LB', 'DB', 'RB', 'TE', 'WR', 'QB']
+POSITION_GROUPS = ['OL', 'DL', 'LB', 'RB','DB', 'TE', 'WR', 'QB']
 
 # Importiere Farbkonfiguration
 try:
@@ -284,13 +284,23 @@ def new_training():
 def edit_training(id):
     training = Training.query.get_or_404(id)
     if request.method == 'POST':
+        old_start_time = training.start_time
+        new_start_time = datetime.strptime(request.form['start_time'], '%H:%M').time()
+        
         training.name = request.form['name']
         training.weekday = int(request.form['weekday'])
         training.start_date = datetime.strptime(request.form['start_date'], '%Y-%m-%d').date()
         training.end_date = datetime.strptime(request.form['end_date'], '%Y-%m-%d').date()
-        training.start_time = datetime.strptime(request.form['start_time'], '%H:%M').time()
+        training.start_time = new_start_time
         db.session.commit()
-        flash('Training erfolgreich aktualisiert!', 'success')
+        
+        # Wenn sich die Startzeit geändert hat, berechne alle Aktivitätszeiten neu
+        if old_start_time != new_start_time:
+            recalculate_times(id)
+            flash('Training und Aktivitätszeiten erfolgreich aktualisiert!', 'success')
+        else:
+            flash('Training erfolgreich aktualisiert!', 'success')
+        
         return redirect(url_for('edit_training', id=id))
     activities = Activity.query.filter_by(training_id=id).order_by(Activity.order_index).all()
     activities_json = [{
