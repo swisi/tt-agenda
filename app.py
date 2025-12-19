@@ -1082,4 +1082,4 @@ if __name__ == '__main__':
             db.session.add(user)
             db.session.commit()
             print('Default users created: admin/admin and user/user')
-    app.run(debug=True)
+    app.run(debug=False)
