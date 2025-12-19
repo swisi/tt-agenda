@@ -12,6 +12,7 @@ services:
     environment:
       - FLASK_APP=app.py
       - FLASK_ENV=production
+      - TZ=Europe/Zurich
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/login"]

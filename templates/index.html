@@ -426,8 +426,18 @@
         // Berechne End-Zeit
         currentActivityEndTime.setTime(activityStartTime.getTime() + ({{ current_activity.duration }} * 60 * 1000));
         
+        // Server-Zeit vom Backend für Synchronisation
+        const serverTime = new Date("{{ now.strftime('%Y-%m-%d %H:%M:%S') }}");
+        const clientTime = new Date();
+        const timeDiff = serverTime - clientTime;
+        
+        console.log('Server Zeit:', serverTime);
+        console.log('Client Zeit:', clientTime);
+        console.log('Zeit-Differenz:', timeDiff, 'ms');
+        
         function updateCountdown() {
-            const now = new Date();
+            // Verwende Server-Zeit statt Client-Zeit
+            const now = new Date(new Date().getTime() + timeDiff);
             const diff = currentActivityEndTime - now;
             
             const timer = document.getElementById('countdown-timer');

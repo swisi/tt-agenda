@@ -24,6 +24,7 @@ RUN mkdir -p /app/instance
 # Setze Umgebungsvariablen
 ENV FLASK_APP=app.py
 ENV PYTHONUNBUFFERED=1
+ENV TZ=Europe/Zurich
 
 # Exponiere Port 5000
 EXPOSE 5000
