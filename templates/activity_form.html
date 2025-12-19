@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">{{ 'Aktivität bearbeiten' if activity else 'Neue Aktivität' }}</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('edit_activity', id=activity.id) if activity else url_for('add_activity', training_id=training.id) }}" id="activityForm" onsubmit="return prepareFormSubmit()">
+                        <input type="hidden" name="training_id" value="{{ training.id }}">
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Typ</label>
+                            <select name="activity_type" class="form-select" id="activity_type" onchange="updateFormSections()" required>
+                                <option value="team" {% if activity and activity.activity_type == 'team' %}selected{% endif %}>Team</option>
+                                <option value="prepractice" {% if activity and activity.activity_type == 'prepractice' %}selected{% endif %}>Prepractice</option>
+                                <option value="individual" {% if activity and activity.activity_type == 'individual' %}selected{% endif %}>Individual</option>
+                                <option value="group" {% if activity and activity.activity_type == 'group' %}selected{% endif %}>Group</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Dauer (Min)</label>
+                            <input type="number" name="duration" class="form-control" value="{{ activity.duration if activity else 60 }}" required>
+                        </div>
+                        
+                        
+                        <!-- Topic Section (Team/Prepractice) -->
+                        <div class="mb-3" id="topic_section" style="display: {% if activity and activity.activity_type in ['team', 'prepractice'] %}block{% elif not activity %}block{% else %}none{% endif %};">
+                            <label class="form-label">Thema</label>
+                            <input type="text" name="topic" class="form-control" value="{{ activity.topic if activity and activity.topic else '' }}">
+                        </div>
+                        
+                        <!-- Individual Section -->
+                        <div class="mb-3" id="individual_section" style="display: {% if activity and activity.activity_type == 'individual' %}block{% else %}none{% endif %};">
+                            <label class="form-label">Themen pro Gruppe</label>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="radio" name="individual_mode" id="individual_same" value="same" {% if individual_mode_same %}checked{% endif %} onchange="updateIndividualMode()">
+                                <label class="form-check-label" for="individual_same">Gleiches Thema für alle Gruppen</label>
+                            </div>
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="radio" name="individual_mode" id="individual_different" value="different" {% if not individual_mode_same %}checked{% endif %} onchange="updateIndividualMode()">
+                                <label class="form-check-label" for="individual_different">Unterschiedliche Themen pro Gruppe</label>
+                            </div>
+                            <div id="individual_same_topic" class="mb-3" style="display: {% if individual_mode_same %}block{% else %}none{% endif %};">
+                                <input type="text" name="individual_common_topic" id="individual_common_topic" class="form-control" value="{{ individual_common_topic }}" placeholder="Thema für alle Gruppen">
+                            </div>
+                            <div id="individual_topics_list" style="display: {% if individual_mode_same %}none{% else %}block{% endif %};">
+                                {% for group in position_groups %}
+                                <div class="mb-2">
+                                    <label class="form-label">{{ group }}</label>
+                                    <input type="text" name="individual_topic_{{ group }}" class="form-control" value="{{ individual_topics.get(group, '') }}" placeholder="Thema für {{ group }}">
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        
+                        <!-- Group Section -->
+                        <div class="mb-3" id="group_section" style="display: {% if activity and activity.activity_type == 'group' %}block{% else %}none{% endif %};">
+                            <label class="form-label">Gruppen-Kombinationen</label>
+                            <div id="group_combinations_list">
+                                {% if activity and activity.topics_json %}
+                                    {% set combinations = activity.topics_json|parse_groups %}
+                                    {% for combo in combinations %}
+                                    <div class="card mb-2 combo-item">
+                                        <div class="card-body">
+                                            <div class="row">
+                                                <div class="col-md-6 mb-2">
+                                                    <label class="form-label">Gruppen</label>
+                                                    <div>
+                                                        {% for group in position_groups %}
+                                                        <div class="form-check form-check-inline">
+                                                            <input class="form-check-input combo-group" type="checkbox" name="combo_{{ loop.index0 }}_groups" value="{{ group }}" id="combo_{{ loop.index0 }}_{{ group }}" {% if group in combo.groups %}checked{% endif %}>
+                                                            <label class="form-check-label" for="combo_{{ loop.index0 }}_{{ group }}">{{ group }}</label>
+                                                        </div>
+                                                        {% endfor %}
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-5 mb-2">
+                                                    <label class="form-label">Thema</label>
+                                                    <input type="text" name="combo_{{ loop.index0 }}_topic" class="form-control combo-topic" value="{{ combo.topic }}" placeholder="Thema für diese Kombination">
+                                                </div>
+                                                <div class="col-md-1 mb-2 d-flex align-items-end">
+                                                    <button type="button" class="btn btn-sm btn-danger" onclick="removeComboItem(this)">×</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                            <input type="hidden" name="combo_count" id="combo_count" value="{{ (activity.topics_json|parse_groups|length) if activity and activity.topics_json else 0 }}">
+                            <button type="button" class="btn btn-sm btn-secondary" onclick="addGroupCombination()">
+                                <i class="bi bi-plus"></i> Kombination hinzufügen
+                            </button>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{{ url_for('edit_training', id=training.id) }}" class="btn btn-secondary">Abbrechen</a>
+                            <button type="submit" class="btn btn-primary">Speichern</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Initialisiere comboCounter mit der Anzahl vorhandener Kombinationen
+let comboCounter = {{ (activity.topics_json|parse_groups|length) if activity and activity.topics_json else 0 }};
+// Stelle sicher, dass comboCounter mindestens so groß ist wie die Anzahl der Items
+document.addEventListener('DOMContentLoaded', function() {
+    const initialCount = document.querySelectorAll('.combo-item').length;
+    if (initialCount > comboCounter) {
+        comboCounter = initialCount;
+    }
+    // Stelle sicher, dass combo_count hidden field korrekt gesetzt ist
+    document.getElementById('combo_count').value = initialCount;
+    
+    // Debug: Log alle vorhandenen Kombinationen
+    console.log('Initial combo items:', initialCount);
+    console.log('Combo counter:', comboCounter);
+});
+
+function updateFormSections() {
+    const type = document.getElementById('activity_type').value;
+    document.getElementById('topic_section').style.display = (type === 'team' || type === 'prepractice') ? 'block' : 'none';
+    document.getElementById('individual_section').style.display = (type === 'individual') ? 'block' : 'none';
+    document.getElementById('group_section').style.display = (type === 'group') ? 'block' : 'none';
+}
+
+function updateIndividualMode() {
+    const mode = document.querySelector('input[name="individual_mode"]:checked').value;
+    document.getElementById('individual_same_topic').style.display = (mode === 'same') ? 'block' : 'none';
+    document.getElementById('individual_topics_list').style.display = (mode === 'same') ? 'none' : 'block';
+}
+
+function addGroupCombination() {
+    const container = document.getElementById('group_combinations_list');
+    // Verwende die aktuelle Anzahl als neuen Index, damit keine Lücken entstehen
+    const currentCount = document.querySelectorAll('.combo-item').length;
+    const id = currentCount;
+    const positionGroups = {{ position_groups|tojson|safe }};
+    
+    let groupsHTML = '';
+    positionGroups.forEach(group => {
+        groupsHTML += `<div class="form-check form-check-inline"><input class="form-check-input combo-group" type="checkbox" name="combo_${id}_groups" value="${group}" id="combo_${id}_${group}"><label class="form-check-label" for="combo_${id}_${group}">${group}</label></div>`;
+    });
+    
+    const html = `<div class="card mb-2 combo-item"><div class="card-body"><div class="row"><div class="col-md-6 mb-2"><label class="form-label">Gruppen</label><div>${groupsHTML}</div></div><div class="col-md-5 mb-2"><label class="form-label">Thema</label><input type="text" name="combo_${id}_topic" class="form-control combo-topic" placeholder="Thema für diese Kombination"></div><div class="col-md-1 mb-2 d-flex align-items-end"><button type="button" class="btn btn-sm btn-danger" onclick="removeComboItem(this)">×</button></div></div></div></div>`;
+    container.insertAdjacentHTML('beforeend', html);
+    comboCounter = id + 1;
+    document.getElementById('combo_count').value = document.querySelectorAll('.combo-item').length;
+}
+
+function removeComboItem(button) {
+    button.closest('.combo-item').remove();
+    // Indizes neu nummerieren, damit keine Lücken entstehen
+    renumberComboItems();
+    const newCount = document.querySelectorAll('.combo-item').length;
+    comboCounter = newCount;
+}
+
+function renumberComboItems() {
+    const items = document.querySelectorAll('.combo-item');
+    items.forEach((item, index) => {
+        // Aktualisiere alle Checkbox-Namen und IDs mit dem neuen Index
+        const checkboxes = item.querySelectorAll('input[type="checkbox"].combo-group');
+        checkboxes.forEach(checkbox => {
+            const groupName = checkbox.value;
+            const oldId = checkbox.id;
+            
+            // Aktualisiere Name und ID der Checkbox
+            checkbox.name = `combo_${index}_groups`;
+            checkbox.id = `combo_${index}_${groupName}`;
+            
+            // Finde das zugehörige Label (suche nach dem Label, das auf die alte ID zeigt)
+            const label = checkbox.closest('.form-check').querySelector('label');
+            if (label) {
+                label.setAttribute('for', `combo_${index}_${groupName}`);
+            }
+        });
+        
+        // Aktualisiere Topic-Input
+        const topicInput = item.querySelector('input.combo-topic');
+        if (topicInput) {
+            topicInput.name = `combo_${index}_topic`;
+        }
+    });
+}
+
+// Stelle sicher, dass combo_count vor dem Submit aktualisiert wird
+function prepareFormSubmit() {
+    // Stelle sicher, dass alle Indizes korrekt sind
+    renumberComboItems();
+    const count = document.querySelectorAll('.combo-item').length;
+    document.getElementById('combo_count').value = count;
+    console.log('Submitting form with combo_count:', count);
+    
+    // Debug: Zeige alle Checkboxen
+    const allCheckboxes = document.querySelectorAll('input[type="checkbox"].combo-group');
+    console.log('Total checkboxes found:', allCheckboxes.length);
+    allCheckboxes.forEach(cb => {
+        console.log(`Checkbox: name=${cb.name}, value=${cb.value}, checked=${cb.checked}`);
+    });
+    
+    return true; // Formular absenden
+}
+
+// Farbselektor-Funktionen entfernt - Farben werden automatisch zugewiesen
+</script>
+{% endblock %}
+

@@ -1,24 +1,35 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>Zeitplan: {{ training.name }}</h1>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="mb-0">Zeitplan: {{ training.name }}</h1>
+    <div class="d-flex gap-2 align-items-center">
+        <label for="groupFilter" class="form-label mb-0 me-2">Filter:</label>
+        <select id="groupFilter" class="form-select" style="width: auto;">
+            <option value="all">Alle Gruppen</option>
+            {% for group in position_groups %}
+            <option value="{{ group }}">{{ group }}</option>
+            {% endfor %}
+        </select>
+    </div>
+</div>
 <a href="{{ url_for('edit_training', id=training.id) }}" class="btn btn-secondary mb-3">Zurück</a>
 
 <div class="table-responsive">
-    <table class="table table-bordered schedule-table">
+    <table class="table table-bordered schedule-table" id="scheduleTable">
         <thead class="table-dark">
             <tr>
                 <th>From</th>
                 <th>To</th>
                 <th>min</th>
-                <th>Activity</th>
-                <th>OL</th>
-                <th>DL</th>
-                <th>LB</th>
-                <th>RB</th>
-                <th>DB</th>
-                <th>WR/TE</th>
-                <th>QB</th>
+                <th class="group-header" data-group="OL">OL</th>
+                <th class="group-header" data-group="DL">DL</th>
+                <th class="group-header" data-group="LB">LB</th>
+                <th class="group-header" data-group="RB">RB</th>
+                <th class="group-header" data-group="DB">DB</th>
+                <th class="group-header" data-group="WR">WR</th>
+                <th class="group-header" data-group="TE">TE</th>
+                <th class="group-header" data-group="QB">QB</th>
             </tr>
         </thead>
         <tbody>
@@ -29,15 +40,17 @@
             {% set end_hour = (end_time_minutes // 60) %}
             {% set end_min = (end_time_minutes % 60) %}
             
+            {% set activity_color = activity.color if activity.color else '#10b981' %}
             <tr class="{% if loop.index % 2 == 0 %}table-row-even{% else %}table-row-odd{% endif %}">
-                <td>{{ activity.start_time.strftime('%H:%M') }}</td>
-                <td>{{ '%02d:%02d'|format(end_hour, end_min) }}</td>
-                <td>{{ activity.duration }}</td>
-                <td><strong>{{ activity.activity_type|title }}</strong></td>
+                <td class="time-cell">{{ activity.start_time.strftime('%H:%M') }}</td>
+                <td class="time-cell">{{ '%02d:%02d'|format(end_hour, end_min) }}</td>
+                <td class="time-cell">{{ activity.duration }}</td>
                 
                 {% set cells = activity|build_group_cells %}
                 {% for cell in cells %}
-                <td class="{{ cell.class }}" {% if cell.colspan > 1 %}colspan="{{ cell.colspan }}"{% endif %}>{{ cell.content }}</td>
+                <td class="{{ cell.class }} group-cell" {% if cell.colspan and cell.colspan > 1 %}colspan="{{ cell.colspan }}"{% endif %} 
+                    data-groups="{{ cell.groups|join(',') if cell.groups else '' }}"
+                    style="{% if cell.color %}background-color: var(--color-{{ activity.activity_type }}) !important;{% if cell.text_color %}color: {{ cell.text_color }} !important;{% endif %}{% endif %}">{% if cell.content and cell.content.strip() %}{{ cell.content }}{% else %}&nbsp;{% endif %}</td>
                 {% endfor %}
             </tr>
             {% endfor %}
@@ -58,9 +71,7 @@
     padding: 8px;
 }
 
-.schedule-table td:nth-child(4) {
-    text-align: left;
-}
+/* Activity-Spalte wurde entfernt */
 
 .schedule-table tbody tr.table-row-odd td {
     background-color: #e3f2fd;
@@ -68,6 +79,14 @@
 
 .schedule-table tbody tr.table-row-even td {
     background-color: #b8ddf7;
+}
+
+[data-theme="dark"] .schedule-table tbody tr.table-row-odd td {
+    background-color: #1e3a5f;
+}
+
+[data-theme="dark"] .schedule-table tbody tr.table-row-even td {
+    background-color: #1e4a6f;
 }
 
 .schedule-table tbody tr.table-row-odd td.table-success {
@@ -78,8 +97,114 @@
     background-color: #81c784 !important;
 }
 
+[data-theme="dark"] .schedule-table tbody tr.table-row-odd td.table-success {
+    background-color: #2d5a2d !important;
+}
+
+[data-theme="dark"] .schedule-table tbody tr.table-row-even td.table-success {
+    background-color: #3d6a3d !important;
+}
+
 .schedule-table thead th {
     border: 2px solid #333;
 }
+
+[data-theme="dark"] .schedule-table thead th {
+    border-color: var(--border-color);
+    background-color: var(--bg-card);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .schedule-table {
+    border-color: var(--border-color);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .schedule-table td, 
+[data-theme="dark"] .schedule-table th {
+    border-color: var(--border-color);
+    color: var(--text-primary);
+}
+
+/* Filter Styles */
+.group-header.hidden,
+.group-cell.hidden {
+    display: none !important;
+}
+
+/* Debug: Stelle sicher, dass leere Zellen sichtbar sind */
+.group-cell {
+    min-width: 50px;
+    min-height: 20px;
+}
+
+/* Verhindere, dass leere Zellen kollabieren */
+.schedule-table td {
+    padding: 8px;
+}
+
+/* Debug: Stelle sicher, dass leere Zellen sichtbar sind */
+.group-cell {
+    min-width: 50px;
+    min-height: 20px;
+}
+
+/* Verhindere, dass leere Zellen kollabieren */
+.schedule-table td {
+    padding: 8px;
+}
 </style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const filterSelect = document.getElementById('groupFilter');
+    const table = document.getElementById('scheduleTable');
+    
+    filterSelect.addEventListener('change', function() {
+        const selectedGroup = this.value;
+        
+        // Alle Header und Zellen zeigen/verstecken
+        const headers = table.querySelectorAll('th.group-header');
+        const cells = table.querySelectorAll('td.group-cell');
+        
+        if (selectedGroup === 'all') {
+            // Alle Gruppen anzeigen
+            headers.forEach(header => {
+                header.style.display = '';
+                header.classList.remove('hidden');
+            });
+            cells.forEach(cell => {
+                cell.style.display = '';
+                cell.classList.remove('hidden');
+            });
+        } else {
+            // Nur die ausgewählte Gruppe anzeigen
+            headers.forEach(header => {
+                const group = header.getAttribute('data-group');
+                if (group === selectedGroup) {
+                    header.style.display = '';
+                    header.classList.remove('hidden');
+                } else {
+                    header.style.display = 'none';
+                    header.classList.add('hidden');
+                }
+            });
+            
+            cells.forEach(cell => {
+                const groupsAttr = cell.getAttribute('data-groups');
+                const groups = groupsAttr ? groupsAttr.split(',') : [];
+                
+                // Zeige Zelle wenn sie die ausgewählte Gruppe enthält
+                if (groups.includes(selectedGroup)) {
+                    cell.style.display = '';
+                    cell.classList.remove('hidden');
+                } else {
+                    cell.style.display = 'none';
+                    cell.classList.add('hidden');
+                }
+            });
+        }
+    });
+});
+</script>
 {% endblock %}
