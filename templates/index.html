@@ -14,7 +14,7 @@
 {% if current_training %}
 <div class="card mb-4 border-0 shadow-lg" id="live-training-widget">
     <div class="card-header {% if training_status == 'running' %}bg-danger{% else %}bg-primary{% endif %} text-white">
-        <div class="d-flex justify-content-between align-items-center">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
             <h4 class="mb-0">
                 <i class="bi bi-{% if training_status == 'running' %}broadcast{% else %}clock-history{% endif %} me-2"></i>
                 {% if training_status == 'running' %}
@@ -23,7 +23,16 @@
                     ⏰ Nächstes Training: {{ current_training.name }}
                 {% endif %}
             </h4>
-            <div class="d-flex gap-3 align-items-center">
+            <div class="d-flex gap-3 align-items-center flex-wrap">
+                <div class="d-flex align-items-center gap-2">
+                    <label for="liveGroupFilter" class="form-label mb-0 small">Filter:</label>
+                    <select id="liveGroupFilter" class="form-select form-select-sm live-filter-select">
+                        <option value="all">Alle Gruppen</option>
+                        {% for group in position_groups %}
+                        <option value="{{ group }}">{{ group }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
                 {% if training_status == 'running' and current_activity %}
                 <div id="countdown-timer" class="countdown-timer">
                     <div class="countdown-label">Noch:</div>
@@ -246,13 +255,216 @@
             box-shadow: 0 0 40px rgba(220, 38, 38, 0.7);
         }
     }
+    
+    /* Countdown Timer Styles */
+    .countdown-timer {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        background: rgba(255, 255, 255, 0.2);
+        padding: 8px 16px;
+        border-radius: 8px;
+        backdrop-filter: blur(10px);
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        transition: all 0.3s ease;
+    }
+    
+    .countdown-label {
+        font-size: 0.7rem;
+        font-weight: 500;
+        opacity: 0.9;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .countdown-value {
+        font-size: 1.8rem;
+        font-weight: bold;
+        font-family: 'Courier New', monospace;
+        line-height: 1;
+        margin-top: 2px;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+    
+    .countdown-warning {
+        background: rgba(245, 158, 11, 0.3) !important;
+        border-color: rgba(245, 158, 11, 0.6) !important;
+        animation: warningPulse 1s infinite;
+    }
+    
+    .countdown-critical {
+        background: rgba(239, 68, 68, 0.4) !important;
+        border-color: rgba(239, 68, 68, 0.8) !important;
+        animation: criticalPulse 0.5s infinite;
+    }
+    
+    .countdown-finished {
+        background: rgba(107, 114, 128, 0.3) !important;
+        border-color: rgba(107, 114, 128, 0.6) !important;
+    }
+    
+    @keyframes warningPulse {
+        0%, 100% {
+            transform: scale(1);
+            box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+        }
+        50% {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(245, 158, 11, 0.8);
+        }
+    }
+    
+    @keyframes criticalPulse {
+        0%, 100% {
+            transform: scale(1);
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.6);
+        }
+        50% {
+            transform: scale(1.08);
+            box-shadow: 0 0 30px rgba(239, 68, 68, 1);
+        }
+    }
+    
+    /* Live Filter Select */
+    .live-filter-select {
+        background-color: rgba(255, 255, 255, 0.95);
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        color: #1e293b;
+        font-weight: 600;
+        min-width: 150px;
+        backdrop-filter: blur(10px);
+        transition: all 0.3s ease;
+    }
+    
+    .live-filter-select:focus {
+        background-color: white;
+        border-color: rgba(255, 255, 255, 0.8);
+        box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2);
+    }
+    
+    .live-filter-select option {
+        background-color: white;
+        color: #1e293b;
+    }
+    
+    /* Filter Styles */
+    .group-header.hidden,
+    .group-cell.hidden {
+        display: none !important;
+    }
 </style>
 
 <script>
-    // Auto-Refresh alle 30 Sekunden
+    // Countdown Timer
+    {% if training_status == 'running' and current_activity %}
+    (function() {
+        const currentActivityEndTime = new Date();
+        const activityStartTime = new Date();
+        
+        // Parse Start-Zeit
+        const startParts = "{{ current_activity.start_time.strftime('%H:%M') }}".split(':');
+        activityStartTime.setHours(parseInt(startParts[0]), parseInt(startParts[1]), 0, 0);
+        
+        // Berechne End-Zeit
+        currentActivityEndTime.setTime(activityStartTime.getTime() + ({{ current_activity.duration }} * 60 * 1000));
+        
+        function updateCountdown() {
+            const now = new Date();
+            const diff = currentActivityEndTime - now;
+            
+            if (diff <= 0) {
+                document.getElementById('countdown-value').textContent = '00:00';
+                document.getElementById('countdown-timer').classList.add('countdown-finished');
+                // Reload nach Ablauf
+                setTimeout(function() {
+                    location.reload();
+                }, 2000);
+                return;
+            }
+            
+            const minutes = Math.floor(diff / 60000);
+            const seconds = Math.floor((diff % 60000) / 1000);
+            
+            const display = String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
+            document.getElementById('countdown-value').textContent = display;
+            
+            // Warnung bei weniger als 2 Minuten
+            if (diff < 120000) {
+                document.getElementById('countdown-timer').classList.add('countdown-warning');
+            }
+            
+            // Kritisch bei weniger als 30 Sekunden
+            if (diff < 30000) {
+                document.getElementById('countdown-timer').classList.add('countdown-critical');
+            }
+        }
+        
+        // Initialer Update
+        updateCountdown();
+        
+        // Update jede Sekunde
+        setInterval(updateCountdown, 1000);
+    })();
+    {% endif %}
+    
+    // Gruppen-Filter
+    document.addEventListener('DOMContentLoaded', function() {
+        const filterSelect = document.getElementById('liveGroupFilter');
+        const table = document.getElementById('liveScheduleTable');
+        
+        if (filterSelect && table) {
+            filterSelect.addEventListener('change', function() {
+                const selectedGroup = this.value;
+                
+                // Alle Header und Zellen zeigen/verstecken
+                const headers = table.querySelectorAll('th.group-header');
+                const cells = table.querySelectorAll('td.group-cell');
+                
+                if (selectedGroup === 'all') {
+                    // Alle Gruppen anzeigen
+                    headers.forEach(header => {
+                        header.style.display = '';
+                        header.classList.remove('hidden');
+                    });
+                    cells.forEach(cell => {
+                        cell.style.display = '';
+                        cell.classList.remove('hidden');
+                    });
+                } else {
+                    // Nur die ausgewählte Gruppe anzeigen
+                    headers.forEach(header => {
+                        const group = header.getAttribute('data-group');
+                        if (group === selectedGroup) {
+                            header.style.display = '';
+                            header.classList.remove('hidden');
+                        } else {
+                            header.style.display = 'none';
+                            header.classList.add('hidden');
+                        }
+                    });
+                    
+                    cells.forEach(cell => {
+                        const groupsAttr = cell.getAttribute('data-groups');
+                        const groups = groupsAttr ? groupsAttr.split(',') : [];
+                        
+                        // Zeige Zelle wenn sie die ausgewählte Gruppe enthält
+                        if (groups.includes(selectedGroup)) {
+                            cell.style.display = '';
+                            cell.classList.remove('hidden');
+                        } else {
+                            cell.style.display = 'none';
+                            cell.classList.add('hidden');
+                        }
+                    });
+                }
+            });
+        }
+    });
+    
+    // Auto-Refresh alle 5 Minuten (nicht mehr alle 30 Sekunden, da Countdown läuft)
     setTimeout(function() {
         location.reload();
-    }, 30000);
+    }, 300000);
 </script>
 {% endif %}
 

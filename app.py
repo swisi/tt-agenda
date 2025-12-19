@@ -157,6 +157,7 @@ def index():
     return render_template('index.html', 
                          trainings=trainings, 
                          weekdays=WEEKDAYS,
+                         position_groups=POSITION_GROUPS,
                          current_training=current_training,
                          current_activity=current_activity,
                          next_activity=next_activity,
