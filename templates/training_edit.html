@@ -57,52 +57,96 @@
     <div class="card activity-card mb-2 activity-type-{{ activity.activity_type }}">
         <div class="card-body">
             <div class="d-flex align-items-center">
-                <div class="me-3">
+                <div class="me-3 d-flex flex-column gap-1" style="min-width: 40px;">
                     {% if not loop.first %}
                     <form method="POST" action="{{ url_for('move_activity_up', id=activity.id) }}" style="display: inline;">
-                        <button type="submit" class="btn btn-sm btn-outline-secondary" title="Nach oben">
-                            <i class="bi bi-arrow-up"></i>
+                        <button type="submit" class="btn btn-sm btn-primary" title="Nach oben">
+                            <i class="bi bi-arrow-up-circle-fill"></i>
                         </button>
                     </form>
+                    {% else %}
+                    <div style="height: 31px;"></div>
                     {% endif %}
                     {% if not loop.last %}
                     <form method="POST" action="{{ url_for('move_activity_down', id=activity.id) }}" style="display: inline;">
-                        <button type="submit" class="btn btn-sm btn-outline-secondary" title="Nach unten">
-                            <i class="bi bi-arrow-down"></i>
+                        <button type="submit" class="btn btn-sm btn-primary" title="Nach unten">
+                            <i class="bi bi-arrow-down-circle-fill"></i>
                         </button>
                     </form>
+                    {% else %}
+                    <div style="height: 31px;"></div>
                     {% endif %}
                 </div>
                 <div class="flex-grow-1">
-                    <div class="d-flex align-items-center gap-2 mb-1">
-                        <h5 class="mb-0">{{ activity.activity_type }}</h5>
-                    </div>
-                    <p class="mb-1"><strong>Zeit:</strong> {{ activity.start_time.strftime('%H:%M') }} ({{ activity.duration }} Min)</p>
-                    <p class="mb-1"><strong>Gruppen:</strong> 
-                        {% for group in activity.position_groups|parse_groups %}
-                        <span class="badge bg-secondary">{{ group }}</span>
-                        {% endfor %}
-                    </p>
+                    <!-- Thema/Topic zuerst anzeigen -->
                     {% if activity.activity_type == 'team' and activity.topic %}
-                    <p class="mb-0"><strong>Thema:</strong> {{ activity.topic }}</p>
+                    <h5 class="mb-1">{{ activity.topic }}</h5>
+                    <p class="text-muted mb-2"><small><span class="badge bg-info">{{ activity.activity_type }}</span></small></p>
                     {% elif activity.activity_type == 'prepractice' and activity.topic %}
-                    <p class="mb-0"><strong>Thema:</strong> {{ activity.topic }}</p>
+                    <h5 class="mb-1">{{ activity.topic }}</h5>
+                    <p class="text-muted mb-2"><small><span class="badge bg-warning">{{ activity.activity_type }}</span></small></p>
                     {% elif activity.activity_type == 'individual' and activity.topics_json %}
-                    <p class="mb-0"><strong>Themen:</strong></p>
-                    <ul class="mb-0">
-                        {% set topics = activity.topics_json|parse_groups %}
-                        {% for group, topic in topics.items() %}
-                        <li>{{ group }}: {{ topic }}</li>
-                        {% endfor %}
-                    </ul>
+                    {% set topics = activity.topics_json|parse_groups %}
+                    {% set topic_values = topics.values()|list %}
+                    {% if topic_values and topic_values|length > 0 %}
+                        {% set first_topic = topic_values[0] %}
+                        {% set all_same = topic_values|select('equalto', first_topic)|list|length == topic_values|length %}
+                        {% if all_same %}
+                        <h5 class="mb-1">{{ first_topic }}</h5>
+                        {% else %}
+                        <h5 class="mb-1">Individual (verschiedene Themen)</h5>
+                        {% endif %}
+                    {% else %}
+                    <h5 class="mb-1">Individual</h5>
+                    {% endif %}
+                    <p class="text-muted mb-2"><small><span class="badge bg-success">{{ activity.activity_type }}</span></small></p>
                     {% elif activity.activity_type == 'group' and activity.topics_json %}
-                    <p class="mb-0"><strong>Gruppen-Kombinationen:</strong></p>
-                    <ul class="mb-0">
-                        {% set combinations = activity.topics_json|parse_groups %}
-                        {% for combo in combinations %}
-                        <li>{{ combo.groups|join(' & ') }}: {{ combo.topic }}</li>
-                        {% endfor %}
-                    </ul>
+                    {% set combinations = activity.topics_json|parse_groups %}
+                    {% if combinations and combinations|length > 0 %}
+                    <h5 class="mb-1">{{ combinations[0].topic }}</h5>
+                    {% if combinations|length > 1 %}
+                    <p class="text-muted mb-1"><small>+ {{ combinations|length - 1 }} weitere Gruppe(n)</small></p>
+                    {% endif %}
+                    {% else %}
+                    <h5 class="mb-1">Group</h5>
+                    {% endif %}
+                    <p class="text-muted mb-2"><small><span class="badge bg-primary">{{ activity.activity_type }}</span></small></p>
+                    {% else %}
+                    <h5 class="mb-1">{{ activity.activity_type }}</h5>
+                    {% endif %}
+                    
+                    <p class="mb-1"><strong>Zeit:</strong> {{ activity.start_time.strftime('%H:%M') }} ({{ activity.duration }} Min)</p>
+                    
+                    <!-- Details für Individual und Group -->
+                    {% if activity.activity_type == 'individual' and activity.topics_json %}
+                    {% set topics = activity.topics_json|parse_groups %}
+                    {% set topic_values = topics.values()|list %}
+                    {% if topic_values and topic_values|length > 0 %}
+                        {% set first_topic = topic_values[0] %}
+                        {% set all_same = topic_values|select('equalto', first_topic)|list|length == topic_values|length %}
+                        {% if not all_same %}
+                        <details class="mt-2">
+                            <summary class="text-primary" style="cursor: pointer;"><small>Themen anzeigen</small></summary>
+                            <ul class="mb-0 mt-1">
+                                {% for group, topic in topics.items() %}
+                                <li><small>{{ group }}: {{ topic }}</small></li>
+                                {% endfor %}
+                            </ul>
+                        </details>
+                        {% endif %}
+                    {% endif %}
+                    {% elif activity.activity_type == 'group' and activity.topics_json %}
+                    {% set combinations = activity.topics_json|parse_groups %}
+                    {% if combinations and combinations|length > 1 %}
+                    <details class="mt-2">
+                        <summary class="text-primary" style="cursor: pointer;"><small>Alle Gruppen anzeigen</small></summary>
+                        <ul class="mb-0 mt-1">
+                            {% for combo in combinations %}
+                            <li><small>{{ combo.groups|join(' & ') }}: {{ combo.topic }}</small></li>
+                            {% endfor %}
+                        </ul>
+                    </details>
+                    {% endif %}
                     {% endif %}
                 </div>
                 <div>

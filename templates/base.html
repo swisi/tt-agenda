@@ -292,6 +292,11 @@
                     </li>
                     {% if session.get('user_role') == 'admin' %}
                     <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_trainings') }}">
+                            <i class="bi bi-gear-fill me-1"></i>Verwaltung
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('new_training') }}">
                             <i class="bi bi-plus-circle me-1"></i>Neues Training
                         </a>

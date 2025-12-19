@@ -4,8 +4,8 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1 class="mb-0">Trainings Übersicht</h1>
     {% if session.get('user_role') == 'admin' %}
-    <a href="{{ url_for('new_training') }}" class="btn btn-primary">
-        <i class="bi bi-plus-circle me-1"></i>Neues Training
+    <a href="{{ url_for('admin_trainings') }}" class="btn btn-primary">
+        <i class="bi bi-gear-fill me-1"></i>Trainings verwalten
     </a>
     {% endif %}
 </div>
@@ -14,16 +14,28 @@
 {% if current_training %}
 <div class="card mb-4 border-0 shadow-lg" id="live-training-widget">
     <div class="card-header {% if training_status == 'running' %}bg-danger{% else %}bg-primary{% endif %} text-white">
-        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-            <h4 class="mb-0">
-                <i class="bi bi-{% if training_status == 'running' %}broadcast{% else %}clock-history{% endif %} me-2"></i>
-                {% if training_status == 'running' %}
-                    🔴 LIVE: {{ current_training.name }}
-                {% else %}
-                    ⏰ Nächstes Training: {{ current_training.name }}
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div class="d-flex align-items-center gap-3 flex-wrap">
+                <h4 class="mb-0">
+                    <i class="bi bi-{% if training_status == 'running' %}broadcast{% else %}clock-history{% endif %} me-2"></i>
+                    {% if training_status == 'running' %}
+                        🔴 LIVE: {{ current_training.name }}
+                    {% else %}
+                        ⏰ Nächstes Training: {{ current_training.name }}
+                    {% endif %}
+                </h4>
+                {% if training_status == 'running' and current_activity %}
+                <div id="countdown-timer" class="countdown-timer-large">
+                    <div class="countdown-icon">⏱️</div>
+                    <div class="countdown-content">
+                        <div class="countdown-label">Noch verbleibend</div>
+                        <div class="countdown-value-large" id="countdown-value">--:--</div>
+                    </div>
+                </div>
                 {% endif %}
-            </h4>
-            <div class="d-flex gap-3 align-items-center flex-wrap">
+            </div>
+            <div class="d-flex gap-2 align-items-center">
+                <span class="badge bg-light text-dark fs-6 me-2">{{ now.strftime('%H:%M') }} Uhr</span>
                 <div class="d-flex align-items-center gap-2">
                     <label for="liveGroupFilter" class="form-label mb-0 small">Filter:</label>
                     <select id="liveGroupFilter" class="form-select form-select-sm live-filter-select">
@@ -33,13 +45,6 @@
                         {% endfor %}
                     </select>
                 </div>
-                {% if training_status == 'running' and current_activity %}
-                <div id="countdown-timer" class="countdown-timer">
-                    <div class="countdown-label">Noch:</div>
-                    <div class="countdown-value" id="countdown-value">--:--</div>
-                </div>
-                {% endif %}
-                <span class="badge bg-light text-dark fs-6">{{ now.strftime('%H:%M') }} Uhr</span>
             </div>
         </div>
     </div>
@@ -211,11 +216,13 @@
         background-color: transparent !important;
         border: 2px solid #dc2626 !important;
         font-weight: bold;
+        color: #1e293b !important;
     }
     
     .activity-current-row td.table-success {
         background-color: var(--color-team) !important;
         border: 2px solid #dc2626 !important;
+        color: #1e293b !important;
     }
     
     .activity-next-row {
@@ -226,6 +233,7 @@
     .activity-next-row td {
         background-color: transparent !important;
         border: 2px solid #f59e0b !important;
+        color: #1e293b !important;
     }
     
     .activity-finished-row {
@@ -234,6 +242,33 @@
     
     .activity-finished-row td {
         background-color: #f1f5f9 !important;
+        color: #64748b !important;
+    }
+    
+    /* Dark Mode Anpassungen für Live-Hervorhebungen */
+    [data-theme="dark"] .activity-current-row {
+        background: linear-gradient(135deg, #7f1d1d 0%, #991b1b 100%) !important;
+    }
+    
+    [data-theme="dark"] .activity-current-row td {
+        color: #ffffff !important;
+    }
+    
+    [data-theme="dark"] .activity-current-row td.table-success {
+        color: #ffffff !important;
+    }
+    
+    [data-theme="dark"] .activity-next-row {
+        background: linear-gradient(135deg, #78350f 0%, #92400e 100%) !important;
+    }
+    
+    [data-theme="dark"] .activity-next-row td {
+        color: #ffffff !important;
+    }
+    
+    [data-theme="dark"] .activity-finished-row td {
+        background-color: #1e293b !important;
+        color: #94a3b8 !important;
     }
     
     .live-indicator {
@@ -256,72 +291,95 @@
         }
     }
     
-    /* Countdown Timer Styles */
-    .countdown-timer {
+    /* Countdown Timer Styles - Große Version */
+    .countdown-timer-large {
         display: flex;
-        flex-direction: column;
         align-items: center;
-        background: rgba(255, 255, 255, 0.2);
-        padding: 8px 16px;
-        border-radius: 8px;
+        gap: 12px;
+        background: rgba(255, 255, 255, 0.25);
+        padding: 12px 20px;
+        border-radius: 12px;
         backdrop-filter: blur(10px);
-        border: 2px solid rgba(255, 255, 255, 0.3);
+        border: 3px solid rgba(255, 255, 255, 0.4);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
         transition: all 0.3s ease;
     }
     
-    .countdown-label {
-        font-size: 0.7rem;
-        font-weight: 500;
-        opacity: 0.9;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
+    .countdown-icon {
+        font-size: 2.5rem;
+        line-height: 1;
+        animation: pulse 2s infinite;
     }
     
-    .countdown-value {
-        font-size: 1.8rem;
-        font-weight: bold;
+    .countdown-content {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+    
+    .countdown-label {
+        font-size: 0.65rem;
+        font-weight: 600;
+        opacity: 0.95;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        line-height: 1;
+    }
+    
+    .countdown-value-large {
+        font-size: 2.5rem;
+        font-weight: 900;
         font-family: 'Courier New', monospace;
         line-height: 1;
-        margin-top: 2px;
-        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        text-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+        letter-spacing: 2px;
     }
     
-    .countdown-warning {
-        background: rgba(245, 158, 11, 0.3) !important;
-        border-color: rgba(245, 158, 11, 0.6) !important;
+    .countdown-timer-large.countdown-warning {
+        background: rgba(245, 158, 11, 0.4) !important;
+        border-color: rgba(245, 158, 11, 0.8) !important;
         animation: warningPulse 1s infinite;
     }
     
-    .countdown-critical {
-        background: rgba(239, 68, 68, 0.4) !important;
-        border-color: rgba(239, 68, 68, 0.8) !important;
+    .countdown-timer-large.countdown-critical {
+        background: rgba(239, 68, 68, 0.5) !important;
+        border-color: rgba(239, 68, 68, 1) !important;
         animation: criticalPulse 0.5s infinite;
     }
     
-    .countdown-finished {
-        background: rgba(107, 114, 128, 0.3) !important;
-        border-color: rgba(107, 114, 128, 0.6) !important;
+    .countdown-timer-large.countdown-finished {
+        background: rgba(107, 114, 128, 0.4) !important;
+        border-color: rgba(107, 114, 128, 0.8) !important;
+    }
+    
+    @keyframes pulse {
+        0%, 100% {
+            transform: scale(1);
+        }
+        50% {
+            transform: scale(1.1);
+        }
     }
     
     @keyframes warningPulse {
         0%, 100% {
             transform: scale(1);
-            box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+            box-shadow: 0 4px 20px rgba(245, 158, 11, 0.6);
         }
         50% {
             transform: scale(1.05);
-            box-shadow: 0 0 20px rgba(245, 158, 11, 0.8);
+            box-shadow: 0 6px 30px rgba(245, 158, 11, 1);
         }
     }
     
     @keyframes criticalPulse {
         0%, 100% {
             transform: scale(1);
-            box-shadow: 0 0 15px rgba(239, 68, 68, 0.6);
+            box-shadow: 0 4px 25px rgba(239, 68, 68, 0.8);
         }
         50% {
             transform: scale(1.08);
-            box-shadow: 0 0 30px rgba(239, 68, 68, 1);
+            box-shadow: 0 8px 40px rgba(239, 68, 68, 1);
         }
     }
     
@@ -372,9 +430,11 @@
             const now = new Date();
             const diff = currentActivityEndTime - now;
             
+            const timer = document.getElementById('countdown-timer');
+            
             if (diff <= 0) {
                 document.getElementById('countdown-value').textContent = '00:00';
-                document.getElementById('countdown-timer').classList.add('countdown-finished');
+                timer.classList.add('countdown-finished');
                 // Reload nach Ablauf
                 setTimeout(function() {
                     location.reload();
@@ -389,13 +449,14 @@
             document.getElementById('countdown-value').textContent = display;
             
             // Warnung bei weniger als 2 Minuten
-            if (diff < 120000) {
-                document.getElementById('countdown-timer').classList.add('countdown-warning');
+            if (diff < 120000 && !timer.classList.contains('countdown-warning')) {
+                timer.classList.add('countdown-warning');
             }
             
             // Kritisch bei weniger als 30 Sekunden
-            if (diff < 30000) {
-                document.getElementById('countdown-timer').classList.add('countdown-critical');
+            if (diff < 30000 && !timer.classList.contains('countdown-critical')) {
+                timer.classList.remove('countdown-warning');
+                timer.classList.add('countdown-critical');
             }
         }
         
@@ -468,61 +529,53 @@
 </script>
 {% endif %}
 
-<div class="row">
-    {% for training in trainings %}
-    <div class="col-md-6 col-lg-4 mb-3">
-        <div class="card h-100">
-            <div class="card-header">
-                <h5 class="mb-0">{{ training.name }}</h5>
-            </div>
-            <div class="card-body">
-                <div class="mb-2">
-                    <i class="bi bi-calendar-week text-primary me-2"></i>
-                    <strong>{{ weekdays[training.weekday] }}</strong>
+<!-- Nächste 3 Trainings -->
+{% if upcoming_trainings and upcoming_trainings|length > 0 %}
+<div class="mb-4">
+    <h3 class="mb-3">
+        <i class="bi bi-calendar-check me-2"></i>Nächste Trainings
+    </h3>
+    <div class="row">
+        {% for item in upcoming_trainings %}
+        <div class="col-md-4 mb-3">
+            <div class="card h-100 {% if item.is_running %}border-danger{% elif item.is_upcoming %}border-primary{% endif %}" 
+                 style="cursor: pointer; {% if item.is_running %}border-width: 3px;{% endif %}"
+                 onclick="window.location.href='{{ url_for('training_schedule', id=item.training.id) }}';">
+                <div class="card-header {% if item.is_running %}bg-danger text-white{% elif item.is_upcoming %}bg-primary text-white{% else %}bg-light{% endif %}">
+                    <h6 class="mb-0">
+                        {% if item.is_running %}🔴 LÄUFT JETZT{% elif item.is_upcoming %}⏰ HEUTE{% else %}📅{% endif %}
+                        {{ item.training.name }}
+                    </h6>
                 </div>
-                <div class="mb-2">
-                    <i class="bi bi-calendar-range text-primary me-2"></i>
-                    {{ training.start_date.strftime('%d.%m.%Y') }} - {{ training.end_date.strftime('%d.%m.%Y') }}
-                </div>
-                <div class="mb-2">
-                    <i class="bi bi-clock text-primary me-2"></i>
-                    {{ training.start_time.strftime('%H:%M') }}
-                </div>
-                <div class="mb-3">
-                    <i class="bi bi-list-task text-primary me-2"></i>
-                    {{ training.activities|length }} Aktivitäten
-                </div>
-                <div class="d-flex gap-2 flex-wrap">
-                    <a href="{{ url_for('training_schedule', id=training.id) }}" class="btn btn-sm btn-success">
-                        <i class="bi bi-calendar3 me-1"></i>Zeitplan
-                    </a>
-                    {% if session.get('user_role') == 'admin' %}
-                    <a href="{{ url_for('edit_training', id=training.id) }}" class="btn btn-sm btn-primary">
-                        <i class="bi bi-pencil me-1"></i>Bearbeiten
-                    </a>
-                    <form method="POST" action="{{ url_for('delete_training', id=training.id) }}" style="display:inline;">
-                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Wirklich löschen?')">
-                            <i class="bi bi-trash me-1"></i>Löschen
-                        </button>
-                    </form>
+                <div class="card-body">
+                    <div class="mb-2">
+                        <i class="bi bi-calendar3 me-2"></i>
+                        <strong>{{ item.date.strftime('%d.%m.%Y') }}</strong>
+                    </div>
+                    <div class="mb-2">
+                        <i class="bi bi-calendar-week me-2"></i>
+                        {{ weekdays[item.training.weekday] }}
+                    </div>
+                    <div class="mb-2">
+                        <i class="bi bi-clock me-2"></i>
+                        {{ item.start_time.strftime('%H:%M') }} - {{ item.end_time.strftime('%H:%M') }}
+                    </div>
+                    <div class="mb-2">
+                        <i class="bi bi-list-task me-2"></i>
+                        {{ item.training.activities|length }} Aktivitäten
+                    </div>
+                    {% if item.is_running %}
+                    <span class="badge bg-danger w-100">LÄUFT JETZT</span>
+                    {% elif item.is_upcoming %}
+                    <span class="badge bg-primary w-100">STARTET HEUTE</span>
+                    {% else %}
+                    <span class="badge bg-secondary w-100">GEPLANT</span>
                     {% endif %}
                 </div>
             </div>
         </div>
+        {% endfor %}
     </div>
-    {% endfor %}
-</div>
-
-{% if trainings|length == 0 %}
-<div class="text-center py-5">
-    <i class="bi bi-inbox" style="font-size: 4rem; color: #cbd5e1;"></i>
-    <h3 class="mt-3 text-muted">Keine Trainings vorhanden</h3>
-    {% if session.get('user_role') == 'admin' %}
-    <p class="text-muted">Erstellen Sie Ihr erstes Training</p>
-    <a href="{{ url_for('new_training') }}" class="btn btn-primary">
-        <i class="bi bi-plus-circle me-1"></i>Neues Training
-    </a>
-    {% endif %}
 </div>
 {% endif %}
 {% endblock %}

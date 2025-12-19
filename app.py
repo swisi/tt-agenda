@@ -91,6 +91,35 @@ def inject_colors():
         'timedelta': timedelta
     }
 
+def get_next_training_dates(training, limit=3):
+    """Berechnet die nächsten Trainingstermine für ein Training."""
+    now = datetime.now()
+    today = now.date()
+    dates = []
+    
+    # Starte ab heute
+    current = today
+    max_days_ahead = 60  # Suche maximal 60 Tage in die Zukunft
+    days_checked = 0
+    
+    while len(dates) < limit and days_checked < max_days_ahead:
+        if current >= training.start_date and current <= training.end_date:
+            if current.weekday() == training.weekday:
+                # Prüfe ob das Training heute bereits vorbei ist
+                if current == today:
+                    activities = Activity.query.filter_by(training_id=training.id).order_by(Activity.order_index).all()
+                    if activities:
+                        last_activity = activities[-1]
+                        last_end_datetime = datetime.combine(today, last_activity.start_time) + timedelta(minutes=last_activity.duration)
+                        if now.time() < last_end_datetime.time():
+                            dates.append(current)
+                else:
+                    dates.append(current)
+        current += timedelta(days=1)
+        days_checked += 1
+    
+    return dates
+
 @app.route('/')
 @login_required
 def index():
@@ -106,6 +135,44 @@ def index():
     current_activity = None
     next_activity = None
     training_status = None  # 'running', 'upcoming', 'finished'
+    
+    # Berechne die nächsten 3 Trainings
+    upcoming_trainings = []
+    
+    for training in trainings:
+        next_dates = get_next_training_dates(training, limit=3)
+        for date in next_dates:
+            activities = Activity.query.filter_by(training_id=training.id).order_by(Activity.order_index).all()
+            if activities:
+                first_activity = activities[0]
+                last_activity = activities[-1]
+                
+                training_start = first_activity.start_time
+                last_end_datetime = datetime.combine(date, last_activity.start_time) + timedelta(minutes=last_activity.duration)
+                training_end = last_end_datetime.time()
+                
+                is_today = date == today
+                is_running = False
+                is_upcoming = False
+                
+                if is_today:
+                    if current_time >= training_start and current_time < training_end:
+                        is_running = True
+                    elif current_time < training_start:
+                        is_upcoming = True
+                
+                upcoming_trainings.append({
+                    'training': training,
+                    'date': date,
+                    'start_time': training_start,
+                    'end_time': training_end,
+                    'is_today': is_today,
+                    'is_running': is_running,
+                    'is_upcoming': is_upcoming
+                })
+    
+    # Sortiere nach Datum und Zeit
+    upcoming_trainings.sort(key=lambda x: (x['date'], x['start_time']))
     
     # Suche alle Trainings, die heute stattfinden könnten
     for training in trainings:
@@ -158,6 +225,7 @@ def index():
                          trainings=trainings, 
                          weekdays=WEEKDAYS,
                          position_groups=POSITION_GROUPS,
+                         upcoming_trainings=upcoming_trainings[:3],  # Nur die nächsten 3
                          current_training=current_training,
                          current_activity=current_activity,
                          next_activity=next_activity,
@@ -625,6 +693,50 @@ def recalculate_times(training_id):
             current_time = current_datetime.time()
 
     db.session.commit()
+
+@app.route('/admin/trainings')
+@admin_required
+def admin_trainings():
+    """Admin-Seite zur Verwaltung aller Trainings."""
+    trainings = Training.query.all()
+    return render_template('admin_trainings.html', trainings=trainings, weekdays=WEEKDAYS)
+
+@app.route('/training/<int:id>/copy', methods=['POST'])
+@admin_required
+def copy_training(id):
+    """Kopiert ein Training mit allen Aktivitäten."""
+    original_training = Training.query.get_or_404(id)
+    
+    # Erstelle eine Kopie des Trainings
+    new_training = Training(
+        name=f"{original_training.name} (Kopie)",
+        weekday=original_training.weekday,
+        start_date=original_training.start_date,
+        end_date=original_training.end_date,
+        start_time=original_training.start_time
+    )
+    db.session.add(new_training)
+    db.session.flush()  # Um die ID zu erhalten
+    
+    # Kopiere alle Aktivitäten
+    original_activities = Activity.query.filter_by(training_id=id).order_by(Activity.order_index).all()
+    for activity in original_activities:
+        new_activity = Activity(
+            training_id=new_training.id,
+            activity_type=activity.activity_type,
+            start_time=activity.start_time,
+            duration=activity.duration,
+            position_groups=activity.position_groups,
+            topic=activity.topic,
+            order_index=activity.order_index,
+            topics_json=activity.topics_json,
+            color=activity.color
+        )
+        db.session.add(new_activity)
+    
+    db.session.commit()
+    flash(f'Training "{original_training.name}" wurde erfolgreich kopiert!', 'success')
+    return redirect(url_for('admin_trainings'))
 
 @app.route('/training/<int:id>/schedule')
 def training_schedule(id):
