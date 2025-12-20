@@ -120,6 +120,79 @@ def get_next_training_dates(training, limit=3):
     
     return dates
 
+@app.route('/live')
+@login_required
+def live():
+    """Live-Ansicht des aktuellen Trainings."""
+    trainings = Training.query.all()
+    
+    # Finde aktuelles oder kommendes Training für heute
+    now = datetime.now()
+    today = now.date()
+    current_time = now.time()
+    today_weekday = today.weekday()  # 0=Montag, 6=Sonntag
+    
+    current_training = None
+    current_activity = None
+    next_activity = None
+    training_status = None  # 'running', 'upcoming', 'finished'
+    
+    # Suche alle Trainings, die heute stattfinden könnten
+    for training in trainings:
+        # Prüfe ob heute der richtige Wochentag ist und das Datum im Bereich liegt
+        if training.weekday == today_weekday and training.start_date <= today <= training.end_date:
+            # Hole alle Aktivitäten für dieses Training
+            activities = Activity.query.filter_by(training_id=training.id).order_by(Activity.order_index).all()
+            
+            if not activities:
+                continue
+            
+            # Berechne Start- und Endzeit des gesamten Trainings
+            first_activity = activities[0]
+            last_activity = activities[-1]
+            
+            training_start = first_activity.start_time
+            # Berechne Endzeit der letzten Aktivität
+            last_end_datetime = datetime.combine(today, last_activity.start_time) + timedelta(minutes=last_activity.duration)
+            training_end = last_end_datetime.time()
+            
+            # Prüfe ob Training noch nicht gestartet hat
+            if current_time < training_start:
+                if current_training is None or training_start < current_training.start_time:
+                    current_training = training
+                    training_status = 'upcoming'
+                    next_activity = first_activity
+                    current_activity = None
+            # Prüfe ob Training gerade läuft
+            elif current_time < training_end:
+                current_training = training
+                training_status = 'running'
+                
+                # Finde die aktuelle und nächste Aktivität
+                for i, activity in enumerate(activities):
+                    activity_end_datetime = datetime.combine(today, activity.start_time) + timedelta(minutes=activity.duration)
+                    activity_end = activity_end_datetime.time()
+                    
+                    if activity.start_time <= current_time < activity_end:
+                        current_activity = activity
+                        if i + 1 < len(activities):
+                            next_activity = activities[i + 1]
+                        break
+                    elif current_time < activity.start_time:
+                        next_activity = activity
+                        break
+                
+                break  # Wir haben ein laufendes Training gefunden, keine weiteren prüfen
+    
+    return render_template('live.html', 
+                         weekdays=WEEKDAYS,
+                         position_groups=POSITION_GROUPS,
+                         current_training=current_training,
+                         current_activity=current_activity,
+                         next_activity=next_activity,
+                         training_status=training_status,
+                         now=now)
+
 @app.route('/')
 @login_required
 def index():

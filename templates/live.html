@@ -1,0 +1,548 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="mb-0">
+        <i class="bi bi-broadcast me-2"></i>Live Training
+    </h1>
+    <a href="{{ url_for('index') }}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left me-1"></i>Zurück zur Übersicht
+    </a>
+</div>
+
+<!-- Live Training -->
+{% if current_training %}
+<div class="card mb-4 border-0 shadow-lg" id="live-training-widget">
+    <div class="card-header {% if training_status == 'running' %}bg-danger{% else %}bg-primary{% endif %} text-white">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div class="d-flex align-items-center gap-3 flex-wrap">
+                <h4 class="mb-0">
+                    <i class="bi bi-{% if training_status == 'running' %}broadcast{% else %}clock-history{% endif %} me-2"></i>
+                    {% if training_status == 'running' %}
+                        🔴 LIVE: {{ current_training.name }}
+                    {% else %}
+                        ⏰ Nächstes Training: {{ current_training.name }}
+                    {% endif %}
+                </h4>
+                {% if training_status == 'running' and current_activity %}
+                <div id="countdown-timer" class="countdown-timer-large">
+                    <div class="countdown-icon">⏱️</div>
+                    <div class="countdown-content">
+                        <div class="countdown-label">Noch verbleibend</div>
+                        <div class="countdown-value-large" id="countdown-value">--:--</div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            <div class="d-flex gap-2 align-items-center">
+                <span class="badge bg-light text-dark fs-6 me-2">{{ now.strftime('%H:%M') }} Uhr</span>
+                <div class="d-flex align-items-center gap-2">
+                    <label for="liveGroupFilter" class="form-label mb-0 small">Filter:</label>
+                    <select id="liveGroupFilter" class="form-select form-select-sm live-filter-select">
+                        <option value="all">Alle Gruppen</option>
+                        {% for group in position_groups %}
+                        <option value="{{ group }}">{{ group }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card-body p-3">
+        {% if training_status == 'upcoming' %}
+            <div class="alert alert-info mb-3">
+                <i class="bi bi-info-circle me-2"></i>
+                <strong>Training startet um {{ current_training.start_time.strftime('%H:%M') }} Uhr</strong>
+            </div>
+        {% endif %}
+        
+        <!-- Tabellen-Ansicht -->
+        <div class="table-responsive">
+            <table class="table table-bordered schedule-table" id="liveScheduleTable">
+                <thead class="table-dark">
+                    <tr>
+                        <th>From</th>
+                        <th>To</th>
+                        <th>min</th>
+                        <th class="group-header" data-group="OL">OL</th>
+                        <th class="group-header" data-group="DL">DL</th>
+                        <th class="group-header" data-group="LB">LB</th>
+                        <th class="group-header" data-group="RB">RB</th>
+                        <th class="group-header" data-group="DB">DB</th>
+                        <th class="group-header" data-group="WR">WR</th>
+                        <th class="group-header" data-group="TE">TE</th>
+                        <th class="group-header" data-group="QB">QB</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set activities = current_training.activities|sort(attribute='order_index') %}
+                    {% for activity in activities %}
+                    {% set start_datetime = activity.start_time %}
+                    {% set end_time_minutes = (activity.start_time.hour * 60 + activity.start_time.minute + activity.duration) %}
+                    {% set end_hour = (end_time_minutes // 60) %}
+                    {% set end_min = (end_time_minutes % 60) %}
+                    
+                    {% set activity_end_time = (now.replace(hour=activity.start_time.hour, minute=activity.start_time.minute, second=0, microsecond=0) + timedelta(minutes=activity.duration)).time() %}
+                    {% set is_current = current_activity and current_activity.id == activity.id %}
+                    {% set is_next = next_activity and next_activity.id == activity.id and not current_activity %}
+                    {% set is_finished = activity.start_time < now.time() and activity_end_time <= now.time() and training_status == 'running' %}
+                    
+                    <tr class="{% if is_current %}activity-current-row{% elif is_next %}activity-next-row{% elif is_finished %}activity-finished-row{% elif loop.index % 2 == 0 %}table-row-even{% else %}table-row-odd{% endif %}">
+                        <td class="time-cell">
+                            {{ activity.start_time.strftime('%H:%M') }}
+                            {% if is_current %}
+                                <span class="live-indicator">🔴</span>
+                            {% endif %}
+                        </td>
+                        <td class="time-cell">{{ '%02d:%02d'|format(end_hour, end_min) }}</td>
+                        <td class="time-cell">{{ activity.duration }}</td>
+                        
+                        {% set cells = activity|build_group_cells %}
+                        {% for cell in cells %}
+                        <td class="{{ cell.class }} group-cell" {% if cell.colspan and cell.colspan > 1 %}colspan="{{ cell.colspan }}"{% endif %} 
+                            data-groups="{{ cell.groups|join(',') if cell.groups else '' }}"
+                            style="{% if cell.color %}background-color: var(--color-{{ activity.activity_type }}) !important;{% if cell.text_color %}color: {{ cell.text_color }} !important;{% endif %}{% endif %}">{% if cell.content and cell.content.strip() %}{{ cell.content }}{% else %}&nbsp;{% endif %}</td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="text-center mt-3">
+            <a href="{{ url_for('training_schedule', id=current_training.id) }}" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-calendar3 me-1"></i>Vollständiger Zeitplan
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+    #live-training-widget {
+        animation: slideIn 0.5s ease-out;
+    }
+    
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    /* Schedule Table Styles */
+    .schedule-table {
+        border: 2px solid #333;
+        border-collapse: collapse;
+    }
+
+    .schedule-table td, .schedule-table th {
+        vertical-align: middle;
+        text-align: center;
+        border: 1px solid #999;
+        padding: 8px;
+    }
+
+    .schedule-table tbody tr.table-row-odd td {
+        background-color: #e3f2fd;
+    }
+
+    .schedule-table tbody tr.table-row-even td {
+        background-color: #b8ddf7;
+    }
+
+    [data-theme="dark"] .schedule-table tbody tr.table-row-odd td {
+        background-color: #1e3a5f;
+    }
+
+    [data-theme="dark"] .schedule-table tbody tr.table-row-even td {
+        background-color: #1e4a6f;
+    }
+
+    .schedule-table tbody tr.table-row-odd td.table-success {
+        background-color: #a5d6a7 !important;
+    }
+
+    .schedule-table tbody tr.table-row-even td.table-success {
+        background-color: #81c784 !important;
+    }
+
+    [data-theme="dark"] .schedule-table tbody tr.table-row-odd td.table-success {
+        background-color: #2d5a2d !important;
+    }
+
+    [data-theme="dark"] .schedule-table tbody tr.table-row-even td.table-success {
+        background-color: #3d6a3d !important;
+    }
+
+    .schedule-table thead th {
+        border: 2px solid #333;
+    }
+
+    [data-theme="dark"] .schedule-table thead th {
+        border-color: var(--border-color);
+        background-color: var(--bg-card);
+        color: var(--text-primary);
+    }
+
+    [data-theme="dark"] .schedule-table {
+        border-color: var(--border-color);
+        color: var(--text-primary);
+    }
+
+    [data-theme="dark"] .schedule-table td, 
+    [data-theme="dark"] .schedule-table th {
+        border-color: var(--border-color);
+        color: var(--text-primary);
+    }
+
+    .group-cell {
+        min-width: 50px;
+        min-height: 20px;
+    }
+    
+    /* Live-Hervorhebungen */
+    .activity-current-row {
+        background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%) !important;
+        border: 4px solid #dc2626 !important;
+        box-shadow: 0 0 30px rgba(220, 38, 38, 0.4) !important;
+        animation: pulseRow 2s infinite;
+    }
+    
+    .activity-current-row td {
+        background-color: transparent !important;
+        border: 2px solid #dc2626 !important;
+        font-weight: bold;
+        color: #1e293b !important;
+    }
+    
+    .activity-current-row td.table-success {
+        background-color: var(--color-team) !important;
+        border: 2px solid #dc2626 !important;
+        color: #1e293b !important;
+    }
+    
+    .activity-next-row {
+        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%) !important;
+        border: 3px solid #f59e0b !important;
+    }
+    
+    .activity-next-row td {
+        background-color: transparent !important;
+        border: 2px solid #f59e0b !important;
+        color: #1e293b !important;
+    }
+    
+    .activity-finished-row {
+        opacity: 0.5;
+    }
+    
+    .activity-finished-row td {
+        background-color: #f1f5f9 !important;
+        color: #64748b !important;
+    }
+    
+    /* Dark Mode Anpassungen für Live-Hervorhebungen */
+    [data-theme="dark"] .activity-current-row {
+        background: linear-gradient(135deg, #7f1d1d 0%, #991b1b 100%) !important;
+    }
+    
+    [data-theme="dark"] .activity-current-row td {
+        color: #ffffff !important;
+    }
+    
+    [data-theme="dark"] .activity-current-row td.table-success {
+        color: #ffffff !important;
+    }
+    
+    [data-theme="dark"] .activity-next-row {
+        background: linear-gradient(135deg, #78350f 0%, #92400e 100%) !important;
+    }
+    
+    [data-theme="dark"] .activity-next-row td {
+        color: #ffffff !important;
+    }
+    
+    [data-theme="dark"] .activity-finished-row td {
+        background-color: #1e293b !important;
+        color: #94a3b8 !important;
+    }
+    
+    .live-indicator {
+        display: inline-block;
+        animation: blink 1.5s infinite;
+        margin-left: 5px;
+    }
+    
+    @keyframes blink {
+        0%, 50%, 100% { opacity: 1; }
+        25%, 75% { opacity: 0.3; }
+    }
+    
+    @keyframes pulseRow {
+        0%, 100% {
+            box-shadow: 0 0 20px rgba(220, 38, 38, 0.4);
+        }
+        50% {
+            box-shadow: 0 0 40px rgba(220, 38, 38, 0.7);
+        }
+    }
+    
+    /* Countdown Timer Styles - Große Version */
+    .countdown-timer-large {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: rgba(255, 255, 255, 0.25);
+        padding: 12px 20px;
+        border-radius: 12px;
+        backdrop-filter: blur(10px);
+        border: 3px solid rgba(255, 255, 255, 0.4);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        transition: all 0.3s ease;
+    }
+    
+    .countdown-icon {
+        font-size: 2.5rem;
+        line-height: 1;
+        animation: pulse 2s infinite;
+    }
+    
+    .countdown-content {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+    
+    .countdown-label {
+        font-size: 0.65rem;
+        font-weight: 600;
+        opacity: 0.95;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        line-height: 1;
+    }
+    
+    .countdown-value-large {
+        font-size: 2.5rem;
+        font-weight: 900;
+        font-family: 'Courier New', monospace;
+        line-height: 1;
+        text-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+        letter-spacing: 2px;
+    }
+    
+    .countdown-timer-large.countdown-warning {
+        background: rgba(245, 158, 11, 0.4) !important;
+        border-color: rgba(245, 158, 11, 0.8) !important;
+        animation: warningPulse 1s infinite;
+    }
+    
+    .countdown-timer-large.countdown-critical {
+        background: rgba(239, 68, 68, 0.5) !important;
+        border-color: rgba(239, 68, 68, 1) !important;
+        animation: criticalPulse 0.5s infinite;
+    }
+    
+    .countdown-timer-large.countdown-finished {
+        background: rgba(107, 114, 128, 0.4) !important;
+        border-color: rgba(107, 114, 128, 0.8) !important;
+    }
+    
+    @keyframes pulse {
+        0%, 100% {
+            transform: scale(1);
+        }
+        50% {
+            transform: scale(1.1);
+        }
+    }
+    
+    @keyframes warningPulse {
+        0%, 100% {
+            transform: scale(1);
+            box-shadow: 0 4px 20px rgba(245, 158, 11, 0.6);
+        }
+        50% {
+            transform: scale(1.05);
+            box-shadow: 0 6px 30px rgba(245, 158, 11, 1);
+        }
+    }
+    
+    @keyframes criticalPulse {
+        0%, 100% {
+            transform: scale(1);
+            box-shadow: 0 4px 25px rgba(239, 68, 68, 0.8);
+        }
+        50% {
+            transform: scale(1.08);
+            box-shadow: 0 8px 40px rgba(239, 68, 68, 1);
+        }
+    }
+    
+    /* Live Filter Select */
+    .live-filter-select {
+        background-color: rgba(255, 255, 255, 0.95);
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        color: #1e293b;
+        font-weight: 600;
+        min-width: 150px;
+        backdrop-filter: blur(10px);
+        transition: all 0.3s ease;
+    }
+    
+    .live-filter-select:focus {
+        background-color: white;
+        border-color: rgba(255, 255, 255, 0.8);
+        box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2);
+    }
+    
+    .live-filter-select option {
+        background-color: white;
+        color: #1e293b;
+    }
+    
+    /* Filter Styles */
+    .group-header.hidden,
+    .group-cell.hidden {
+        display: none !important;
+    }
+</style>
+
+<script>
+    // Countdown Timer
+    {% if training_status == 'running' and current_activity %}
+    (function() {
+        const activityStartTime = new Date();
+        const startParts = "{{ current_activity.start_time.strftime('%H:%M') }}".split(':');
+        activityStartTime.setHours(parseInt(startParts[0]), parseInt(startParts[1]), 0, 0);
+        
+        // Berechne End-Zeit
+        const currentActivityEndTime = new Date(activityStartTime.getTime() + ({{ current_activity.duration }} * 60 * 1000));
+        
+        // Server-Zeit vom Backend für Synchronisation
+        const serverTime = new Date("{{ now.strftime('%Y-%m-%d %H:%M:%S') }}");
+        const clientTime = new Date();
+        const timeDiff = serverTime - clientTime;
+        
+        console.log('Server Zeit:', serverTime);
+        console.log('Client Zeit:', clientTime);
+        console.log('Zeit-Differenz:', timeDiff, 'ms');
+        
+        function updateCountdown() {
+            // Verwende Server-Zeit statt Client-Zeit
+            const now = new Date(new Date().getTime() + timeDiff);
+            const diff = currentActivityEndTime - now;
+            
+            const timer = document.getElementById('countdown-timer');
+            
+            if (diff <= 0) {
+                document.getElementById('countdown-value').textContent = '00:00';
+                timer.classList.add('countdown-finished');
+                // Reload nach Ablauf
+                setTimeout(function() {
+                    location.reload();
+                }, 2000);
+                return;
+            }
+            
+            const minutes = Math.floor(diff / 60000);
+            const seconds = Math.floor((diff % 60000) / 1000);
+            
+            const display = String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
+            document.getElementById('countdown-value').textContent = display;
+            
+            // Warnung bei weniger als 2 Minuten
+            if (diff < 120000 && !timer.classList.contains('countdown-warning')) {
+                timer.classList.add('countdown-warning');
+            }
+            
+            // Kritisch bei weniger als 30 Sekunden
+            if (diff < 30000 && !timer.classList.contains('countdown-critical')) {
+                timer.classList.remove('countdown-warning');
+                timer.classList.add('countdown-critical');
+            }
+        }
+        
+        // Initialer Update
+        updateCountdown();
+        
+        // Update jede Sekunde
+        setInterval(updateCountdown, 1000);
+    })();
+    {% endif %}
+    
+    // Gruppen-Filter
+    document.addEventListener('DOMContentLoaded', function() {
+        const filterSelect = document.getElementById('liveGroupFilter');
+        const table = document.getElementById('liveScheduleTable');
+        
+        if (filterSelect && table) {
+            filterSelect.addEventListener('change', function() {
+                const selectedGroup = this.value;
+                
+                // Alle Header und Zellen zeigen/verstecken
+                const headers = table.querySelectorAll('th.group-header');
+                const cells = table.querySelectorAll('td.group-cell');
+                
+                if (selectedGroup === 'all') {
+                    // Alle Gruppen anzeigen
+                    headers.forEach(header => {
+                        header.style.display = '';
+                        header.classList.remove('hidden');
+                    });
+                    cells.forEach(cell => {
+                        cell.style.display = '';
+                        cell.classList.remove('hidden');
+                    });
+                } else {
+                    // Nur die ausgewählte Gruppe anzeigen
+                    headers.forEach(header => {
+                        const group = header.getAttribute('data-group');
+                        if (group === selectedGroup) {
+                            header.style.display = '';
+                            header.classList.remove('hidden');
+                        } else {
+                            header.style.display = 'none';
+                            header.classList.add('hidden');
+                        }
+                    });
+                    
+                    cells.forEach(cell => {
+                        const groupsAttr = cell.getAttribute('data-groups');
+                        const groups = groupsAttr ? groupsAttr.split(',') : [];
+                        
+                        // Zeige Zelle wenn sie die ausgewählte Gruppe enthält
+                        if (groups.includes(selectedGroup)) {
+                            cell.style.display = '';
+                            cell.classList.remove('hidden');
+                        } else {
+                            cell.style.display = 'none';
+                            cell.classList.add('hidden');
+                        }
+                    });
+                }
+            });
+        }
+    });
+    
+    // Auto-Refresh alle 5 Minuten
+    setTimeout(function() {
+        location.reload();
+    }, 300000);
+</script>
+
+{% else %}
+<div class="text-center py-5">
+    <i class="bi bi-calendar-x" style="font-size: 4rem; color: #cbd5e1;"></i>
+    <h3 class="mt-3 text-muted">Kein aktuelles Training</h3>
+    <p class="text-muted">Aktuell läuft kein Training und es ist auch keines für heute geplant</p>
+    <a href="{{ url_for('index') }}" class="btn btn-primary mt-3">
+        <i class="bi bi-arrow-left me-1"></i>Zurück zur Übersicht
+    </a>
+</div>
+{% endif %}
+{% endblock %}
