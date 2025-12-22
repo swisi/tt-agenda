@@ -1,50 +1,48 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="mb-0">
-        <i class="bi bi-broadcast me-2"></i>Live Training
-    </h1>
-    <a href="{{ url_for('index') }}" class="btn btn-secondary">
-        <i class="bi bi-arrow-left me-1"></i>Zurück zur Übersicht
-    </a>
-</div>
 
 <!-- Live Training -->
 {% if current_training %}
 <div class="card mb-4 border-0 shadow-lg" id="live-training-widget">
     <div class="card-header {% if training_status == 'running' %}bg-danger{% else %}bg-primary{% endif %} text-white">
-        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
-            <div class="d-flex align-items-center gap-3 flex-wrap">
-                <h4 class="mb-0">
-                    <i class="bi bi-{% if training_status == 'running' %}broadcast{% else %}clock-history{% endif %} me-2"></i>
-                    {% if training_status == 'running' %}
-                        🔴 LIVE: {{ current_training.name }}
-                    {% else %}
-                        ⏰ Nächstes Training: {{ current_training.name }}
-                    {% endif %}
-                </h4>
+        <div class="live-header-toolbar">
+            <!-- Zurück Button, Timer & Uhrzeit -->
+            <div class="live-header-left">
+                <a href="{{ url_for('index') }}" class="btn btn-sm btn-light me-2">
+                    <i class="bi bi-arrow-left"></i>
+                </a>
                 {% if training_status == 'running' and current_activity %}
-                <div id="countdown-timer" class="countdown-timer-large">
-                    <div class="countdown-icon">⏱️</div>
-                    <div class="countdown-content">
-                        <div class="countdown-label">Noch verbleibend</div>
-                        <div class="countdown-value-large" id="countdown-value">--:--</div>
-                    </div>
+                <div id="countdown-timer-compact" class="countdown-timer-compact me-2">
+                    <span class="countdown-icon-small">⏱️</span>
+                    <span class="countdown-value-compact" id="countdown-value-compact">--:--</span>
                 </div>
                 {% endif %}
-            </div>
-            <div class="d-flex gap-2 align-items-center">
-                <span class="badge bg-light text-dark fs-6 me-2">{{ now.strftime('%H:%M') }} Uhr</span>
-                <div class="d-flex align-items-center gap-2">
-                    <label for="liveGroupFilter" class="form-label mb-0 small">Filter:</label>
-                    <select id="liveGroupFilter" class="form-select form-select-sm live-filter-select">
-                        <option value="all">Alle Gruppen</option>
-                        {% for group in position_groups %}
-                        <option value="{{ group }}">{{ group }}</option>
-                        {% endfor %}
-                    </select>
+                <div class="current-time-inline">
+                    <i class="bi bi-clock me-1"></i>{{ now.strftime('%H:%M') }}
                 </div>
+            </div>
+            
+            <!-- Trainingsname Mitte -->
+            <div class="live-header-center">
+                <div class="training-title">
+                    <i class="bi bi-{% if training_status == 'running' %}broadcast{% else %}clock-history{% endif %} me-2"></i>
+                    {% if training_status == 'running' %}
+                        🔴 {{ current_training.name }}
+                    {% else %}
+                        ⏰ {{ current_training.name }}
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Gruppen-Filter Rechts -->
+            <div class="live-header-right">
+                <select id="liveGroupFilter" class="form-select form-select-sm live-filter-inline">
+                    <option value="all">Alle</option>
+                    {% for group in position_groups %}
+                    <option value="{{ group }}">{{ group }}</option>
+                    {% endfor %}
+                </select>
             </div>
         </div>
     </div>
@@ -291,18 +289,177 @@
         }
     }
     
-    /* Countdown Timer Styles - Große Version */
-    .countdown-timer-large {
+    /* Live Header Toolbar im Card-Header */
+    .live-header-toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 15px;
+        flex-wrap: wrap;
+    }
+    
+    .live-header-left {
         display: flex;
         align-items: center;
-        gap: 12px;
-        background: rgba(255, 255, 255, 0.25);
-        padding: 12px 20px;
-        border-radius: 12px;
+        gap: 10px;
+        flex: 0 0 auto;
+    }
+    
+    .live-header-center {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex: 1 1 auto;
+        min-width: 200px;
+    }
+    
+    .live-header-right {
+        display: flex;
+        align-items: center;
+        flex: 0 0 auto;
+    }
+    
+    .training-title {
+        font-size: 1.5rem;
+        font-weight: bold;
+        text-align: center;
+        line-height: 1.2;
+    }
+    
+    .current-time-inline {
+        font-size: 1rem;
+        opacity: 0.95;
+        font-weight: 600;
+        background: rgba(255, 255, 255, 0.2);
+        padding: 6px 12px;
+        border-radius: 6px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
         backdrop-filter: blur(10px);
-        border: 3px solid rgba(255, 255, 255, 0.4);
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+    
+    /* Kompakter Countdown Timer */
+    .countdown-timer-compact {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background: rgba(255, 255, 255, 0.2);
+        padding: 6px 12px;
+        border-radius: 6px;
+        color: white;
+        font-weight: bold;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        backdrop-filter: blur(10px);
         transition: all 0.3s ease;
+    }
+    
+    .countdown-icon-small {
+        font-size: 1rem;
+        animation: pulse 2s infinite;
+    }
+    
+    .countdown-value-compact {
+        font-size: 1.25rem;
+        font-family: 'Courier New', monospace;
+        letter-spacing: 1px;
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    }
+    
+    .countdown-timer-compact.countdown-warning {
+        background: rgba(245, 158, 11, 0.3);
+        border-color: rgba(245, 158, 11, 0.6);
+        animation: warningPulse 1s infinite;
+    }
+    
+    .countdown-timer-compact.countdown-critical {
+        background: rgba(239, 68, 68, 0.4);
+        border-color: rgba(239, 68, 68, 0.8);
+        animation: criticalPulse 0.5s infinite;
+    }
+    
+    .countdown-timer-compact.countdown-finished {
+        background: rgba(107, 114, 128, 0.3);
+        border-color: rgba(107, 114, 128, 0.6);
+    }
+    
+    /* Inline Filter */
+    .live-filter-inline {
+        min-width: 120px;
+        background-color: rgba(255, 255, 255, 0.95);
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        color: #1e293b;
+        font-weight: 600;
+        backdrop-filter: blur(10px);
+    }
+    
+    .live-filter-inline:focus {
+        background-color: white;
+        border-color: rgba(255, 255, 255, 0.8);
+        box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2);
+    }
+    
+    .live-filter-inline option {
+        background-color: white;
+        color: #1e293b;
+    }
+    
+    /* Responsive Design */
+    @media (max-width: 992px) {
+        .training-title {
+            font-size: 1.25rem;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .live-header-toolbar {
+            gap: 8px;
+        }
+        
+        .live-header-center {
+            order: -1;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        
+        .training-title {
+            font-size: 1.1rem;
+        }
+        
+        .current-time-inline {
+            font-size: 0.875rem;
+            padding: 4px 8px;
+        }
+        
+        .countdown-value-compact {
+            font-size: 1rem;
+        }
+        
+        .live-filter-inline {
+            min-width: 100px;
+            font-size: 0.875rem;
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .live-header-left,
+        .live-header-right {
+            flex: 1 1 auto;
+        }
+        
+        .live-header-right {
+            justify-content: flex-end;
+        }
+        
+        .training-title {
+            font-size: 0.95rem;
+        }
+        
+        .current-time-inline {
+            font-size: 0.75rem;
+        }
+        
+        .countdown-timer-compact {
+            padding: 4px 8px;
+        }
     }
     
     .countdown-icon {
@@ -324,32 +481,6 @@
         text-transform: uppercase;
         letter-spacing: 1px;
         line-height: 1;
-    }
-    
-    .countdown-value-large {
-        font-size: 2.5rem;
-        font-weight: 900;
-        font-family: 'Courier New', monospace;
-        line-height: 1;
-        text-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
-        letter-spacing: 2px;
-    }
-    
-    .countdown-timer-large.countdown-warning {
-        background: rgba(245, 158, 11, 0.4) !important;
-        border-color: rgba(245, 158, 11, 0.8) !important;
-        animation: warningPulse 1s infinite;
-    }
-    
-    .countdown-timer-large.countdown-critical {
-        background: rgba(239, 68, 68, 0.5) !important;
-        border-color: rgba(239, 68, 68, 1) !important;
-        animation: criticalPulse 0.5s infinite;
-    }
-    
-    .countdown-timer-large.countdown-finished {
-        background: rgba(107, 114, 128, 0.4) !important;
-        border-color: rgba(107, 114, 128, 0.8) !important;
     }
     
     @keyframes pulse {
@@ -381,28 +512,6 @@
             transform: scale(1.08);
             box-shadow: 0 8px 40px rgba(239, 68, 68, 1);
         }
-    }
-    
-    /* Live Filter Select */
-    .live-filter-select {
-        background-color: rgba(255, 255, 255, 0.95);
-        border: 2px solid rgba(255, 255, 255, 0.3);
-        color: #1e293b;
-        font-weight: 600;
-        min-width: 150px;
-        backdrop-filter: blur(10px);
-        transition: all 0.3s ease;
-    }
-    
-    .live-filter-select:focus {
-        background-color: white;
-        border-color: rgba(255, 255, 255, 0.8);
-        box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2);
-    }
-    
-    .live-filter-select option {
-        background-color: white;
-        color: #1e293b;
     }
     
     /* Filter Styles */
@@ -437,10 +546,10 @@
             const now = new Date(new Date().getTime() + timeDiff);
             const diff = currentActivityEndTime - now;
             
-            const timer = document.getElementById('countdown-timer');
+            const timer = document.getElementById('countdown-timer-compact');
             
             if (diff <= 0) {
-                document.getElementById('countdown-value').textContent = '00:00';
+                document.getElementById('countdown-value-compact').textContent = '00:00';
                 timer.classList.add('countdown-finished');
                 // Reload nach Ablauf
                 setTimeout(function() {
@@ -453,7 +562,7 @@
             const seconds = Math.floor((diff % 60000) / 1000);
             
             const display = String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
-            document.getElementById('countdown-value').textContent = display;
+            document.getElementById('countdown-value-compact').textContent = display;
             
             // Warnung bei weniger als 2 Minuten
             if (diff < 120000 && !timer.classList.contains('countdown-warning')) {
