@@ -107,11 +107,10 @@ def get_next_training_dates(training, limit=3):
             if current.weekday() == training.weekday:
                 # Prüfe ob das Training heute bereits vorbei ist
                 if current == today:
-                    activities = Activity.query.filter_by(training_id=training.id).order_by(Activity.order_index).all()
+                    activities = Activity.query.filter_by(training_id=training.id).order_by(Activity.order_index, Activity.id).all()
                     if activities:
-                        last_activity = activities[-1]
-                        last_end_datetime = datetime.combine(today, last_activity.start_time) + timedelta(minutes=last_activity.duration)
-                        if now.time() < last_end_datetime.time():
+                        timeline = build_activity_timeline(activities, today)
+                        if timeline and now < timeline[-1][2]:
                             dates.append(current)
                 else:
                     dates.append(current)
@@ -119,6 +118,36 @@ def get_next_training_dates(training, limit=3):
         days_checked += 1
     
     return dates
+
+def build_activity_timeline(activities, base_date):
+    """Erstellt eine Timeline mit Datetimes, inkl. Mitternachts-Überlauf."""
+    timeline = []
+    current_date = base_date
+    last_start = None
+
+    for activity in activities:
+        activity_start = datetime.combine(current_date, activity.start_time)
+        if last_start and activity_start <= last_start:
+            current_date += timedelta(days=1)
+            activity_start = datetime.combine(current_date, activity.start_time)
+
+        activity_end = activity_start + timedelta(minutes=activity.duration)
+        timeline.append((activity, activity_start, activity_end))
+        last_start = activity_start
+
+    return timeline
+
+def get_training_timeline(training, base_date):
+    """Lädt Aktivitäten und berechnet die Timeline für ein Datum."""
+    activities = Activity.query.filter_by(training_id=training.id).order_by(Activity.order_index).all()
+    if not activities:
+        return None, None, None, None
+
+    timeline = build_activity_timeline(activities, base_date)
+    if not timeline:
+        return activities, None, None, None
+
+    return activities, timeline, timeline[0][1], timeline[-1][2]
 
 @app.route('/live')
 @login_required
@@ -129,60 +158,53 @@ def live():
     # Finde aktuelles oder kommendes Training für heute
     now = datetime.now()
     today = now.date()
-    current_time = now.time()
+    yesterday = today - timedelta(days=1)
     today_weekday = today.weekday()  # 0=Montag, 6=Sonntag
     
     current_training = None
     current_activity = None
     next_activity = None
     training_status = None  # 'running', 'upcoming', 'finished'
+    upcoming_start = None
     
-    # Suche alle Trainings, die heute stattfinden könnten
+    # Prüfe laufende Trainings (heute oder gestern bei Mitternachts-Überlauf)
     for training in trainings:
-        # Prüfe ob heute der richtige Wochentag ist und das Datum im Bereich liegt
-        if training.weekday == today_weekday and training.start_date <= today <= training.end_date:
-            # Hole alle Aktivitäten für dieses Training
-            activities = Activity.query.filter_by(training_id=training.id).order_by(Activity.order_index).all()
-            
-            if not activities:
+        for candidate_date in (yesterday, today):
+            if training.weekday != candidate_date.weekday():
                 continue
-            
-            # Berechne Start- und Endzeit des gesamten Trainings
-            first_activity = activities[0]
-            last_activity = activities[-1]
-            
-            training_start = first_activity.start_time
-            # Berechne Endzeit der letzten Aktivität
-            last_end_datetime = datetime.combine(today, last_activity.start_time) + timedelta(minutes=last_activity.duration)
-            training_end = last_end_datetime.time()
-            
-            # Prüfe ob Training noch nicht gestartet hat
-            if current_time < training_start:
-                if current_training is None or training_start < current_training.start_time:
-                    current_training = training
-                    training_status = 'upcoming'
-                    next_activity = first_activity
-                    current_activity = None
-            # Prüfe ob Training gerade läuft
-            elif current_time < training_end:
+            if not (training.start_date <= candidate_date <= training.end_date):
+                continue
+
+            activities, timeline, start_dt, end_dt = get_training_timeline(training, candidate_date)
+            if not timeline:
+                continue
+
+            if start_dt <= now < end_dt:
                 current_training = training
                 training_status = 'running'
-                
-                # Finde die aktuelle und nächste Aktivität
-                for i, activity in enumerate(activities):
-                    activity_end_datetime = datetime.combine(today, activity.start_time) + timedelta(minutes=activity.duration)
-                    activity_end = activity_end_datetime.time()
-                    
-                    if activity.start_time <= current_time < activity_end:
+
+                for i, (activity, activity_start, activity_end) in enumerate(timeline):
+                    if activity_start <= now < activity_end:
                         current_activity = activity
-                        if i + 1 < len(activities):
-                            next_activity = activities[i + 1]
+                        if i + 1 < len(timeline):
+                            next_activity = timeline[i + 1][0]
                         break
-                    elif current_time < activity.start_time:
+                    elif now < activity_start:
                         next_activity = activity
                         break
-                
-                break  # Wir haben ein laufendes Training gefunden, keine weiteren prüfen
+                break
+        if training_status == 'running':
+            break
+
+        if training.weekday == today_weekday and training.start_date <= today <= training.end_date:
+            activities, timeline, start_dt, end_dt = get_training_timeline(training, today)
+            if timeline and now < start_dt:
+                if upcoming_start is None or start_dt < upcoming_start:
+                    current_training = training
+                    training_status = 'upcoming'
+                    next_activity = timeline[0][0]
+                    current_activity = None
+                    upcoming_start = start_dt
     
     return render_template('live.html', 
                          weekdays=WEEKDAYS,
@@ -201,13 +223,14 @@ def index():
     # Finde aktuelles oder kommendes Training für heute
     now = datetime.now()
     today = now.date()
-    current_time = now.time()
+    yesterday = today - timedelta(days=1)
     today_weekday = today.weekday()  # 0=Montag, 6=Sonntag
     
     current_training = None
     current_activity = None
     next_activity = None
     training_status = None  # 'running', 'upcoming', 'finished'
+    upcoming_start = None
     
     # Berechne die nächsten 3 Trainings
     upcoming_trainings = []
@@ -217,28 +240,28 @@ def index():
         for date in next_dates:
             activities = Activity.query.filter_by(training_id=training.id).order_by(Activity.order_index).all()
             if activities:
-                first_activity = activities[0]
-                last_activity = activities[-1]
-                
-                training_start = first_activity.start_time
-                last_end_datetime = datetime.combine(date, last_activity.start_time) + timedelta(minutes=last_activity.duration)
-                training_end = last_end_datetime.time()
+                timeline = build_activity_timeline(activities, date)
+                if not timeline:
+                    continue
+
+                training_start_datetime = timeline[0][1]
+                training_end_datetime = timeline[-1][2]
                 
                 is_today = date == today
                 is_running = False
                 is_upcoming = False
                 
                 if is_today:
-                    if current_time >= training_start and current_time < training_end:
+                    if now >= training_start_datetime and now < training_end_datetime:
                         is_running = True
-                    elif current_time < training_start:
+                    elif now < training_start_datetime:
                         is_upcoming = True
                 
                 upcoming_trainings.append({
                     'training': training,
                     'date': date,
-                    'start_time': training_start,
-                    'end_time': training_end,
+                    'start_time': training_start_datetime.time(),
+                    'end_time': training_end_datetime.time(),
                     'is_today': is_today,
                     'is_running': is_running,
                     'is_upcoming': is_upcoming
@@ -247,52 +270,44 @@ def index():
     # Sortiere nach Datum und Zeit
     upcoming_trainings.sort(key=lambda x: (x['date'], x['start_time']))
     
-    # Suche alle Trainings, die heute stattfinden könnten
+    # Prüfe laufende Trainings (heute oder gestern bei Mitternachts-Überlauf)
     for training in trainings:
-        # Prüfe ob heute der richtige Wochentag ist und das Datum im Bereich liegt
-        if training.weekday == today_weekday and training.start_date <= today <= training.end_date:
-            # Hole alle Aktivitäten für dieses Training
-            activities = Activity.query.filter_by(training_id=training.id).order_by(Activity.order_index).all()
-            
-            if not activities:
+        for candidate_date in (yesterday, today):
+            if training.weekday != candidate_date.weekday():
                 continue
-            
-            # Berechne Start- und Endzeit des gesamten Trainings
-            first_activity = activities[0]
-            last_activity = activities[-1]
-            
-            training_start = first_activity.start_time
-            # Berechne Endzeit der letzten Aktivität
-            last_end_datetime = datetime.combine(today, last_activity.start_time) + timedelta(minutes=last_activity.duration)
-            training_end = last_end_datetime.time()
-            
-            # Prüfe ob Training noch nicht gestartet hat
-            if current_time < training_start:
-                if current_training is None or training_start < current_training.start_time:
-                    current_training = training
-                    training_status = 'upcoming'
-                    next_activity = first_activity
-                    current_activity = None
-            # Prüfe ob Training gerade läuft
-            elif current_time < training_end:
+            if not (training.start_date <= candidate_date <= training.end_date):
+                continue
+
+            activities, timeline, start_dt, end_dt = get_training_timeline(training, candidate_date)
+            if not timeline:
+                continue
+
+            if start_dt <= now < end_dt:
                 current_training = training
                 training_status = 'running'
-                
-                # Finde die aktuelle und nächste Aktivität
-                for i, activity in enumerate(activities):
-                    activity_end_datetime = datetime.combine(today, activity.start_time) + timedelta(minutes=activity.duration)
-                    activity_end = activity_end_datetime.time()
-                    
-                    if activity.start_time <= current_time < activity_end:
+
+                for i, (activity, activity_start, activity_end) in enumerate(timeline):
+                    if activity_start <= now < activity_end:
                         current_activity = activity
-                        if i + 1 < len(activities):
-                            next_activity = activities[i + 1]
+                        if i + 1 < len(timeline):
+                            next_activity = timeline[i + 1][0]
                         break
-                    elif current_time < activity.start_time:
+                    elif now < activity_start:
                         next_activity = activity
                         break
-                
-                break  # Wir haben ein laufendes Training gefunden, keine weiteren prüfen
+                break
+        if training_status == 'running':
+            break
+
+        if training.weekday == today_weekday and training.start_date <= today <= training.end_date:
+            activities, timeline, start_dt, end_dt = get_training_timeline(training, today)
+            if timeline and now < start_dt:
+                if upcoming_start is None or start_dt < upcoming_start:
+                    current_training = training
+                    training_status = 'upcoming'
+                    next_activity = timeline[0][0]
+                    current_activity = None
+                    upcoming_start = start_dt
     
     return render_template('index.html', 
                          trainings=trainings, 
