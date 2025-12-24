@@ -5,18 +5,18 @@ Separate Farben für Light- und Dark-Mode
 
 # Farbkonfiguration für Light-Mode (Pastellfarben)
 LIGHT_MODE_COLORS = {
-    'team': '#A8D5E2',      # Pastell-Blau
-    'prepractice': '#FFD6CC',  # Pastell-Rosa
-    'individual': '#D4E4C5',   # Pastell-Grün
-    'group': '#FFE5B4'        # Pastell-Gelb
+    'team': '#C4B5FD',         # Club Purple (soft)
+    'prepractice': '#E5E7EB',  # Silver
+    'individual': '#DDD6FE',   # Light Purple
+    'group': '#CBD5E1'         # Cool Silver
 }
 
 # Farbkonfiguration für Dark-Mode (dunklere, aber immer noch erkennbare Farben)
 DARK_MODE_COLORS = {
-    'team': '#4A90A4',      # Dunkleres Blau
-    'prepractice': '#C97A6B',  # Dunkleres Rosa
-    'individual': '#7A9B6B',   # Dunkleres Grün
-    'group': '#C9A86B'        # Dunkleres Gelb
+    'team': '#6D28D9',         # Club Purple
+    'prepractice': '#64748B',  # Silver Slate
+    'individual': '#7C3AED',   # Vivid Purple
+    'group': '#334155'         # Near-Black
 }
 
 def get_activity_color(activity_type, theme='light'):
@@ -44,4 +44,3 @@ def get_all_colors(theme='light'):
         Dictionary mit allen Aktivitätsfarben
     """
     return DARK_MODE_COLORS.copy() if theme == 'dark' else LIGHT_MODE_COLORS.copy()
-

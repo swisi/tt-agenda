@@ -1,16 +1,15 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
-            <div class="card">
-                <div class="card-header">
-                    <h4 class="mb-0">{{ 'Aktivität bearbeiten' if activity else 'Neue Aktivität' }}</h4>
-                </div>
-                <div class="card-body">
-                    <form method="POST" action="{{ url_for('edit_activity', id=activity.id) if activity else url_for('add_activity', training_id=training.id) }}" id="activityForm" onsubmit="return prepareFormSubmit()">
-                        <input type="hidden" name="training_id" value="{{ training.id }}">
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">{{ 'Aktivität bearbeiten' if activity else 'Neue Aktivität' }}</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('edit_activity', id=activity.id) if activity else url_for('add_activity', training_id=training.id) }}" id="activityForm" onsubmit="return prepareFormSubmit()">
+                    <input type="hidden" name="training_id" value="{{ training.id }}">
                         
                         <div class="mb-3">
                             <label class="form-label">Typ</label>
@@ -102,8 +101,7 @@
                             <a href="{{ url_for('edit_training', id=training.id) }}" class="btn btn-secondary">Abbrechen</a>
                             <button type="submit" class="btn btn-primary">Speichern</button>
                         </div>
-                    </form>
-                </div>
+                </form>
             </div>
         </div>
     </div>
@@ -120,10 +118,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     // Stelle sicher, dass combo_count hidden field korrekt gesetzt ist
     document.getElementById('combo_count').value = initialCount;
-    
-    // Debug: Log alle vorhandenen Kombinationen
-    console.log('Initial combo items:', initialCount);
-    console.log('Combo counter:', comboCounter);
 });
 
 function updateFormSections() {
@@ -199,19 +193,9 @@ function prepareFormSubmit() {
     renumberComboItems();
     const count = document.querySelectorAll('.combo-item').length;
     document.getElementById('combo_count').value = count;
-    console.log('Submitting form with combo_count:', count);
-    
-    // Debug: Zeige alle Checkboxen
-    const allCheckboxes = document.querySelectorAll('input[type="checkbox"].combo-group');
-    console.log('Total checkboxes found:', allCheckboxes.length);
-    allCheckboxes.forEach(cb => {
-        console.log(`Checkbox: name=${cb.name}, value=${cb.value}, checked=${cb.checked}`);
-    });
-    
     return true; // Formular absenden
 }
 
 // Farbselektor-Funktionen entfernt - Farben werden automatisch zugewiesen
 </script>
 {% endblock %}
-

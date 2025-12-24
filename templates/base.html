@@ -6,65 +6,127 @@
     <title>{% block title %}Trainingsverwaltung{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;700&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary-color: #2563eb;
-            --primary-dark: #1e40af;
-            --secondary-color: #64748b;
-            --success-color: #10b981;
+            --font-sans: "Space Grotesk", "Segoe UI", system-ui, -apple-system, sans-serif;
+            --font-display: "Fraunces", "Times New Roman", serif;
+            --primary-color: #6d28d9;
+            --primary-dark: #4c1d95;
+            --secondary-color: #475569;
+            --success-color: #16a34a;
             --danger-color: #ef4444;
             --warning-color: #f59e0b;
-            --bg-light: #f8fafc;
+            --accent-color: #a855f7;
+            --bg-light: #f6f7fb;
             --bg-card: #ffffff;
-            --text-primary: #1e293b;
-            --text-secondary: #64748b;
-            --border-color: #e2e8f0;
-            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            --bg-muted: #f0f1f6;
+            --text-primary: #0b0c10;
+            --text-secondary: #4b5563;
+            --border-color: #d7dbe4;
+            --shadow-sm: 0 1px 2px rgba(11, 12, 16, 0.08);
+            --shadow-md: 0 12px 24px -18px rgba(11, 12, 16, 0.4);
+            --shadow-lg: 0 35px 70px -55px rgba(11, 12, 16, 0.6);
+            --ring-color: rgba(109, 40, 217, 0.2);
         }
 
         [data-theme="dark"] {
-            --primary-color: #3b82f6;
-            --primary-dark: #2563eb;
+            --primary-color: #a855f7;
+            --primary-dark: #6d28d9;
             --secondary-color: #94a3b8;
-            --success-color: #34d399;
+            --success-color: #22c55e;
             --danger-color: #f87171;
             --warning-color: #fbbf24;
-            --bg-light: #0f172a;
-            --bg-card: #1e293b;
-            --text-primary: #f1f5f9;
-            --text-secondary: #cbd5e1;
-            --border-color: #334155;
-            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
-            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
-            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+            --accent-color: #c084fc;
+            --bg-light: #0b0b12;
+            --bg-card: #12131c;
+            --bg-muted: #161827;
+            --text-primary: #eef0f6;
+            --text-secondary: #b7bcc8;
+            --border-color: #1f2233;
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+            --shadow-md: 0 14px 28px -20px rgba(0, 0, 0, 0.8);
+            --shadow-lg: 0 40px 70px -55px rgba(0, 0, 0, 0.85);
+            --ring-color: rgba(168, 85, 247, 0.25);
         }
 
         body {
-            background-color: var(--bg-light);
+            background:
+                radial-gradient(1100px circle at 8% -10%, rgba(109, 40, 217, 0.2), transparent 55%),
+                radial-gradient(900px circle at 92% 5%, rgba(156, 163, 175, 0.22), transparent 55%),
+                linear-gradient(180deg, #f6f7fb 0%, #eceef4 45%, #f6f7fb 100%);
             color: var(--text-primary);
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            font-family: var(--font-sans);
+            min-height: 100vh;
+            letter-spacing: 0.01em;
+        }
+
+        [data-theme="dark"] body {
+            background:
+                radial-gradient(1000px circle at 10% 0%, rgba(168, 85, 247, 0.2), transparent 55%),
+                radial-gradient(900px circle at 95% 10%, rgba(148, 163, 184, 0.16), transparent 55%),
+                linear-gradient(180deg, #0b0b12 0%, #101120 45%, #0b0b12 100%);
         }
 
         .navbar {
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%) !important;
+            background: linear-gradient(135deg, rgba(109, 40, 217, 0.92) 0%, rgba(11, 12, 16, 0.96) 100%) !important;
             box-shadow: var(--shadow-md);
-            padding: 1rem 0;
+            padding: 0.85rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(16px);
+        }
+
+        [data-theme="dark"] .navbar {
+            background: linear-gradient(135deg, rgba(168, 85, 247, 0.22) 0%, rgba(11, 12, 16, 0.98) 100%) !important;
         }
 
         .navbar-brand {
             font-weight: 600;
-            font-size: 1.25rem;
+            font-size: 1.3rem;
+            letter-spacing: 0.02em;
+        }
+
+        .navbar .nav-link {
+            color: rgba(255, 255, 255, 0.85);
+            font-weight: 500;
+        }
+
+        .navbar .nav-link:hover,
+        .navbar .nav-link:focus {
+            color: #ffffff;
         }
 
         .container {
-            max-width: 1400px;
+            max-width: 1280px;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.5rem;
+        }
+
+        .page-title {
+            font-family: var(--font-display);
+            font-size: clamp(1.6rem, 1.2rem + 1vw, 2.2rem);
+            margin: 0;
+        }
+
+        .page-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
         }
 
         .card {
-            border: none;
-            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
             box-shadow: var(--shadow-sm);
             transition: all 0.3s ease;
             background: var(--bg-card);
@@ -76,17 +138,24 @@
         }
 
         .card-header {
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
-            color: white;
             border: none;
-            border-radius: 12px 12px 0 0 !important;
-            padding: 1rem 1.25rem;
+            border-radius: 16px 16px 0 0 !important;
+            padding: 1rem 1.5rem;
             font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+        }
+
+        .card-header:not(.bg-primary):not(.bg-danger):not(.bg-success):not(.bg-warning):not(.bg-info):not(.bg-dark) {
+            background: var(--bg-muted);
+            color: var(--text-primary);
         }
 
         .btn {
-            border-radius: 8px;
-            padding: 0.5rem 1rem;
+            border-radius: 999px;
+            padding: 0.5rem 1.1rem;
             font-weight: 500;
             transition: all 0.2s ease;
             border: none;
@@ -100,6 +169,29 @@
             background: var(--primary-dark);
             transform: translateY(-1px);
             box-shadow: var(--shadow-md);
+        }
+
+        .bg-primary {
+            background: linear-gradient(135deg, rgba(109, 40, 217, 0.95) 0%, rgba(76, 29, 149, 0.95) 100%) !important;
+        }
+
+        [data-theme="dark"] .bg-primary {
+            background: linear-gradient(135deg, rgba(168, 85, 247, 0.9) 0%, rgba(76, 29, 149, 0.9) 100%) !important;
+        }
+
+        .alert-primary {
+            background: rgba(109, 40, 217, 0.12);
+            border-color: rgba(109, 40, 217, 0.35);
+            color: var(--text-primary);
+        }
+
+        [data-theme="dark"] .alert-primary {
+            background: rgba(168, 85, 247, 0.18);
+            border-color: rgba(168, 85, 247, 0.35);
+        }
+
+        .badge.bg-primary {
+            background: var(--primary-color) !important;
         }
 
         .btn-success {
@@ -127,14 +219,16 @@
 
         .form-control, .form-select {
             border: 1px solid var(--border-color);
-            border-radius: 8px;
+            border-radius: 12px;
             padding: 0.5rem 0.75rem;
             transition: all 0.2s ease;
+            background: var(--bg-card);
+            color: var(--text-primary);
         }
 
         .form-control:focus, .form-select:focus {
             border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+            box-shadow: 0 0 0 4px var(--ring-color);
         }
 
         .form-label {
@@ -185,16 +279,94 @@
 
         .schedule-table {
             font-size: 0.875rem;
+            border-radius: 14px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            background: var(--bg-card);
+            box-shadow: var(--shadow-sm);
         }
 
         .schedule-table td, .schedule-table th {
-            padding: 0.5rem;
+            padding: 0.65rem 0.75rem;
             vertical-align: middle;
+            border: 1px solid var(--border-color);
+            text-align: center;
+        }
+
+        .schedule-table thead th {
+            background: linear-gradient(180deg, rgba(109, 40, 217, 0.28) 0%, rgba(76, 29, 149, 0.18) 100%);
+            color: var(--text-primary);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-size: 0.7rem;
+            font-weight: 600;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .schedule-table thead th.time-head {
+            color: #f8fafc;
+            background: linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 0.7) 100%);
+        }
+
+        [data-theme="dark"] .schedule-table thead th.time-head {
+            color: #f8fafc;
+            background: linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 0.75) 100%);
+        }
+
+        [data-theme="dark"] .schedule-table thead th {
+            background: linear-gradient(180deg, rgba(168, 85, 247, 0.32) 0%, rgba(76, 29, 149, 0.5) 100%);
+            color: var(--text-primary);
+        }
+
+        .schedule-table tbody tr {
+            transition: background 0.2s ease;
+        }
+
+        .schedule-table tbody tr:hover td {
+            background-color: rgba(109, 40, 217, 0.08);
+        }
+
+        [data-theme="dark"] .schedule-table tbody tr:hover td {
+            background-color: rgba(168, 85, 247, 0.14);
+        }
+
+        .time-cell {
+            font-variant-numeric: tabular-nums;
+            color: var(--text-primary);
+            font-weight: 700;
+            background: rgba(15, 23, 42, 0.06);
+        }
+
+        [data-theme="dark"] .schedule-table td.time-cell {
+            color: #f8fafc;
+            background: rgba(15, 23, 42, 0.6);
         }
 
         h1, h2, h3, h4, h5 {
             color: var(--text-primary);
             font-weight: 600;
+            font-family: var(--font-display);
+        }
+
+        .table {
+            background: var(--bg-card);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        .table thead th {
+            background: var(--bg-muted);
+            color: var(--text-primary);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .table tbody tr {
+            border-color: var(--border-color);
+        }
+
+        .table-responsive {
+            border-radius: 16px;
+            box-shadow: var(--shadow-sm);
         }
 
         .compact-form .row {
@@ -272,6 +444,91 @@
         .theme-toggle:hover {
             background: rgba(255, 255, 255, 0.1);
         }
+
+        .hero-alert {
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+            background: var(--bg-card);
+        }
+
+        .soft-card {
+            background: var(--bg-card);
+            border-radius: 18px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-md);
+        }
+
+        .schedule-table tbody tr.table-row-odd td {
+            background-color: rgba(109, 40, 217, 0.05);
+        }
+
+        .schedule-table tbody tr.table-row-even td {
+            background-color: rgba(148, 163, 184, 0.1);
+        }
+
+        [data-theme="dark"] .schedule-table tbody tr.table-row-odd td {
+            background-color: rgba(168, 85, 247, 0.12);
+        }
+
+        [data-theme="dark"] .schedule-table tbody tr.table-row-even td {
+            background-color: rgba(148, 163, 184, 0.12);
+        }
+
+        .schedule-table tbody tr.table-row-odd td.table-success {
+            background-color: rgba(22, 163, 74, 0.2) !important;
+        }
+
+        .schedule-table tbody tr.table-row-even td.table-success {
+            background-color: rgba(22, 163, 74, 0.3) !important;
+        }
+
+        [data-theme="dark"] .schedule-table tbody tr.table-row-odd td.table-success {
+            background-color: rgba(34, 197, 94, 0.2) !important;
+        }
+
+        [data-theme="dark"] .schedule-table tbody tr.table-row-even td.table-success {
+            background-color: rgba(34, 197, 94, 0.28) !important;
+        }
+
+        .group-cell {
+            min-width: 50px;
+            min-height: 20px;
+        }
+
+        .color-panel {
+            min-width: 240px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-md);
+            border-radius: 14px;
+        }
+
+        .color-panel label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-secondary);
+        }
+
+        .color-panel input[type="color"] {
+            border: none;
+            background: transparent;
+            width: 42px;
+            height: 32px;
+            padding: 0;
+        }
+
+        @media (max-width: 768px) {
+            .page-header {
+                align-items: flex-start;
+            }
+
+            .page-actions {
+                width: 100%;
+                justify-content: flex-start;
+            }
+        }
     </style>
 </head>
 <body>
@@ -313,6 +570,52 @@
                         <span class="nav-link theme-toggle" id="themeToggle" title="Theme wechseln">
                             <i class="bi bi-moon-fill" id="themeIcon"></i>
                         </span>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" title="Aktivitätsfarben">
+                            <i class="bi bi-palette me-1"></i>Farben
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-end p-3 color-panel">
+                            <div class="mb-2">
+                                <label class="form-label mb-1">Light Mode</label>
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <span class="small">Team</span>
+                                    <input type="color" data-color-input data-theme="light" data-activity="team">
+                                </div>
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <span class="small">Prepractice</span>
+                                    <input type="color" data-color-input data-theme="light" data-activity="prepractice">
+                                </div>
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <span class="small">Individual</span>
+                                    <input type="color" data-color-input data-theme="light" data-activity="individual">
+                                </div>
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <span class="small">Group</span>
+                                    <input type="color" data-color-input data-theme="light" data-activity="group">
+                                </div>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label mb-1">Dark Mode</label>
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <span class="small">Team</span>
+                                    <input type="color" data-color-input data-theme="dark" data-activity="team">
+                                </div>
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <span class="small">Prepractice</span>
+                                    <input type="color" data-color-input data-theme="dark" data-activity="prepractice">
+                                </div>
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <span class="small">Individual</span>
+                                    <input type="color" data-color-input data-theme="dark" data-activity="individual">
+                                </div>
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <span class="small">Group</span>
+                                    <input type="color" data-color-input data-theme="dark" data-activity="group">
+                                </div>
+                            </div>
+                            <button class="btn btn-sm btn-outline-secondary w-100" id="resetActivityColors">Zurücksetzen</button>
+                        </div>
                     </li>
                     {% if session.get('user_id') %}
                     <li class="nav-item">
@@ -374,12 +677,43 @@
             group: '{{ DARK_MODE_COLORS.get("group", "#C9A86B") }}'
         };
         
+        function getStoredColors(theme) {
+            try {
+                const stored = localStorage.getItem(`activityColors_${theme}`);
+                return stored ? JSON.parse(stored) : {};
+            } catch (error) {
+                return {};
+            }
+        }
+
+        function setStoredColors(theme, colors) {
+            localStorage.setItem(`activityColors_${theme}`, JSON.stringify(colors));
+        }
+
+        function getMergedColors(theme) {
+            const base = theme === 'dark' ? darkColors : lightColors;
+            const overrides = getStoredColors(theme);
+            return { ...base, ...overrides };
+        }
+
         function updateActivityColors(theme) {
-            const colors = theme === 'dark' ? darkColors : lightColors;
+            const colors = getMergedColors(theme);
             html.style.setProperty('--color-team', colors.team);
             html.style.setProperty('--color-prepractice', colors.prepractice);
             html.style.setProperty('--color-individual', colors.individual);
             html.style.setProperty('--color-group', colors.group);
+        }
+
+        function syncColorInputs() {
+            const inputs = document.querySelectorAll('[data-color-input]');
+            inputs.forEach(input => {
+                const theme = input.getAttribute('data-theme');
+                const activity = input.getAttribute('data-activity');
+                const colors = getMergedColors(theme);
+                if (colors[activity]) {
+                    input.value = colors[activity];
+                }
+            });
         }
         
         // Lade gespeichertes Theme oder verwende System-Präferenz
@@ -398,11 +732,36 @@
         }
         
         setTheme(savedTheme);
+        syncColorInputs();
         
         themeToggle.addEventListener('click', () => {
             const currentTheme = html.getAttribute('data-theme');
             setTheme(currentTheme === 'dark' ? 'light' : 'dark');
+            syncColorInputs();
         });
+
+        document.querySelectorAll('[data-color-input]').forEach(input => {
+            input.addEventListener('input', (event) => {
+                const theme = event.target.getAttribute('data-theme');
+                const activity = event.target.getAttribute('data-activity');
+                const stored = getStoredColors(theme);
+                stored[activity] = event.target.value;
+                setStoredColors(theme, stored);
+                if (html.getAttribute('data-theme') === theme) {
+                    updateActivityColors(theme);
+                }
+            });
+        });
+
+        const resetButton = document.getElementById('resetActivityColors');
+        if (resetButton) {
+            resetButton.addEventListener('click', () => {
+                localStorage.removeItem('activityColors_light');
+                localStorage.removeItem('activityColors_dark');
+                updateActivityColors(html.getAttribute('data-theme'));
+                syncColorInputs();
+            });
+        }
     </script>
     {% block scripts %}{% endblock %}
 </body>

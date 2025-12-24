@@ -6,29 +6,42 @@
     <title>Login - Trainingsverwaltung</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;700&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary-color: #2563eb;
-            --primary-dark: #1e40af;
-            --bg-light: #f8fafc;
+            --font-sans: "Space Grotesk", "Segoe UI", system-ui, -apple-system, sans-serif;
+            --font-display: "Fraunces", "Times New Roman", serif;
+            --primary-color: #6d28d9;
+            --primary-dark: #4c1d95;
+            --accent-color: #a855f7;
+            --bg-light: #f6f7fb;
+            --text-primary: #0b0c10;
+            --text-secondary: #4b5563;
+            --border-color: #d7dbe4;
         }
 
         body {
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            background:
+                radial-gradient(900px circle at 10% 0%, rgba(109, 40, 217, 0.22), transparent 55%),
+                radial-gradient(800px circle at 90% 10%, rgba(156, 163, 175, 0.18), transparent 55%),
+                linear-gradient(180deg, #f6f7fb 0%, #eceef4 45%, #f6f7fb 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            font-family: var(--font-sans);
         }
 
         .login-card {
             background: white;
-            border-radius: 16px;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-            padding: 2.5rem;
+            border-radius: 20px;
+            box-shadow: 0 30px 60px -45px rgba(15, 23, 42, 0.6);
+            padding: 2.75rem;
             width: 100%;
             max-width: 420px;
+            border: 1px solid var(--border-color);
         }
 
         .login-header {
@@ -43,27 +56,28 @@
         }
 
         .login-header h1 {
-            font-size: 1.75rem;
-            font-weight: 600;
-            color: #1e293b;
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
             margin-bottom: 0.5rem;
+            font-family: var(--font-display);
         }
 
         .form-control {
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
             padding: 0.75rem 1rem;
         }
 
         .form-control:focus {
             border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+            box-shadow: 0 0 0 4px rgba(109, 40, 217, 0.2);
         }
 
         .btn-primary {
             background: var(--primary-color);
             border: none;
-            border-radius: 8px;
+            border-radius: 999px;
             padding: 0.75rem;
             font-weight: 500;
             width: 100%;
@@ -77,17 +91,18 @@
 
         .form-label {
             font-weight: 500;
-            color: #475569;
+            color: var(--text-secondary);
             margin-bottom: 0.5rem;
         }
 
         .login-info {
             margin-top: 1.5rem;
-            padding: 1rem;
-            background: #f1f5f9;
-            border-radius: 8px;
+            padding: 1rem 1.25rem;
+            background: #f8fafc;
+            border-radius: 12px;
             font-size: 0.875rem;
-            color: #64748b;
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
         }
     </style>
 </head>

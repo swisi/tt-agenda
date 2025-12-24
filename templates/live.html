@@ -55,13 +55,13 @@
         {% endif %}
         
         <!-- Tabellen-Ansicht -->
-        <div class="table-responsive">
-            <table class="table table-bordered schedule-table" id="liveScheduleTable">
+        <div class="table-responsive soft-card p-2">
+            <table class="table schedule-table" id="liveScheduleTable">
                 <thead class="table-dark">
                     <tr>
-                        <th>From</th>
-                        <th>To</th>
-                        <th>min</th>
+                        <th class="time-head">From</th>
+                        <th class="time-head">To</th>
+                        <th class="time-head">min</th>
                         <th class="group-header" data-group="OL">OL</th>
                         <th class="group-header" data-group="DL">DL</th>
                         <th class="group-header" data-group="LB">LB</th>
@@ -129,77 +129,6 @@
             opacity: 1;
             transform: translateY(0);
         }
-    }
-    
-    /* Schedule Table Styles */
-    .schedule-table {
-        border: 2px solid #333;
-        border-collapse: collapse;
-    }
-
-    .schedule-table td, .schedule-table th {
-        vertical-align: middle;
-        text-align: center;
-        border: 1px solid #999;
-        padding: 8px;
-    }
-
-    .schedule-table tbody tr.table-row-odd td {
-        background-color: #e3f2fd;
-    }
-
-    .schedule-table tbody tr.table-row-even td {
-        background-color: #b8ddf7;
-    }
-
-    [data-theme="dark"] .schedule-table tbody tr.table-row-odd td {
-        background-color: #1e3a5f;
-    }
-
-    [data-theme="dark"] .schedule-table tbody tr.table-row-even td {
-        background-color: #1e4a6f;
-    }
-
-    .schedule-table tbody tr.table-row-odd td.table-success {
-        background-color: #a5d6a7 !important;
-    }
-
-    .schedule-table tbody tr.table-row-even td.table-success {
-        background-color: #81c784 !important;
-    }
-
-    [data-theme="dark"] .schedule-table tbody tr.table-row-odd td.table-success {
-        background-color: #2d5a2d !important;
-    }
-
-    [data-theme="dark"] .schedule-table tbody tr.table-row-even td.table-success {
-        background-color: #3d6a3d !important;
-    }
-
-    .schedule-table thead th {
-        border: 2px solid #333;
-    }
-
-    [data-theme="dark"] .schedule-table thead th {
-        border-color: var(--border-color);
-        background-color: var(--bg-card);
-        color: var(--text-primary);
-    }
-
-    [data-theme="dark"] .schedule-table {
-        border-color: var(--border-color);
-        color: var(--text-primary);
-    }
-
-    [data-theme="dark"] .schedule-table td, 
-    [data-theme="dark"] .schedule-table th {
-        border-color: var(--border-color);
-        color: var(--text-primary);
-    }
-
-    .group-cell {
-        min-width: 50px;
-        min-height: 20px;
     }
     
     /* Live-Hervorhebungen */
@@ -536,10 +465,6 @@
         const serverTime = new Date("{{ now.strftime('%Y-%m-%d %H:%M:%S') }}");
         const clientTime = new Date();
         const timeDiff = serverTime - clientTime;
-        
-        console.log('Server Zeit:', serverTime);
-        console.log('Client Zeit:', clientTime);
-        console.log('Zeit-Differenz:', timeDiff, 'ms');
         
         function updateCountdown() {
             // Verwende Server-Zeit statt Client-Zeit
