@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, request
 from datetime import datetime, timedelta
 from ..models import Training, Activity
 from ..utils import login_required, get_next_training_dates, build_activity_timeline, get_training_timeline, WEEKDAYS, POSITION_GROUPS
@@ -121,6 +121,48 @@ def live():
     next_activity = None
     training_status = None
     upcoming_start = None
+
+    selected_training_id = request.args.get('training_id', type=int)
+    selected_date_str = request.args.get('date')
+    selected_date = None
+    if selected_training_id and selected_date_str:
+        try:
+            selected_date = datetime.strptime(selected_date_str, '%Y-%m-%d').date()
+        except ValueError:
+            selected_date = None
+
+    if selected_training_id and selected_date:
+        training = Training.query.get_or_404(selected_training_id)
+        if training.start_date <= selected_date <= training.end_date and training.weekday == selected_date.weekday():
+            activities, timeline, start_dt, end_dt = get_training_timeline(training, selected_date)
+        else:
+            activities, timeline, start_dt, end_dt = None, None, None, None
+
+        if timeline:
+            current_training = training
+            if selected_date == today:
+                if start_dt <= now < end_dt:
+                    training_status = 'running'
+                    for i, (activity, activity_start, activity_end) in enumerate(timeline):
+                        if activity_start <= now < activity_end:
+                            current_activity = activity
+                            if i + 1 < len(timeline):
+                                next_activity = timeline[i + 1][0]
+                            break
+                        elif now < activity_start:
+                            next_activity = activity
+                            break
+                elif now < start_dt:
+                    training_status = 'upcoming'
+                    next_activity = timeline[0][0]
+        return render_template('live.html', 
+                             weekdays=WEEKDAYS,
+                             position_groups=POSITION_GROUPS,
+                             current_training=current_training,
+                             current_activity=current_activity,
+                             next_activity=next_activity,
+                             training_status=training_status,
+                             now=now)
     
     for training in trainings:
         for candidate_date in (yesterday, today):

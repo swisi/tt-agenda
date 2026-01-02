@@ -15,15 +15,15 @@
             --font-display: "Ubuntu", sans-serif;
             
             /* Modern Palette */
-            --primary-color: #7c3aed; /* Violet 600 */
-            --primary-hover: #6d28d9; /* Violet 700 */
-            --primary-soft: #ddd6fe; /* Violet 200 */
+            --primary-color: #5b4df0; /* Indigo 600 */
+            --primary-hover: #4b3fd6; /* Indigo 700 */
+            --primary-soft: #e3ddff; /* Indigo 100 */
             
             --surface-1: #ffffff;
             --surface-2: #f8fafc;
             --surface-3: #f1f5f9;
             
-            --text-main: #0f172a;
+            --text-main: #0b1220;
             --text-muted: #64748b;
             
             --border-light: #e2e8f0;
@@ -33,7 +33,7 @@
             --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
             --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
             --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-            --shadow-glow: 0 0 20px rgba(124, 58, 237, 0.15);
+            --shadow-glow: 0 0 20px rgba(91, 77, 240, 0.18);
             
             --radius-md: 12px;
             --radius-lg: 16px;
@@ -41,21 +41,21 @@
         }
 
         [data-theme="dark"] {
-            --surface-1: #1e293b; /* Slate 800 */
-            --surface-2: #0f172a; /* Slate 900 */
-            --surface-3: #334155; /* Slate 700 */
+            --surface-1: #111827; /* Slate 900 */
+            --surface-2: #0b1120; /* Deep slate */
+            --surface-3: #1f2937; /* Slate 800 */
             
-            --text-main: #f8fafc;
+            --text-main: #e2e8f0;
             --text-muted: #94a3b8;
             
-            --border-light: #334155;
+            --border-light: #263141;
         }
 
         body {
             background-color: var(--surface-2);
             /* Subtiler, modernerer Gradient */
             background-image: 
-                radial-gradient(circle at 15% 50%, rgba(124, 58, 237, 0.08), transparent 25%),
+                radial-gradient(circle at 15% 50%, rgba(91, 77, 240, 0.10), transparent 25%),
                 radial-gradient(circle at 85% 30%, rgba(56, 189, 248, 0.08), transparent 25%);
             background-attachment: fixed;
             color: var(--text-main);
@@ -306,6 +306,25 @@
             font-weight: 600;
         }
 
+        .page-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .page-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .hero-alert {
+            margin-top: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+
         .schedule-table {
             /* Keep schedule table grid-like */
             border-collapse: collapse;
@@ -317,6 +336,49 @@
         .schedule-table td {
             border-radius: 0 !important;
             border: 1px solid var(--border-light);
+        }
+
+        .schedule-table thead .time-head {
+            background: var(--surface-3);
+            color: var(--text-muted);
+            font-weight: 600;
+            width: 64px;
+            min-width: 64px;
+            padding: 0.35rem 0.45rem;
+        }
+
+        .schedule-table .time-cell {
+            background: var(--surface-1);
+            color: var(--text-muted);
+            font-weight: 600;
+            width: 64px;
+            min-width: 64px;
+            padding: 0.35rem 0.45rem;
+        }
+
+        .schedule-table .group-cell {
+            background-color: var(--activity-base, transparent);
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        .schedule-table .group-cell.group-tone-0 { background-color: color-mix(in srgb, var(--activity-base) 80%, #ffffff 20%); }
+        .schedule-table .group-cell.group-tone-1 { background-color: color-mix(in srgb, var(--activity-base) 88%, #ffffff 12%); }
+        .schedule-table .group-cell.group-tone-2 { background-color: color-mix(in srgb, var(--activity-base) 82%, #000000 18%); }
+        .schedule-table .group-cell.group-tone-3 { background-color: color-mix(in srgb, var(--activity-base) 72%, #000000 28%); }
+        .schedule-table .group-cell.group-tone-4 { background-color: color-mix(in srgb, var(--activity-base) 84%, #ffffff 16%); }
+        .schedule-table .group-cell.group-tone-5 { background-color: color-mix(in srgb, var(--activity-base) 78%, #000000 22%); }
+        .schedule-table .group-cell.group-tone-6 { background-color: color-mix(in srgb, var(--activity-base) 90%, #ffffff 10%); }
+        .schedule-table .group-cell.group-tone-7 { background-color: color-mix(in srgb, var(--activity-base) 68%, #000000 32%); }
+
+        [data-theme="dark"] .schedule-table thead .time-head {
+            background: var(--surface-3);
+            color: var(--text-muted);
+        }
+
+        [data-theme="dark"] .schedule-table .time-cell {
+            background: var(--surface-2);
+            color: var(--text-muted);
         }
         
         /* Time Slots in Live View */

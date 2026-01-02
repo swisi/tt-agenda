@@ -112,9 +112,26 @@ def get_text_color_for_bg(bg_color):
 
 def build_group_cells(activity):
     all_groups = ['OL', 'DL', 'LB', 'RB', 'DB', 'WR', 'TE', 'QB']
+    group_tone_map = {
+        'OL': 0,
+        'DL': 1,
+        'LB': 2,
+        'RB': 3,
+        'DB': 4,
+        'WR': 5,
+        'TE': 6,
+        'QB': 7
+    }
     cells = []
     activity_color = activity.color if hasattr(activity, 'color') and activity.color else get_activity_color(activity.activity_type, 'light')
     text_color = get_text_color_for_bg(activity_color)
+    def with_tone_class(base_class, groups):
+        if not groups:
+            return base_class
+        tone = group_tone_map.get(groups[0])
+        if tone is None:
+            return base_class
+        return f"{base_class} group-tone-{tone}".strip()
 
     if activity.activity_type in ['team', 'prepractice']:
         position_groups_list = json.loads(activity.position_groups) if activity.position_groups else all_groups
@@ -133,7 +150,7 @@ def build_group_cells(activity):
                 cells.append({
                     'colspan': 1,
                     'groups': ['WR'],
-                    'class': 'table-success',
+                    'class': with_tone_class('table-success', ['WR']),
                     'content': topics.get('WR', topics.get('TE', '')),
                     'color': activity_color,
                     'text_color': text_color
@@ -142,7 +159,7 @@ def build_group_cells(activity):
                 cells.append({
                     'colspan': 1,
                     'groups': ['TE'],
-                    'class': 'table-success',
+                    'class': with_tone_class('table-success', ['TE']),
                     'content': topics.get('TE', topics.get('WR', '')),
                     'color': activity_color,
                     'text_color': text_color
@@ -151,7 +168,7 @@ def build_group_cells(activity):
                 cells.append({
                     'colspan': 1,
                     'groups': [group],
-                    'class': 'table-success',
+                    'class': with_tone_class('table-success', [group]),
                     'content': topics.get(group, ''),
                     'color': activity_color,
                     'text_color': text_color
@@ -176,7 +193,7 @@ def build_group_cells(activity):
                             cells.append({
                                 'colspan': 1,
                                 'groups': ['TE'],
-                                'class': 'table-success',
+                                'class': with_tone_class('table-success', ['TE']),
                                 'content': te_combo['topic'],
                                 'color': activity_color,
                                 'text_color': text_color
@@ -204,7 +221,7 @@ def build_group_cells(activity):
                         cells.append({
                             'colspan': 1,
                             'groups': ['WR'],
-                            'class': 'table-success',
+                            'class': with_tone_class('table-success', ['WR']),
                             'content': wr_combo['topic'],
                             'color': activity_color,
                             'text_color': text_color
@@ -212,7 +229,7 @@ def build_group_cells(activity):
                         cells.append({
                             'colspan': 1,
                             'groups': ['TE'],
-                            'class': 'table-success',
+                            'class': with_tone_class('table-success', ['TE']),
                             'content': te_combo['topic'],
                             'color': activity_color,
                             'text_color': text_color
@@ -221,7 +238,7 @@ def build_group_cells(activity):
                         cells.append({
                             'colspan': 2,
                             'groups': ['WR', 'TE'],
-                            'class': 'table-success',
+                            'class': with_tone_class('table-success', ['WR', 'TE']),
                             'content': wr_combo['topic'],
                             'color': activity_color,
                             'text_color': text_color
@@ -232,7 +249,7 @@ def build_group_cells(activity):
                     cells.append({
                         'colspan': 1,
                         'groups': ['WR'],
-                        'class': 'table-success',
+                        'class': with_tone_class('table-success', ['WR']),
                         'content': wr_combo['topic'],
                         'color': activity_color,
                         'text_color': text_color
@@ -259,7 +276,7 @@ def build_group_cells(activity):
                     cells.append({
                         'colspan': 1,
                         'groups': ['TE'],
-                        'class': 'table-success',
+                        'class': with_tone_class('table-success', ['TE']),
                         'content': te_combo['topic'],
                         'color': activity_color,
                         'text_color': text_color
@@ -328,7 +345,7 @@ def build_group_cells(activity):
                 cells.append({
                     'colspan': len(consecutive_groups),
                     'groups': consecutive_groups,
-                    'class': 'table-success',
+                    'class': with_tone_class('table-success', consecutive_groups),
                     'content': combo['topic'],
                     'color': activity_color,
                     'text_color': text_color

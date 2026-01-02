@@ -3,20 +3,20 @@ Konfigurierbare Farben für Aktivitätstypen
 Separate Farben für Light- und Dark-Mode
 """
 
-# Farbkonfiguration für Light-Mode (Pastellfarben)
+# Farbkonfiguration für Light-Mode (klar, aber nicht zu dominant)
 LIGHT_MODE_COLORS = {
-    'team': '#C4B5FD',         # Club Purple (soft)
-    'prepractice': '#E5E7EB',  # Silver
-    'individual': '#DDD6FE',   # Light Purple
-    'group': '#CBD5E1'         # Cool Silver
+    'team': '#C6B8FF',         # Soft Indigo
+    'prepractice': '#FFE0B3',  # Soft Amber
+    'individual': '#BFE9D3',   # Soft Mint
+    'group': '#B7D4FF'         # Soft Blue
 }
 
-# Farbkonfiguration für Dark-Mode (dunklere, aber immer noch erkennbare Farben)
+# Farbkonfiguration für Dark-Mode (kräftiger, gut unterscheidbar)
 DARK_MODE_COLORS = {
-    'team': '#6D28D9',         # Club Purple
-    'prepractice': '#64748B',  # Silver Slate
-    'individual': '#7C3AED',   # Vivid Purple
-    'group': '#334155'         # Near-Black
+    'team': '#5B4DF0',         # Indigo
+    'prepractice': '#C2410C',  # Amber/Dark Orange
+    'individual': '#0F9D74',   # Emerald
+    'group': '#1D4ED8'         # Blue
 }
 
 def get_activity_color(activity_type, theme='light'):

@@ -81,8 +81,8 @@
                     {% set end_min = (end_time_minutes % 60) %}
                     
                     {% set activity_end_time = (now.replace(hour=activity.start_time.hour, minute=activity.start_time.minute, second=0, microsecond=0) + timedelta(minutes=activity.duration)).time() %}
-                    {% set is_current = current_activity and current_activity.id == activity.id %}
-                    {% set is_next = next_activity and next_activity.id == activity.id and not current_activity %}
+                    {% set is_current = training_status == 'running' and current_activity and current_activity.id == activity.id %}
+                    {% set is_next = training_status == 'running' and next_activity and next_activity.id == activity.id and not current_activity %}
                     {% set is_finished = activity.start_time < now.time() and activity_end_time <= now.time() and training_status == 'running' %}
                     
                     <tr class="{% if is_current %}activity-current-row{% elif is_next %}activity-next-row{% elif is_finished %}activity-finished-row{% elif loop.index % 2 == 0 %}table-row-even{% else %}table-row-odd{% endif %}">
@@ -99,7 +99,7 @@
                         {% for cell in cells %}
                         <td class="{{ cell.class }} group-cell" {% if cell.colspan and cell.colspan > 1 %}colspan="{{ cell.colspan }}"{% endif %} 
                             data-groups="{{ cell.groups|join(',') if cell.groups else '' }}"
-                            style="{% if cell.color %}background-color: var(--color-{{ activity.activity_type }}) !important;{% if cell.text_color %}color: {{ cell.text_color }} !important;{% endif %}{% endif %}">{% if cell.content and cell.content.strip() %}{{ cell.content }}{% else %}&nbsp;{% endif %}</td>
+                            style="{% if cell.color %}--activity-base: var(--color-{{ activity.activity_type }});{% if cell.text_color %}color: {{ cell.text_color }} !important;{% endif %}{% endif %}">{% if cell.content and cell.content.strip() %}{{ cell.content }}{% else %}&nbsp;{% endif %}</td>
                         {% endfor %}
                     </tr>
                     {% endfor %}
