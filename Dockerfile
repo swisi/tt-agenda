@@ -22,7 +22,7 @@ COPY . .
 RUN mkdir -p /app/instance
 
 # Setze Umgebungsvariablen
-ENV FLASK_APP=app.py
+ENV FLASK_APP=run.py
 ENV PYTHONUNBUFFERED=1
 ENV TZ=Europe/Zurich
 
@@ -30,4 +30,4 @@ ENV TZ=Europe/Zurich
 EXPOSE 5000
 
 # Starte die Anwendung
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "4", "app:app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "4", "run:app"]
