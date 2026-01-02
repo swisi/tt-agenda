@@ -539,7 +539,7 @@
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container-fluid">
-            <a class="navbar-brand" href="{{ url_for('index') }}">
+            <a class="navbar-brand" href="{{ url_for('main.index') }}">
                 <i class="bi bi-trophy-fill me-2"></i>Trainingsverwaltung
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -548,23 +548,23 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('index') }}">
+                        <a class="nav-link" href="{{ url_for('main.index') }}">
                             <i class="bi bi-house-fill me-1"></i>Übersicht
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('live') }}">
+                        <a class="nav-link" href="{{ url_for('main.live') }}">
                             <i class="bi bi-broadcast me-1"></i>Live
                         </a>
                     </li>
                     {% if session.get('user_role') == 'admin' %}
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('admin_trainings') }}">
+                        <a class="nav-link" href="{{ url_for('admin.admin_trainings') }}">
                             <i class="bi bi-gear-fill me-1"></i>Verwaltung
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('new_training') }}">
+                        <a class="nav-link" href="{{ url_for('admin.new_training') }}">
                             <i class="bi bi-plus-circle me-1"></i>Neues Training
                         </a>
                     </li>
@@ -632,13 +632,13 @@
                         </span>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('logout') }}">
+                        <a class="nav-link" href="{{ url_for('auth.logout') }}">
                             <i class="bi bi-box-arrow-right me-1"></i>Logout
                         </a>
                     </li>
                     {% else %}
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('login') }}">
+                        <a class="nav-link" href="{{ url_for('auth.login') }}">
                             <i class="bi bi-box-arrow-in-right me-1"></i>Login
                         </a>
                     </li>

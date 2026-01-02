@@ -40,7 +40,7 @@
                 <button type="submit" class="btn btn-primary">
                     <i class="bi bi-save me-1"></i>Speichern
                 </button>
-                <a href="{{ url_for('index') }}" class="btn btn-secondary">
+                <a href="{{ url_for('main.index') }}" class="btn btn-secondary">
                     <i class="bi bi-arrow-left me-1"></i>Zurück
                 </a>
             </div>
@@ -61,7 +61,7 @@
             <div class="d-flex align-items-center">
                 <div class="me-3 d-flex flex-column gap-1" style="min-width: 40px;">
                     {% if not loop.first %}
-                    <form method="POST" action="{{ url_for('move_activity_up', id=activity.id) }}" style="display: inline;">
+                    <form method="POST" action="{{ url_for('admin.move_activity_up', id=activity.id) }}" style="display: inline;">
                         <button type="submit" class="btn btn-sm btn-primary" title="Nach oben">
                             <i class="bi bi-arrow-up-circle-fill"></i>
                         </button>
@@ -70,7 +70,7 @@
                     <div style="height: 31px;"></div>
                     {% endif %}
                     {% if not loop.last %}
-                    <form method="POST" action="{{ url_for('move_activity_down', id=activity.id) }}" style="display: inline;">
+                    <form method="POST" action="{{ url_for('admin.move_activity_down', id=activity.id) }}" style="display: inline;">
                         <button type="submit" class="btn btn-sm btn-primary" title="Nach unten">
                             <i class="bi bi-arrow-down-circle-fill"></i>
                         </button>
@@ -152,8 +152,8 @@
                     {% endif %}
                 </div>
                 <div>
-                    <a href="{{ url_for('edit_activity', id=activity.id) }}" class="btn btn-sm btn-primary me-2">Bearbeiten</a>
-                    <form method="POST" action="{{ url_for('delete_activity', id=activity.id) }}" style="display: inline;" onsubmit="return confirm('Wirklich löschen?');">
+                    <a href="{{ url_for('admin.edit_activity', id=activity.id) }}" class="btn btn-sm btn-primary me-2">Bearbeiten</a>
+                    <form method="POST" action="{{ url_for('admin.delete_activity', id=activity.id) }}" style="display: inline;" onsubmit="return confirm('Wirklich löschen?');">
                         <button type="submit" class="btn btn-sm btn-danger">Löschen</button>
                     </form>
                 </div>
@@ -166,7 +166,7 @@
     {% endif %}
 </div>
 
-<a href="{{ url_for('add_activity', training_id=training.id) }}" class="btn btn-success mt-3">
+<a href="{{ url_for('admin.add_activity', training_id=training.id) }}" class="btn btn-success mt-3">
     <i class="bi bi-plus-circle me-1"></i>Aktivität hinzufügen
 </a>
     </div>

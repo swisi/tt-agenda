@@ -4,7 +4,7 @@
 <div class="page-header">
     <h1 class="page-title">Zeitplan: {{ training.name }}</h1>
     <div class="page-actions align-items-center">
-        <a href="{{ url_for('edit_training', id=training.id) }}" class="btn btn-secondary">
+        <a href="{{ url_for('admin.edit_training', id=training.id) }}" class="btn btn-secondary">
             <i class="bi bi-arrow-left me-1"></i>Zurück
         </a>
         <label for="groupFilter" class="form-label mb-0 me-2">Filter:</label>

@@ -4,11 +4,11 @@
 <div class="page-header">
     <h1 class="page-title">Trainings Übersicht</h1>
     <div class="page-actions">
-        <a href="{{ url_for('live') }}" class="btn btn-danger">
+        <a href="{{ url_for('main.live') }}" class="btn btn-danger">
             <i class="bi bi-broadcast me-1"></i>Live Training
         </a>
         {% if session.get('user_role') == 'admin' %}
-        <a href="{{ url_for('admin_trainings') }}" class="btn btn-primary">
+        <a href="{{ url_for('admin.admin_trainings') }}" class="btn btn-primary">
             <i class="bi bi-gear-fill me-1"></i>Trainings verwalten
         </a>
         {% endif %}
@@ -27,7 +27,7 @@
             {% endif %}
         </strong>
     </div>
-    <a href="{{ url_for('live') }}" class="btn btn-sm {% if training_status == 'running' %}btn-danger{% else %}btn-primary{% endif %}">
+    <a href="{{ url_for('main.live') }}" class="btn btn-sm {% if training_status == 'running' %}btn-danger{% else %}btn-primary{% endif %}">
         <i class="bi bi-arrow-right-circle me-1"></i>Zur Live-Ansicht
     </a>
 </div>
@@ -44,7 +44,7 @@
         <div class="col-md-4 mb-3">
             <div class="card h-100 soft-card {% if item.is_running %}border-danger{% elif item.is_upcoming %}border-primary{% endif %}" 
                  style="cursor: pointer; {% if item.is_running %}border-width: 3px;{% endif %}"
-                 onclick="window.location.href='{{ url_for('training_schedule', id=item.training.id) }}';">
+                 onclick="window.location.href='{{ url_for('main.training_schedule', id=item.training.id) }}';">
                 <div class="card-header {% if item.is_running %}bg-danger text-white{% elif item.is_upcoming %}bg-primary text-white{% else %}bg-light{% endif %}">
                     <h6 class="mb-0">
                         {% if item.is_running %}🔴 LÄUFT JETZT{% elif item.is_upcoming %}⏰ HEUTE{% else %}📅{% endif %}

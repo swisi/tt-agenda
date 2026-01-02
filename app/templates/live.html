@@ -9,7 +9,7 @@
         <div class="live-header-toolbar">
             <!-- Zurück Button, Timer & Uhrzeit -->
             <div class="live-header-left">
-                <a href="{{ url_for('index') }}" class="btn btn-sm btn-light me-2">
+                <a href="{{ url_for('main.index') }}" class="btn btn-sm btn-light me-2">
                     <i class="bi bi-arrow-left"></i>
                 </a>
                 {% if training_status == 'running' and current_activity %}
@@ -108,7 +108,7 @@
         </div>
         
         <div class="text-center mt-3">
-            <a href="{{ url_for('training_schedule', id=current_training.id) }}" class="btn btn-outline-primary btn-sm">
+            <a href="{{ url_for('main.training_schedule', id=current_training.id) }}" class="btn btn-outline-primary btn-sm">
                 <i class="bi bi-calendar3 me-1"></i>Vollständiger Zeitplan
             </a>
         </div>
@@ -574,7 +574,7 @@
     <i class="bi bi-calendar-x" style="font-size: 4rem; color: #cbd5e1;"></i>
     <h3 class="mt-3 text-muted">Kein aktuelles Training</h3>
     <p class="text-muted">Aktuell läuft kein Training und es ist auch keines für heute geplant</p>
-    <a href="{{ url_for('index') }}" class="btn btn-primary mt-3">
+    <a href="{{ url_for('main.index') }}" class="btn btn-primary mt-3">
         <i class="bi bi-arrow-left me-1"></i>Zurück zur Übersicht
     </a>
 </div>

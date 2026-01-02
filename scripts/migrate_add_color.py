@@ -1,8 +1,17 @@
 """
 Migration: Fügt color-Feld zu Activity-Tabelle hinzu
 """
-from app import app, db
+import sys
+import os
+
+# Add parent directory to path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from app import create_app
+from app.extensions import db
 from sqlalchemy import text
+
+app = create_app()
 
 def migrate_add_color():
     """Fügt color-Spalte zur activity Tabelle hinzu."""
@@ -17,13 +26,13 @@ def migrate_add_color():
                 db.session.execute(text("""
                     ALTER TABLE activity 
                     ADD COLUMN color VARCHAR(7) DEFAULT '#10b981'
-                """))
+                """ ))
                 # Setze Standard-Farbe für bestehende Einträge
                 db.session.execute(text("""
                     UPDATE activity 
                     SET color = '#10b981'
                     WHERE color IS NULL
-                """))
+                """ ))
                 print("✓ activity Tabelle aktualisiert")
             else:
                 print("✓ color-Spalte existiert bereits")
@@ -39,4 +48,3 @@ def migrate_add_color():
 if __name__ == '__main__':
     print("Starte Migration: color-Feld hinzufügen...")
     migrate_add_color()
-
