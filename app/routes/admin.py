@@ -1,17 +1,107 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, current_app
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, current_app, send_file, after_this_request
 from datetime import datetime, timedelta
 import json
+import os
+import sqlite3
+import tempfile
 from ..models import Training, Activity
 from ..extensions import db
 from ..utils import admin_required, WEEKDAYS, POSITION_GROUPS, get_activity_color, recalculate_times
 
 bp = Blueprint('admin', __name__)
 
+def resolve_sqlite_db_path():
+    uri = current_app.config.get('SQLALCHEMY_DATABASE_URI', '')
+    if not uri.startswith('sqlite:'):
+        return None
+    if uri.startswith('sqlite:////'):
+        return os.path.abspath(uri.replace('sqlite:////', '/'))
+    if uri.startswith('sqlite:///'):
+        relative = uri.replace('sqlite:///', '')
+        return os.path.abspath(os.path.join(current_app.instance_path, relative))
+    return os.path.abspath(uri.replace('sqlite://', ''))
+
 @bp.route('/admin/trainings')
 @admin_required
 def admin_trainings():
     trainings = Training.query.all()
     return render_template('admin_trainings.html', trainings=trainings, weekdays=WEEKDAYS)
+
+@bp.route('/admin/backup', methods=['GET'])
+@admin_required
+def admin_backup():
+    db_path = resolve_sqlite_db_path()
+    db_exists = bool(db_path and os.path.exists(db_path))
+    return render_template('admin_backup.html', db_path=db_path, db_exists=db_exists, db_backend='sqlite')
+
+@bp.route('/admin/backup/download', methods=['GET'])
+@admin_required
+def admin_backup_download():
+    db_path = resolve_sqlite_db_path()
+    if not db_path or not os.path.exists(db_path):
+        flash('Datenbank nicht gefunden.', 'danger')
+        return redirect(url_for('admin.admin_backup'))
+
+    db.session.commit()
+    db.session.close()
+    db.engine.dispose()
+
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    temp_file = tempfile.NamedTemporaryFile(prefix=f'backup_{timestamp}_', suffix='.db', delete=False)
+    temp_file.close()
+
+    with sqlite3.connect(db_path) as source_conn, sqlite3.connect(temp_file.name) as dest_conn:
+        source_conn.backup(dest_conn)
+
+    @after_this_request
+    def cleanup(response):
+        try:
+            os.remove(temp_file.name)
+        except OSError:
+            pass
+        return response
+
+    return send_file(temp_file.name, as_attachment=True, download_name=f'trainings_backup_{timestamp}.db')
+
+@bp.route('/admin/backup/restore', methods=['POST'])
+@admin_required
+def admin_backup_restore():
+    db_path = resolve_sqlite_db_path()
+    if not db_path:
+        flash('Datenbank-Backend wird nicht unterstützt.', 'danger')
+        return redirect(url_for('admin.admin_backup'))
+
+    upload = request.files.get('backup_file')
+    if not upload or not upload.filename:
+        flash('Bitte eine Backup-Datei auswählen.', 'warning')
+        return redirect(url_for('admin.admin_backup'))
+
+    temp_file = tempfile.NamedTemporaryFile(prefix='restore_', suffix='.db', delete=False)
+    temp_file.close()
+    upload.save(temp_file.name)
+
+    try:
+        with sqlite3.connect(temp_file.name) as conn:
+            result = conn.execute('PRAGMA integrity_check;').fetchone()
+            if not result or result[0].lower() != 'ok':
+                raise ValueError('Integrity check fehlgeschlagen')
+    except Exception:
+        os.remove(temp_file.name)
+        flash('Backup-Datei ist ungültig oder beschädigt.', 'danger')
+        return redirect(url_for('admin.admin_backup'))
+
+    os.makedirs(os.path.dirname(db_path), exist_ok=True)
+    if os.path.exists(db_path):
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        backup_old = f"{db_path}.{timestamp}.bak"
+        os.replace(db_path, backup_old)
+
+    os.replace(temp_file.name, db_path)
+    db.session.close()
+    db.engine.dispose()
+
+    flash('Backup erfolgreich wiederhergestellt. Bitte Anwendung neu starten.', 'success')
+    return redirect(url_for('admin.admin_backup'))
 
 @bp.route('/training/new', methods=['GET', 'POST'])
 @admin_required

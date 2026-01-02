@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">
+        <i class="bi bi-database-down me-2"></i>Backup &amp; Restore
+    </h1>
+    <div class="page-actions">
+        <a href="{{ url_for('admin.admin_trainings') }}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left me-1"></i>Zurück zur Verwaltung
+        </a>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="mb-2">Backup erstellen</h5>
+        <p class="text-muted mb-3">Lädt eine sichere Kopie der aktuellen Datenbank herunter.</p>
+        {% if db_exists %}
+        <a href="{{ url_for('admin.admin_backup_download') }}" class="btn btn-primary">
+            <i class="bi bi-download me-1"></i>Backup herunterladen
+        </a>
+        {% else %}
+        <div class="alert alert-warning mb-0">
+            <i class="bi bi-exclamation-triangle me-1"></i>Keine Datenbank gefunden.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <h5 class="mb-2">Backup wiederherstellen</h5>
+        <p class="text-muted">Lädt eine Backup-Datei hoch und ersetzt die aktuelle Datenbank.</p>
+        <div class="alert alert-danger">
+            <strong>Achtung:</strong> Die aktuelle Datenbank wird überschrieben. Bitte vorher ein Backup erstellen.
+        </div>
+        <form method="POST" action="{{ url_for('admin.admin_backup_restore') }}" enctype="multipart/form-data">
+            <div class="mb-3">
+                <label class="form-label">Backup-Datei (.db)</label>
+                <input type="file" name="backup_file" class="form-control" accept=".db,.sqlite,.sqlite3" required>
+            </div>
+            <button type="submit" class="btn btn-danger">
+                <i class="bi bi-upload me-1"></i>Restore starten
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}
