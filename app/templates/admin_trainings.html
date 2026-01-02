@@ -17,7 +17,7 @@
 
 {% if trainings|length == 0 %}
 <div class="text-center py-5">
-    <i class="bi bi-inbox" style="font-size: 4rem; color: #cbd5e1;"></i>
+    <i class="bi bi-inbox empty-state-icon"></i>
     <h3 class="mt-3 text-muted">Keine Trainings vorhanden</h3>
     <p class="text-muted">Erstellen Sie Ihr erstes Training</p>
     <a href="{{ url_for('admin.new_training') }}" class="btn btn-primary">
@@ -101,23 +101,6 @@
 </div>
 {% endif %}
 
-<style>
-    .table-hover tbody tr {
-        cursor: default;
-    }
-    
-    .table-hover tbody tr:hover {
-        background-color: rgba(0, 0, 0, 0.02);
-    }
-    
-    [data-theme="dark"] .table-hover tbody tr:hover {
-        background-color: rgba(255, 255, 255, 0.05);
-    }
-    
-    .btn-group-sm .btn {
-        padding: 0.25rem 0.5rem;
-    }
-</style>
 {% block scripts %}
 <script>
     // Tooltips initialisieren

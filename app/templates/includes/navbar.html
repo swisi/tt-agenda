@@ -22,7 +22,7 @@
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="bi bi-gear-fill me-1"></i>Administration
                         </a>
-                        <ul class="dropdown-menu border-0 shadow-lg" style="background: var(--surface-1); border: 1px solid var(--border-light);">
+                        <ul class="dropdown-menu border-0 shadow-lg navbar-dropdown-menu">
                             {% if session.get('user_role') == 'admin' %}
                             <li>
                                 <a class="dropdown-item py-2" href="{{ url_for('admin.admin_trainings') }}">

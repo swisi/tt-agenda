@@ -59,24 +59,24 @@
     <div class="card activity-card mb-2 activity-type-{{ activity.activity_type }}">
         <div class="card-body">
             <div class="d-flex align-items-center">
-                <div class="me-3 d-flex flex-column gap-1" style="min-width: 40px;">
+                <div class="me-3 d-flex flex-column gap-1 activity-controls">
                     {% if not loop.first %}
-                    <form method="POST" action="{{ url_for('admin.move_activity_up', id=activity.id) }}" style="display: inline;">
+                    <form method="POST" action="{{ url_for('admin.move_activity_up', id=activity.id) }}" class="inline-form">
                         <button type="submit" class="btn btn-sm btn-primary" title="Nach oben">
                             <i class="bi bi-arrow-up-circle-fill"></i>
                         </button>
                     </form>
                     {% else %}
-                    <div style="height: 31px;"></div>
+                    <div class="activity-control-spacer"></div>
                     {% endif %}
                     {% if not loop.last %}
-                    <form method="POST" action="{{ url_for('admin.move_activity_down', id=activity.id) }}" style="display: inline;">
+                    <form method="POST" action="{{ url_for('admin.move_activity_down', id=activity.id) }}" class="inline-form">
                         <button type="submit" class="btn btn-sm btn-primary" title="Nach unten">
                             <i class="bi bi-arrow-down-circle-fill"></i>
                         </button>
                     </form>
                     {% else %}
-                    <div style="height: 31px;"></div>
+                    <div class="activity-control-spacer"></div>
                     {% endif %}
                 </div>
                 <div class="flex-grow-1">
@@ -128,7 +128,7 @@
                         {% set all_same = topic_values|select('equalto', first_topic)|list|length == topic_values|length %}
                         {% if not all_same %}
                         <details class="mt-2">
-                            <summary class="text-primary" style="cursor: pointer;"><small>Themen anzeigen</small></summary>
+                            <summary class="text-primary summary-toggle"><small>Themen anzeigen</small></summary>
                             <ul class="mb-0 mt-1">
                                 {% for group, topic in topics.items() %}
                                 <li><small>{{ group }}: {{ topic }}</small></li>
@@ -141,7 +141,7 @@
                     {% set combinations = activity.topics_json|parse_groups %}
                     {% if combinations and combinations|length > 1 %}
                     <details class="mt-2">
-                        <summary class="text-primary" style="cursor: pointer;"><small>Alle Gruppen anzeigen</small></summary>
+                        <summary class="text-primary summary-toggle"><small>Alle Gruppen anzeigen</small></summary>
                         <ul class="mb-0 mt-1">
                             {% for combo in combinations %}
                             <li><small>{{ combo.groups|join(' & ') }}: {{ combo.topic }}</small></li>
@@ -153,7 +153,7 @@
                 </div>
                 <div>
                     <a href="{{ url_for('admin.edit_activity', id=activity.id) }}" class="btn btn-sm btn-primary me-2">Bearbeiten</a>
-                    <form method="POST" action="{{ url_for('admin.delete_activity', id=activity.id) }}" style="display: inline;" onsubmit="return confirm('Wirklich löschen?');">
+                    <form method="POST" action="{{ url_for('admin.delete_activity', id=activity.id) }}" class="inline-form" onsubmit="return confirm('Wirklich löschen?');">
                         <button type="submit" class="btn btn-sm btn-danger">Löschen</button>
                     </form>
                 </div>

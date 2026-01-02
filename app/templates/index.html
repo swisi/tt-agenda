@@ -42,8 +42,8 @@
     <div class="row">
         {% for item in upcoming_trainings %}
         <div class="col-md-4 mb-3">
-            <div class="card h-100 {% if item.is_running %}border-danger{% endif %}" 
-                 style="cursor: pointer; {% if item.is_running %}border-width: 3px;{% endif %}"
+            <div class="card h-100 card-clickable {% if item.is_running %}border-danger{% endif %}" 
+                 style="{% if item.is_running %}border-width: 3px;{% endif %}"
                  onclick="window.location.href='{{ url_for('main.live', training_id=item.training.id, date=item.date.strftime('%Y-%m-%d')) }}';">
                 <div class="card-header {% if item.is_running %}bg-danger text-white{% elif item.is_upcoming %}bg-primary text-white{% endif %}">
                     <h6 class="mb-0">
