@@ -84,6 +84,7 @@
                     <li class="nav-item">
                         <span class="nav-link theme-toggle" id="themeToggle" title="Theme wechseln">
                             <i class="bi bi-moon-fill" id="themeIcon"></i>
+                            <span class="theme-label" id="themeLabel">Hell</span>
                         </span>
                     </li>
                     {% if session.get('user_id') %}
@@ -189,6 +190,7 @@
         // Theme Toggle mit dynamischen Farben
         const themeToggle = document.getElementById('themeToggle');
         const themeIcon = document.getElementById('themeIcon');
+        const themeLabel = document.getElementById('themeLabel');
         const html = document.documentElement;
         
         // Farbkonfiguration aus Python
@@ -206,6 +208,17 @@
             group: '{{ DARK_MODE_COLORS.get("group", "#C9A86B") }}'
         };
         
+        const activityColorVersion = '2025-01-02';
+
+        function ensureColorVersion() {
+            const storedVersion = localStorage.getItem('activityColors_version');
+            if (storedVersion !== activityColorVersion) {
+                localStorage.removeItem('activityColors_light');
+                localStorage.removeItem('activityColors_dark');
+                localStorage.setItem('activityColors_version', activityColorVersion);
+            }
+        }
+
         function getStoredColors(theme) {
             try {
                 const stored = localStorage.getItem(`activityColors_${theme}`);
@@ -255,11 +268,18 @@
             updateActivityColors(theme);
             if (theme === 'dark') {
                 themeIcon.className = 'bi bi-sun-fill';
+                if (themeLabel) {
+                    themeLabel.textContent = 'Dark';
+                }
             } else {
                 themeIcon.className = 'bi bi-moon-fill';
+                if (themeLabel) {
+                    themeLabel.textContent = 'Light';
+                }
             }
         }
         
+        ensureColorVersion();
         setTheme(savedTheme);
         syncColorInputs();
         

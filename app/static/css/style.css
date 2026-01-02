@@ -176,10 +176,25 @@ body {
     padding: 0 1rem 0.5rem 1rem;
 }
 
+[data-theme="dark"] .table-dark {
+    background-color: var(--surface-3);
+    color: var(--text-muted);
+}
+
+[data-theme="dark"] .table-dark th {
+    background-color: var(--surface-3);
+    color: var(--text-muted);
+    border-color: var(--border-light);
+}
+
 .table tbody tr {
     background: var(--surface-1);
     box-shadow: var(--shadow-sm);
     transition: transform 0.2s;
+}
+
+[data-theme="dark"] .table tbody tr {
+    background: var(--surface-2);
 }
 
 .table tbody tr:hover {
@@ -188,10 +203,34 @@ body {
     box-shadow: var(--shadow-md);
 }
 
+[data-theme="dark"] .table tbody tr:hover {
+    background: var(--surface-3) !important;
+}
+
 .table td {
     border: none;
     padding: 1rem;
     vertical-align: middle;
+}
+
+.table:not(.schedule-table) tbody td {
+    background-color: var(--surface-1);
+    color: var(--text-main);
+}
+
+[data-theme="dark"] .table:not(.schedule-table) tbody td {
+    background-color: var(--surface-3);
+    color: var(--text-main);
+}
+
+.table:not(.schedule-table) tbody tr:hover td {
+    background-color: var(--surface-1);
+    color: var(--text-main);
+}
+
+[data-theme="dark"] .table:not(.schedule-table) tbody tr:hover td {
+    background-color: #283445;
+    color: var(--text-main);
 }
 
 .table td:first-child {
@@ -417,6 +456,15 @@ h6,
 .schedule-table .group-cell.group-tone-6 { background-color: color-mix(in srgb, var(--activity-base) 90%, #ffffff 10%); }
 .schedule-table .group-cell.group-tone-7 { background-color: color-mix(in srgb, var(--activity-base) 68%, #000000 32%); }
 
+[data-theme="dark"] .schedule-table .group-cell.group-tone-0 { background-color: color-mix(in srgb, var(--activity-base) 70%, #ffffff 30%); }
+[data-theme="dark"] .schedule-table .group-cell.group-tone-1 { background-color: color-mix(in srgb, var(--activity-base) 78%, #ffffff 22%); }
+[data-theme="dark"] .schedule-table .group-cell.group-tone-2 { background-color: color-mix(in srgb, var(--activity-base) 74%, #ffffff 26%); }
+[data-theme="dark"] .schedule-table .group-cell.group-tone-3 { background-color: color-mix(in srgb, var(--activity-base) 66%, #ffffff 34%); }
+[data-theme="dark"] .schedule-table .group-cell.group-tone-4 { background-color: color-mix(in srgb, var(--activity-base) 72%, #ffffff 28%); }
+[data-theme="dark"] .schedule-table .group-cell.group-tone-5 { background-color: color-mix(in srgb, var(--activity-base) 62%, #ffffff 38%); }
+[data-theme="dark"] .schedule-table .group-cell.group-tone-6 { background-color: color-mix(in srgb, var(--activity-base) 80%, #ffffff 20%); }
+[data-theme="dark"] .schedule-table .group-cell.group-tone-7 { background-color: color-mix(in srgb, var(--activity-base) 58%, #ffffff 42%); }
+
 [data-theme="dark"] .schedule-table thead .time-head {
     background: var(--surface-3);
     color: var(--text-muted);
@@ -443,17 +491,25 @@ h6,
 
 .theme-toggle {
     cursor: pointer;
-    width: 40px;
-    height: 40px;
+    width: auto;
+    height: auto;
     display: flex;
     align-items: center;
-    justify-content: center;
-    border-radius: 50%;
+    justify-content: flex-start;
+    border-radius: var(--radius-md);
     transition: background 0.2s;
+    padding: 0.5rem 0.75rem;
+    gap: 6px;
 }
 
 .theme-toggle:hover {
     background: var(--surface-3);
+}
+
+.theme-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-muted);
 }
 
 /* --- Login Page --- */

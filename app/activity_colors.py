@@ -13,10 +13,10 @@ LIGHT_MODE_COLORS = {
 
 # Farbkonfiguration für Dark-Mode (kräftiger, gut unterscheidbar)
 DARK_MODE_COLORS = {
-    'team': '#5B4DF0',         # Indigo
-    'prepractice': '#C2410C',  # Amber/Dark Orange
-    'individual': '#0F9D74',   # Emerald
-    'group': '#1D4ED8'         # Blue
+    'team': '#8B7BFF',         # Bright Indigo
+    'prepractice': '#FB923C',  # Warm Amber
+    'individual': '#34D399',   # Emerald
+    'group': '#60A5FA'         # Bright Blue
 }
 
 def get_activity_color(activity_type, theme='light'):
