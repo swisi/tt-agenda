@@ -57,12 +57,6 @@
                 </td>
                 <td>
                     <div class="d-flex justify-content-end gap-1">
-                        <a href="{{ url_for('main.training_schedule', id=training.id) }}" 
-                           class="btn btn-sm btn-outline-success" 
-                           title="Zeitplan anzeigen"
-                           data-bs-toggle="tooltip">
-                            <i class="bi bi-calendar3"></i>
-                        </a>
                         <a href="{{ url_for('admin.edit_training', id=training.id) }}" 
                            class="btn btn-sm btn-outline-primary" 
                            title="Bearbeiten"
@@ -100,7 +94,6 @@
 <div class="alert alert-info mt-4">
     <h5><i class="bi bi-info-circle me-2"></i>Hinweise</h5>
     <ul class="mb-0">
-        <li><strong>Zeitplan:</strong> Zeigt den vollständigen Trainingsplan an</li>
         <li><strong>Bearbeiten:</strong> Ändert Trainingsdetails und Aktivitäten</li>
         <li><strong>Kopieren:</strong> Erstellt eine vollständige Kopie des Trainings mit allen Aktivitäten</li>
         <li><strong>Löschen:</strong> Entfernt das Training und alle zugehörigen Aktivitäten permanent</li>

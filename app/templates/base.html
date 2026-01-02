@@ -8,380 +8,322 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;700&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Ubuntu:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --font-sans: "Space Grotesk", "Segoe UI", system-ui, -apple-system, sans-serif;
-            --font-display: "Fraunces", "Times New Roman", serif;
-            --primary-color: #6d28d9;
-            --primary-dark: #4c1d95;
-            --secondary-color: #475569;
-            --success-color: #16a34a;
-            --danger-color: #ef4444;
-            --warning-color: #f59e0b;
-            --accent-color: #a855f7;
-            --bg-light: #f6f7fb;
-            --bg-card: #ffffff;
-            --bg-muted: #f0f1f6;
-            --text-primary: #0b0c10;
-            --text-secondary: #4b5563;
-            --border-color: #d7dbe4;
-            --shadow-sm: 0 1px 2px rgba(11, 12, 16, 0.08);
-            --shadow-md: 0 12px 24px -18px rgba(11, 12, 16, 0.4);
-            --shadow-lg: 0 35px 70px -55px rgba(11, 12, 16, 0.6);
-            --ring-color: rgba(109, 40, 217, 0.2);
+            --font-sans: "Roboto", system-ui, -apple-system, sans-serif;
+            --font-display: "Ubuntu", sans-serif;
+            
+            /* Modern Palette */
+            --primary-color: #7c3aed; /* Violet 600 */
+            --primary-hover: #6d28d9; /* Violet 700 */
+            --primary-soft: #ddd6fe; /* Violet 200 */
+            
+            --surface-1: #ffffff;
+            --surface-2: #f8fafc;
+            --surface-3: #f1f5f9;
+            
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            
+            --border-light: #e2e8f0;
+            --border-transparent: rgba(255, 255, 255, 0.1);
+            
+            /* Shadows */
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            --shadow-glow: 0 0 20px rgba(124, 58, 237, 0.15);
+            
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 24px;
         }
 
         [data-theme="dark"] {
-            --primary-color: #a855f7;
-            --primary-dark: #6d28d9;
-            --secondary-color: #94a3b8;
-            --success-color: #22c55e;
-            --danger-color: #f87171;
-            --warning-color: #fbbf24;
-            --accent-color: #c084fc;
-            --bg-light: #0b0b12;
-            --bg-card: #12131c;
-            --bg-muted: #161827;
-            --text-primary: #eef0f6;
-            --text-secondary: #b7bcc8;
-            --border-color: #1f2233;
-            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
-            --shadow-md: 0 14px 28px -20px rgba(0, 0, 0, 0.8);
-            --shadow-lg: 0 40px 70px -55px rgba(0, 0, 0, 0.85);
-            --ring-color: rgba(168, 85, 247, 0.25);
+            --surface-1: #1e293b; /* Slate 800 */
+            --surface-2: #0f172a; /* Slate 900 */
+            --surface-3: #334155; /* Slate 700 */
+            
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            
+            --border-light: #334155;
         }
 
         body {
-            background:
-                radial-gradient(1100px circle at 8% -10%, rgba(109, 40, 217, 0.2), transparent 55%),
-                radial-gradient(900px circle at 92% 5%, rgba(156, 163, 175, 0.22), transparent 55%),
-                linear-gradient(180deg, #f6f7fb 0%, #eceef4 45%, #f6f7fb 100%);
-            color: var(--text-primary);
+            background-color: var(--surface-2);
+            /* Subtiler, modernerer Gradient */
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(124, 58, 237, 0.08), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(56, 189, 248, 0.08), transparent 25%);
+            background-attachment: fixed;
+            color: var(--text-main);
             font-family: var(--font-sans);
             min-height: 100vh;
-            letter-spacing: 0.01em;
+            padding-bottom: 2rem;
         }
 
-        [data-theme="dark"] body {
-            background:
-                radial-gradient(1000px circle at 10% 0%, rgba(168, 85, 247, 0.2), transparent 55%),
-                radial-gradient(900px circle at 95% 10%, rgba(148, 163, 184, 0.16), transparent 55%),
-                linear-gradient(180deg, #0b0b12 0%, #101120 45%, #0b0b12 100%);
-        }
-
+        /* --- Navbar Modern --- */
         .navbar {
-            background: linear-gradient(135deg, rgba(109, 40, 217, 0.92) 0%, rgba(11, 12, 16, 0.96) 100%) !important;
+            background: rgba(255, 255, 255, 0.8) !important;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            margin: 1rem auto;
+            border-radius: var(--radius-xl);
+            max-width: 1280px;
+            padding: 0.75rem 1.5rem;
             box-shadow: var(--shadow-md);
-            padding: 0.85rem 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-            backdrop-filter: blur(16px);
+            position: relative;
+            z-index: 1100;
         }
 
         [data-theme="dark"] .navbar {
-            background: linear-gradient(135deg, rgba(168, 85, 247, 0.22) 0%, rgba(11, 12, 16, 0.98) 100%) !important;
+            background: rgba(15, 23, 42, 0.8) !important;
+            border-color: rgba(255, 255, 255, 0.05);
+        }
+
+        .navbar .dropdown-menu {
+            z-index: 1110;
+        }
+
+        .navbar .dropdown-item {
+            color: var(--text-main);
+        }
+
+        .navbar .dropdown-item:hover,
+        .navbar .dropdown-item:focus {
+            color: var(--text-main);
+            background: var(--surface-3);
+        }
+
+        [data-theme="dark"] .navbar .dropdown-item {
+            color: var(--text-main);
+        }
+
+        [data-theme="dark"] .navbar .dropdown-item:hover,
+        [data-theme="dark"] .navbar .dropdown-item:focus {
+            background: rgba(255, 255, 255, 0.08);
         }
 
         .navbar-brand {
-            font-weight: 600;
-            font-size: 1.3rem;
-            letter-spacing: 0.02em;
-        }
-
-        .navbar .nav-link {
-            color: rgba(255, 255, 255, 0.85);
-            font-weight: 500;
-        }
-
-        .navbar .nav-link:hover,
-        .navbar .nav-link:focus {
-            color: #ffffff;
-        }
-
-        .container {
-            max-width: 1280px;
-        }
-
-        .page-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 1rem;
-            flex-wrap: wrap;
-            margin-bottom: 1.5rem;
-        }
-
-        .page-title {
             font-family: var(--font-display);
-            font-size: clamp(1.6rem, 1.2rem + 1vw, 2.2rem);
-            margin: 0;
+            font-weight: 700;
+            color: var(--primary-color) !important;
+            font-size: 1.4rem;
+        }
+        
+        [data-theme="dark"] .navbar-brand {
+            color: var(--primary-soft) !important;
         }
 
-        .page-actions {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            flex-wrap: wrap;
+        .nav-link {
+            color: var(--text-muted) !important;
+            font-weight: 500;
+            border-radius: var(--radius-md);
+            padding: 0.5rem 1rem !important;
+            transition: all 0.2s ease;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            color: var(--primary-color) !important;
+            background: var(--primary-soft);
+        }
+        
+        [data-theme="dark"] .nav-link:hover {
+            color: var(--text-main) !important;
+            background: rgba(255,255,255,0.1);
+        }
+
+        /* --- Cards & Containers --- */
+        .container {
+            max-width: 1200px;
         }
 
         .card {
-            border: 1px solid var(--border-color);
-            border-radius: 16px;
+            background: var(--surface-1);
+            color: var(--text-main); /* Ensure text color is explicit */
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-lg);
             box-shadow: var(--shadow-sm);
-            transition: all 0.3s ease;
-            background: var(--bg-card);
+            transition: transform 0.2s, box-shadow 0.2s;
+            overflow: hidden;
         }
 
         .card:hover {
-            box-shadow: var(--shadow-md);
             transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
         }
 
         .card-header {
-            border: none;
-            border-radius: 16px 16px 0 0 !important;
-            padding: 1rem 1.5rem;
+            background: transparent;
+            border-bottom: 1px solid var(--border-light);
+            padding: 1.25rem 1.5rem;
+            font-family: var(--font-display);
             font-weight: 600;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 0.75rem;
         }
 
-        .card-header:not(.bg-primary):not(.bg-danger):not(.bg-success):not(.bg-warning):not(.bg-info):not(.bg-dark) {
-            background: var(--bg-muted);
-            color: var(--text-primary);
+        .card-body {
+            padding: 1.5rem;
         }
 
-        .card-header.bg-light,
-        .card-header.bg-light h6 {
-            color: var(--primary-color) !important;
+        /* --- Modern Tables --- */
+        .table-responsive {
+            border-radius: var(--radius-lg);
+            background: transparent;
         }
 
-        .btn {
-            border-radius: 999px;
-            padding: 0.5rem 1.1rem;
-            font-weight: 500;
-            transition: all 0.2s ease;
+        .table {
+            border-collapse: separate; 
+            border-spacing: 0 0.5rem; /* Space between rows */
+            background: transparent;
+        }
+
+        .table thead th {
             border: none;
+            background: transparent;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+            padding: 0 1rem 0.5rem 1rem;
+        }
+
+        .table tbody tr {
+            background: var(--surface-1);
+            box-shadow: var(--shadow-sm);
+            transition: transform 0.2s;
+        }
+
+        .table tbody tr:hover {
+            transform: scale(1.005);
+            background: var(--surface-1) !important; /* Keep bg color */
+            box-shadow: var(--shadow-md);
+        }
+
+        .table td {
+            border: none;
+            padding: 1rem;
+            vertical-align: middle;
+        }
+        
+        .table td:first-child {
+            border-top-left-radius: var(--radius-md);
+            border-bottom-left-radius: var(--radius-md);
+        }
+        
+        .table td:last-child {
+            border-top-right-radius: var(--radius-md);
+            border-bottom-right-radius: var(--radius-md);
+        }
+
+        /* --- Buttons & Inputs --- */
+        .btn {
+            border-radius: var(--radius-md);
+            padding: 0.5rem 1.25rem;
+            font-weight: 600;
+            letter-spacing: 0.01em;
+            transition: all 0.2s;
         }
 
         .btn-primary {
             background: var(--primary-color);
+            border: none;
+            box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
         }
 
         .btn-primary:hover {
-            background: var(--primary-dark);
+            background: var(--primary-hover);
             transform: translateY(-1px);
-            box-shadow: var(--shadow-md);
+            box-shadow: 0 6px 16px rgba(124, 58, 237, 0.4);
         }
-
-        .bg-primary {
-            background: linear-gradient(135deg, rgba(109, 40, 217, 0.95) 0%, rgba(76, 29, 149, 0.95) 100%) !important;
+        
+        .btn-outline-primary {
+            color: var(--primary-color);
+            border-color: var(--primary-color);
         }
-
-        [data-theme="dark"] .bg-primary {
-            background: linear-gradient(135deg, rgba(168, 85, 247, 0.9) 0%, rgba(76, 29, 149, 0.9) 100%) !important;
-        }
-
-        .alert-primary {
-            background: rgba(109, 40, 217, 0.12);
-            border-color: rgba(109, 40, 217, 0.35);
-            color: var(--text-primary);
-        }
-
-        [data-theme="dark"] .alert-primary {
-            background: rgba(168, 85, 247, 0.18);
-            border-color: rgba(168, 85, 247, 0.35);
-        }
-
-        .badge.bg-primary {
-            background: var(--primary-color) !important;
-        }
-
-        .btn-success {
-            background: var(--success-color);
-        }
-
-        .btn-success:hover {
-            background: #059669;
-            transform: translateY(-1px);
-        }
-
-        .btn-danger {
-            background: var(--danger-color);
-        }
-
-        .btn-danger:hover {
-            background: #dc2626;
-            transform: translateY(-1px);
-        }
-
-        .btn-sm {
-            padding: 0.375rem 0.75rem;
-            font-size: 0.875rem;
+        
+        .btn-outline-primary:hover {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
         }
 
         .form-control, .form-select {
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 0.5rem 0.75rem;
-            transition: all 0.2s ease;
-            background: var(--bg-card);
-            color: var(--text-primary);
+            background: var(--surface-2);
+            color: var(--text-main); /* Explizite Textfarbe setzen */
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
+            padding: 0.75rem 1rem;
         }
 
         .form-control:focus, .form-select:focus {
+            background: var(--surface-1);
+            color: var(--text-main); /* Auch im Fokus-Zustand */
             border-color: var(--primary-color);
-            box-shadow: 0 0 0 4px var(--ring-color);
+            box-shadow: 0 0 0 3px var(--primary-soft);
         }
 
-        .form-label {
-            font-weight: 500;
-            color: var(--text-primary);
-            margin-bottom: 0.375rem;
-            font-size: 0.875rem;
+        /* Dark Mode spezifische Anpassungen für Inputs */
+        [data-theme="dark"] .form-control,
+        [data-theme="dark"] .form-select {
+            background-color: var(--surface-3); /* Etwas heller als Hintergrund */
+            border-color: var(--border-light);
+            color: #f1f5f9; /* Helles Weiß/Grau für Text */
+        }
+        
+        [data-theme="dark"] .form-control:focus, 
+        [data-theme="dark"] .form-select:focus {
+            background-color: var(--surface-2);
+            color: #ffffff;
+        }
+        
+        /* Placeholder Farbe im Dark Mode */
+        [data-theme="dark"] ::placeholder {
+            color: var(--text-muted);
+            opacity: 1;
         }
 
-        .mb-3 {
-            margin-bottom: 0.75rem !important;
-        }
-
-        .activity-card {
-            margin-bottom: 0.75rem;
-            border-radius: 10px;
-        }
-
-        .badge {
-            padding: 0.375rem 0.75rem;
-            border-radius: 6px;
-            font-weight: 500;
-        }
-
-        .modal-content {
-            border: none;
-            border-radius: 12px;
-            box-shadow: var(--shadow-lg);
-        }
-
-        .modal-header {
-            border-bottom: 1px solid var(--border-color);
-            padding: 1.25rem;
-        }
-
-        .modal-footer {
-            border-top: 1px solid var(--border-color);
-            padding: 1rem 1.25rem;
-        }
-
-        .time-slot {
-            border: 1px solid var(--border-color);
-            padding: 0.75rem;
-            margin-bottom: 0.5rem;
-            border-radius: 8px;
-            background: var(--bg-card);
-        }
-
-        .schedule-table {
-            font-size: 0.875rem;
-            border-radius: 14px;
-            overflow: hidden;
-            border: 1px solid var(--border-color);
-            background: var(--bg-card);
-            box-shadow: var(--shadow-sm);
-        }
-
-        .schedule-table td, .schedule-table th {
-            padding: 0.65rem 0.75rem;
-            vertical-align: middle;
-            border: 1px solid var(--border-color);
-            text-align: center;
-        }
-
-        .schedule-table thead th {
-            background: linear-gradient(180deg, rgba(109, 40, 217, 0.28) 0%, rgba(76, 29, 149, 0.18) 100%);
-            color: var(--text-primary);
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            font-size: 0.7rem;
-            font-weight: 600;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .schedule-table thead th.time-head {
-            color: #f8fafc;
-            background: linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 0.7) 100%);
-        }
-
-        [data-theme="dark"] .schedule-table thead th.time-head {
-            color: #f8fafc;
-            background: linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 0.75) 100%);
-        }
-
-        [data-theme="dark"] .schedule-table thead th {
-            background: linear-gradient(180deg, rgba(168, 85, 247, 0.32) 0%, rgba(76, 29, 149, 0.5) 100%);
-            color: var(--text-primary);
-        }
-
-        .schedule-table tbody tr {
-            transition: background 0.2s ease;
-        }
-
-        .schedule-table tbody tr:hover td {
-            background-color: rgba(109, 40, 217, 0.08);
-        }
-
-        [data-theme="dark"] .schedule-table tbody tr:hover td {
-            background-color: rgba(168, 85, 247, 0.14);
-        }
-
-        .time-cell {
-            font-variant-numeric: tabular-nums;
-            color: var(--text-primary);
-            font-weight: 700;
-            background: rgba(15, 23, 42, 0.06);
-        }
-
-        [data-theme="dark"] .schedule-table td.time-cell {
-            color: #f8fafc;
-            background: rgba(15, 23, 42, 0.6);
-        }
-
-        h1, h2, h3, h4, h5 {
-            color: var(--text-primary);
+        /* --- Typography --- */
+        .page-title, h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
+            color: var(--text-main);
             font-weight: 600;
             font-family: var(--font-display);
         }
-
-        .table {
-            background: var(--bg-card);
-            border-radius: 16px;
-            overflow: hidden;
+        
+        .text-muted {
+            color: var(--text-muted) !important;
+        }
+        
+        .text-body {
+            color: var(--text-main) !important;
         }
 
-        .table thead th {
-            background: var(--bg-muted);
-            color: var(--text-primary);
-            border-bottom: 1px solid var(--border-color);
+        /* --- Specific Elements --- */
+        .badge {
+            padding: 0.4em 0.8em;
+            border-radius: 6px;
+            font-weight: 600;
         }
 
-        .table tbody tr {
-            border-color: var(--border-color);
+        .schedule-table {
+            /* Keep schedule table grid-like */
+            border-collapse: collapse;
+            border-spacing: 0;
         }
-
-        .table-responsive {
-            border-radius: 16px;
-            box-shadow: var(--shadow-sm);
+        .schedule-table tbody tr {
+            box-shadow: none;
         }
-
-        .compact-form .row {
-            margin-bottom: 0.5rem;
+        .schedule-table td {
+            border-radius: 0 !important;
+            border: 1px solid var(--border-light);
         }
-
-        .compact-form .form-control,
-        .compact-form .form-select {
-            padding: 0.375rem 0.75rem;
-            font-size: 0.875rem;
+        
+        /* Time Slots in Live View */
+        .time-slot {
+            background: var(--surface-1);
+            border: 1px solid var(--border-light);
+            border-left: 4px solid var(--primary-color);
         }
 
         /* Aktivitätsfarben als CSS-Variablen - Light Mode */
@@ -399,145 +341,47 @@
             --color-individual: {{ DARK_MODE_COLORS.get('individual', '#7A9B6B') }};
             --color-group: {{ DARK_MODE_COLORS.get('group', '#C9A86B') }};
         }
-
-        /* Dark Mode Anpassungen */
-        [data-theme="dark"] .card {
-            background: var(--bg-card);
-            color: var(--text-primary);
+        
+        /* Color Panel */
+        .color-panel {
+            background: var(--surface-1);
+            border: 1px solid var(--border-light);
+            padding: 1rem;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
         }
-
-        [data-theme="dark"] .form-control,
-        [data-theme="dark"] .form-select {
-            background: var(--bg-card);
-            color: var(--text-primary);
-            border-color: var(--border-color);
-        }
-
-        [data-theme="dark"] .form-control:focus,
-        [data-theme="dark"] .form-select:focus {
-            background: var(--bg-card);
-            color: var(--text-primary);
-        }
-
-        [data-theme="dark"] .table {
-            color: var(--text-primary);
-        }
-
-        [data-theme="dark"] .table-bordered {
-            border-color: var(--border-color);
-        }
-
-        [data-theme="dark"] .table-bordered td,
-        [data-theme="dark"] .table-bordered th {
-            border-color: var(--border-color);
-        }
-
-        [data-theme="dark"] .alert {
-            background: var(--bg-card);
-            border-color: var(--border-color);
-            color: var(--text-primary);
-        }
-
+        
         .theme-toggle {
             cursor: pointer;
-            font-size: 1.2rem;
-            padding: 0.25rem 0.5rem;
-            border-radius: 6px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
             transition: background 0.2s;
         }
-
+        
         .theme-toggle:hover {
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        .hero-alert {
-            border-radius: 16px;
-            border: 1px solid var(--border-color);
-            box-shadow: var(--shadow-sm);
-            background: var(--bg-card);
-        }
-
-        .soft-card {
-            background: var(--bg-card);
-            border-radius: 18px;
-            border: 1px solid var(--border-color);
-            box-shadow: var(--shadow-md);
-        }
-
-        .schedule-table tbody tr.table-row-odd td {
-            background-color: rgba(109, 40, 217, 0.05);
-        }
-
-        .schedule-table tbody tr.table-row-even td {
-            background-color: rgba(148, 163, 184, 0.1);
-        }
-
-        [data-theme="dark"] .schedule-table tbody tr.table-row-odd td {
-            background-color: rgba(168, 85, 247, 0.12);
-        }
-
-        [data-theme="dark"] .schedule-table tbody tr.table-row-even td {
-            background-color: rgba(148, 163, 184, 0.12);
-        }
-
-        .schedule-table tbody tr.table-row-odd td.table-success {
-            background-color: rgba(22, 163, 74, 0.2) !important;
-        }
-
-        .schedule-table tbody tr.table-row-even td.table-success {
-            background-color: rgba(22, 163, 74, 0.3) !important;
-        }
-
-        [data-theme="dark"] .schedule-table tbody tr.table-row-odd td.table-success {
-            background-color: rgba(34, 197, 94, 0.2) !important;
-        }
-
-        [data-theme="dark"] .schedule-table tbody tr.table-row-even td.table-success {
-            background-color: rgba(34, 197, 94, 0.28) !important;
-        }
-
-        .group-cell {
-            min-width: 50px;
-            min-height: 20px;
-        }
-
-        .color-panel {
-            min-width: 240px;
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            box-shadow: var(--shadow-md);
-            border-radius: 14px;
-        }
-
-        .color-panel label {
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            color: var(--text-secondary);
-        }
-
-        .color-panel input[type="color"] {
-            border: none;
-            background: transparent;
-            width: 42px;
-            height: 32px;
-            padding: 0;
+            background: var(--surface-3);
         }
 
         @media (max-width: 768px) {
-            .page-header {
-                align-items: flex-start;
+            .navbar {
+                margin: 0;
+                border-radius: 0;
+                border: none;
+                border-bottom: 1px solid var(--border-light);
             }
-
-            .page-actions {
-                width: 100%;
-                justify-content: flex-start;
+            .table {
+                display: block;
+                overflow-x: auto;
             }
         }
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark">
+    <nav class="navbar navbar-expand-lg navbar-light fixed-top-md">
         <div class="container-fluid">
             <a class="navbar-brand" href="{{ url_for('main.index') }}">
                 <i class="bi bi-trophy-fill me-2"></i>Trainingsverwaltung
@@ -557,70 +401,37 @@
                             <i class="bi bi-broadcast me-1"></i>Live
                         </a>
                     </li>
-                    {% if session.get('user_role') == 'admin' %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('admin.admin_trainings') }}">
-                            <i class="bi bi-gear-fill me-1"></i>Verwaltung
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-gear-fill me-1"></i>Administration
                         </a>
+                        <ul class="dropdown-menu border-0 shadow-lg" style="background: var(--surface-1); border: 1px solid var(--border-light);">
+                            {% if session.get('user_role') == 'admin' %}
+                            <li>
+                                <a class="dropdown-item py-2" href="{{ url_for('admin.admin_trainings') }}">
+                                    <i class="bi bi-list-check me-2 text-muted"></i>Verwaltung
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item py-2" href="{{ url_for('admin.new_training') }}">
+                                    <i class="bi bi-plus-circle me-2 text-muted"></i>Neues Training
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            {% endif %}
+                            <li>
+                                <a class="dropdown-item py-2" href="#" data-bs-toggle="modal" data-bs-target="#colorModal">
+                                    <i class="bi bi-palette me-2 text-muted"></i>Farben
+                                </a>
+                            </li>
+                        </ul>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('admin.new_training') }}">
-                            <i class="bi bi-plus-circle me-1"></i>Neues Training
-                        </a>
-                    </li>
-                    {% endif %}
                 </ul>
                 <ul class="navbar-nav">
                     <li class="nav-item">
                         <span class="nav-link theme-toggle" id="themeToggle" title="Theme wechseln">
                             <i class="bi bi-moon-fill" id="themeIcon"></i>
                         </span>
-                    </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" title="Aktivitätsfarben">
-                            <i class="bi bi-palette me-1"></i>Farben
-                        </a>
-                        <div class="dropdown-menu dropdown-menu-end p-3 color-panel">
-                            <div class="mb-2">
-                                <label class="form-label mb-1">Light Mode</label>
-                                <div class="d-flex align-items-center justify-content-between">
-                                    <span class="small">Team</span>
-                                    <input type="color" data-color-input data-theme="light" data-activity="team">
-                                </div>
-                                <div class="d-flex align-items-center justify-content-between">
-                                    <span class="small">Prepractice</span>
-                                    <input type="color" data-color-input data-theme="light" data-activity="prepractice">
-                                </div>
-                                <div class="d-flex align-items-center justify-content-between">
-                                    <span class="small">Individual</span>
-                                    <input type="color" data-color-input data-theme="light" data-activity="individual">
-                                </div>
-                                <div class="d-flex align-items-center justify-content-between">
-                                    <span class="small">Group</span>
-                                    <input type="color" data-color-input data-theme="light" data-activity="group">
-                                </div>
-                            </div>
-                            <div class="mb-2">
-                                <label class="form-label mb-1">Dark Mode</label>
-                                <div class="d-flex align-items-center justify-content-between">
-                                    <span class="small">Team</span>
-                                    <input type="color" data-color-input data-theme="dark" data-activity="team">
-                                </div>
-                                <div class="d-flex align-items-center justify-content-between">
-                                    <span class="small">Prepractice</span>
-                                    <input type="color" data-color-input data-theme="dark" data-activity="prepractice">
-                                </div>
-                                <div class="d-flex align-items-center justify-content-between">
-                                    <span class="small">Individual</span>
-                                    <input type="color" data-color-input data-theme="dark" data-activity="individual">
-                                </div>
-                                <div class="d-flex align-items-center justify-content-between">
-                                    <span class="small">Group</span>
-                                    <input type="color" data-color-input data-theme="dark" data-activity="group">
-                                </div>
-                            </div>
-                            <button class="btn btn-sm btn-outline-secondary w-100" id="resetActivityColors">Zurücksetzen</button>
-                        </div>
                     </li>
                     {% if session.get('user_id') %}
                     <li class="nav-item">
@@ -660,6 +471,66 @@
         {% endwith %}
         {% block content %}{% endblock %}
     </div>
+    
+    <!-- Farb-Konfigurations-Modal -->
+    <div class="modal fade" id="colorModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content" style="background: var(--surface-1); color: var(--text-main);">
+                <div class="modal-header border-bottom border-light">
+                    <h5 class="modal-title"><i class="bi bi-palette me-2"></i>Aktivitätsfarben anpassen</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-4">
+                        <h6 class="mb-3 border-bottom pb-2">Light Mode</h6>
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span>Team</span>
+                            <input type="color" class="form-control form-control-color" data-color-input data-theme="light" data-activity="team" title="Team Farbe auswählen">
+                        </div>
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span>Prepractice</span>
+                            <input type="color" class="form-control form-control-color" data-color-input data-theme="light" data-activity="prepractice" title="Prepractice Farbe auswählen">
+                        </div>
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span>Individual</span>
+                            <input type="color" class="form-control form-control-color" data-color-input data-theme="light" data-activity="individual" title="Individual Farbe auswählen">
+                        </div>
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span>Group</span>
+                            <input type="color" class="form-control form-control-color" data-color-input data-theme="light" data-activity="group" title="Group Farbe auswählen">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-2">
+                        <h6 class="mb-3 border-bottom pb-2">Dark Mode</h6>
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span>Team</span>
+                            <input type="color" class="form-control form-control-color" data-color-input data-theme="dark" data-activity="team" title="Team Farbe auswählen">
+                        </div>
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span>Prepractice</span>
+                            <input type="color" class="form-control form-control-color" data-color-input data-theme="dark" data-activity="prepractice" title="Prepractice Farbe auswählen">
+                        </div>
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span>Individual</span>
+                            <input type="color" class="form-control form-control-color" data-color-input data-theme="dark" data-activity="individual" title="Individual Farbe auswählen">
+                        </div>
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span>Group</span>
+                            <input type="color" class="form-control form-control-color" data-color-input data-theme="dark" data-activity="group" title="Group Farbe auswählen">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-top border-light">
+                    <button type="button" class="btn btn-outline-danger me-auto" id="resetActivityColors">
+                        <i class="bi bi-arrow-counterclockwise me-1"></i>Zurücksetzen
+                    </button>
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Fertig</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         // Theme Toggle mit dynamischen Farben

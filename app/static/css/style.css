@@ -1,0 +1,285 @@
+        body {
+            background-color: var(--surface-2);
+            /* Subtiler, modernerer Gradient */
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(124, 58, 237, 0.08), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(56, 189, 248, 0.08), transparent 25%);
+            background-attachment: fixed;
+            color: var(--text-main);
+            font-family: var(--font-sans);
+            min-height: 100vh;
+            padding-bottom: 2rem;
+        }
+
+        /* --- Navbar Modern --- */
+        .navbar {
+            background: rgba(255, 255, 255, 0.8) !important;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            margin: 1rem auto;
+            border-radius: var(--radius-xl);
+            max-width: 1280px;
+            padding: 0.75rem 1.5rem;
+            box-shadow: var(--shadow-md);
+            position: relative;
+            z-index: 1050;
+        }
+
+        [data-theme="dark"] .navbar {
+            background: rgba(15, 23, 42, 0.8) !important;
+            border-color: rgba(255, 255, 255, 0.05);
+        }
+
+        .navbar-brand {
+            font-family: var(--font-display);
+            font-weight: 700;
+            color: var(--primary-color) !important;
+            font-size: 1.4rem;
+        }
+        
+        [data-theme="dark"] .navbar-brand {
+            color: var(--primary-soft) !important;
+        }
+
+        .nav-link {
+            color: var(--text-muted) !important;
+            font-weight: 500;
+            border-radius: var(--radius-md);
+            padding: 0.5rem 1rem !important;
+            transition: all 0.2s ease;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            color: var(--primary-color) !important;
+            background: var(--primary-soft);
+        }
+        
+        [data-theme="dark"] .nav-link:hover {
+            color: var(--text-main) !important;
+            background: rgba(255,255,255,0.1);
+        }
+
+        /* --- Cards & Containers --- */
+        .container {
+            max-width: 1200px;
+        }
+
+        .card {
+            background: var(--surface-1);
+            color: var(--text-main);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            transition: transform 0.2s, box-shadow 0.2s;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .card-header {
+            background: transparent;
+            border-bottom: 1px solid var(--border-light);
+            padding: 1.25rem 1.5rem;
+            font-family: var(--font-display);
+            font-weight: 600;
+        }
+
+        .card-body {
+            padding: 1.5rem;
+        }
+
+        /* --- Modern Tables --- */
+        .table-responsive {
+            border-radius: var(--radius-lg);
+            background: transparent;
+        }
+
+        .table {
+            border-collapse: separate; 
+            border-spacing: 0 0.5rem;
+            background: transparent;
+        }
+
+        .table thead th {
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+            padding: 0 1rem 0.5rem 1rem;
+        }
+
+        .table tbody tr {
+            background: var(--surface-1);
+            box-shadow: var(--shadow-sm);
+            transition: transform 0.2s;
+        }
+
+        .table tbody tr:hover {
+            transform: scale(1.005);
+            background: var(--surface-1) !important;
+            box-shadow: var(--shadow-md);
+        }
+
+        .table td {
+            border: none;
+            padding: 1rem;
+            vertical-align: middle;
+        }
+        
+        .table td:first-child {
+            border-top-left-radius: var(--radius-md);
+            border-bottom-left-radius: var(--radius-md);
+        }
+        
+        .table td:last-child {
+            border-top-right-radius: var(--radius-md);
+            border-bottom-right-radius: var(--radius-md);
+        }
+
+        /* --- Buttons & Inputs --- */
+        .btn {
+            border-radius: var(--radius-md);
+            padding: 0.5rem 1.25rem;
+            font-weight: 600;
+            letter-spacing: 0.01em;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            border: none;
+            box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(124, 58, 237, 0.4);
+        }
+        
+        .btn-outline-primary {
+            color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        
+        .btn-outline-primary:hover {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .form-control, .form-select {
+            background: var(--surface-2);
+            color: var(--text-main);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
+            padding: 0.75rem 1rem;
+        }
+
+        .form-control:focus, .form-select:focus {
+            background: var(--surface-1);
+            color: var(--text-main);
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px var(--primary-soft);
+        }
+
+        /* Dark Mode */
+        [data-theme="dark"] .form-control,
+        [data-theme="dark"] .form-select {
+            background-color: var(--surface-3);
+            border-color: var(--border-light);
+            color: #f1f5f9;
+        }
+        
+        [data-theme="dark"] .form-control:focus, 
+        [data-theme="dark"] .form-select:focus {
+            background-color: var(--surface-2);
+            color: #ffffff;
+        }
+        
+        [data-theme="dark"] ::placeholder {
+            color: var(--text-muted);
+            opacity: 1;
+        }
+
+        /* --- Typography --- */
+        .page-title, h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
+            color: var(--text-main);
+            font-weight: 600;
+            font-family: var(--font-display);
+        }
+        
+        .text-muted {
+            color: var(--text-muted) !important;
+        }
+        
+        .text-body {
+            color: var(--text-main) !important;
+        }
+
+        /* --- Specific Elements --- */
+        .badge {
+            padding: 0.4em 0.8em;
+            border-radius: 6px;
+            font-weight: 600;
+        }
+
+        .schedule-table {
+            border-collapse: collapse;
+            border-spacing: 0;
+        }
+        .schedule-table tbody tr {
+            box-shadow: none;
+        }
+        .schedule-table td {
+            border-radius: 0 !important;
+            border: 1px solid var(--border-light);
+        }
+        
+        .time-slot {
+            background: var(--surface-1);
+            border: 1px solid var(--border-light);
+            border-left: 4px solid var(--primary-color);
+        }
+        
+        /* Color Panel */
+        .color-panel {
+            background: var(--surface-1);
+            border: 1px solid var(--border-light);
+            padding: 1rem;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .theme-toggle {
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background 0.2s;
+        }
+        
+        .theme-toggle:hover {
+            background: var(--surface-3);
+        }
+
+        @media (max-width: 768px) {
+            .navbar {
+                margin: 0;
+                border-radius: 0;
+                border: none;
+                border-bottom: 1px solid var(--border-light);
+            }
+            .table {
+                display: block;
+                overflow-x: auto;
+            }
+        }

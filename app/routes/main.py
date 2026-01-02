@@ -169,17 +169,6 @@ def live():
                          training_status=training_status,
                          now=now)
 
-@bp.route('/training/<int:id>/schedule')
-def training_schedule(id):
-    training = Training.query.get_or_404(id)
-    dates = []
-    current = training.start_date
-    while current <= training.end_date:
-        if current.weekday() == training.weekday:
-            dates.append(current)
-        current += timedelta(days=1)
-    return render_template('schedule.html', training=training, dates=dates, position_groups=POSITION_GROUPS)
-
 @bp.route('/test')
 def test():
     return '<h1>Flask funktioniert!</h1><p>Gehe zu <a href="/login">/login</a></p>'
