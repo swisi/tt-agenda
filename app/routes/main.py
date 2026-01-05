@@ -24,7 +24,7 @@ def index():
     upcoming_trainings = []
     
     for training in trainings:
-        next_dates = get_next_training_dates(training, limit=3)
+        next_dates = get_next_training_dates(training, limit=None)
         for date in next_dates:
             activities = Activity.query.filter_by(training_id=training.id).order_by(Activity.order_index).all()
             if activities:
@@ -99,7 +99,7 @@ def index():
                          trainings=trainings, 
                          weekdays=WEEKDAYS,
                          position_groups=POSITION_GROUPS,
-                         upcoming_trainings=upcoming_trainings[:3],
+                         upcoming_trainings=upcoming_trainings,
                          current_training=current_training,
                          current_activity=current_activity,
                          next_activity=next_activity,

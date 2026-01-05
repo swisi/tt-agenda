@@ -75,25 +75,26 @@ def get_next_training_dates(training, limit=3):
     now = datetime.now()
     today = now.date()
     dates = []
-    
-    current = today
-    max_days_ahead = 60
-    days_checked = 0
-    
-    while len(dates) < limit and days_checked < max_days_ahead:
-        if current >= training.start_date and current <= training.end_date:
-            if current.weekday() == training.weekday:
-                if current == today:
-                    activities = Activity.query.filter_by(training_id=training.id).order_by(Activity.order_index, Activity.id).all()
-                    if activities:
-                        timeline = build_activity_timeline(activities, today)
-                        if timeline and now < timeline[-1][2]:
-                            dates.append(current)
-                else:
+
+    if training.end_date < today:
+        return dates
+
+    start = max(today, training.start_date)
+    days_ahead = (training.weekday - start.weekday()) % 7
+    current = start + timedelta(days=days_ahead)
+    target_limit = float('inf') if limit is None else limit
+
+    while current <= training.end_date and len(dates) < target_limit:
+        if current == today:
+            activities = Activity.query.filter_by(training_id=training.id).order_by(Activity.order_index, Activity.id).all()
+            if activities:
+                timeline = build_activity_timeline(activities, today)
+                if timeline and now < timeline[-1][2]:
                     dates.append(current)
-        current += timedelta(days=1)
-        days_checked += 1
-    
+        else:
+            dates.append(current)
+        current += timedelta(days=7)
+
     return dates
 
 def get_text_color_for_bg(bg_color):
