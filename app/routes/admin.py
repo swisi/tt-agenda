@@ -76,7 +76,8 @@ def admin_backup_restore():
         flash('Bitte eine Backup-Datei auswählen.', 'warning')
         return redirect(url_for('admin.admin_backup'))
 
-    temp_file = tempfile.NamedTemporaryFile(prefix='restore_', suffix='.db', delete=False)
+    os.makedirs(os.path.dirname(db_path), exist_ok=True)
+    temp_file = tempfile.NamedTemporaryFile(prefix='restore_', suffix='.db', dir=os.path.dirname(db_path), delete=False)
     temp_file.close()
     upload.save(temp_file.name)
 
@@ -90,7 +91,6 @@ def admin_backup_restore():
         flash('Backup-Datei ist ungültig oder beschädigt.', 'danger')
         return redirect(url_for('admin.admin_backup'))
 
-    os.makedirs(os.path.dirname(db_path), exist_ok=True)
     if os.path.exists(db_path):
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         backup_old = f"{db_path}.{timestamp}.bak"
