@@ -49,12 +49,12 @@
                             <i class="bi bi-broadcast me-1"></i>Live
                         </a>
                     </li>
+                    {% if session.get('user_role') == 'admin' %}
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="bi bi-gear-fill me-1"></i>Administration
                         </a>
                         <ul class="dropdown-menu border-0 shadow-lg navbar-dropdown-menu">
-                            {% if session.get('user_role') == 'admin' %}
                             <li>
                                 <a class="dropdown-item py-2" href="{{ url_for('admin.admin_trainings') }}">
                                     <i class="bi bi-list-check me-2 text-muted"></i>Verwaltung
@@ -76,9 +76,9 @@
                                     <i class="bi bi-palette me-2 text-muted"></i>Farben
                                 </a>
                             </li>
-                            {% endif %}
                         </ul>
                     </li>
+                    {% endif %}
                 </ul>
                 <ul class="navbar-nav">
                     <li class="nav-item">
