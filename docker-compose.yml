@@ -2,17 +2,26 @@ version: '3.8'
 
 services:
   web:
-    build: .
+    image: ghcr.io/swisi/tt-agenda:latest
     container_name: tt-agenda
     ports:
-      - "5000:5000"
+      - "8085:5000"
     volumes:
-      # Persistiere die Datenbank
-      - ./instance:/app/instance
+      - tt-agenda:/app/instance
     environment:
       - FLASK_APP=app.py
       - FLASK_ENV=production
+      - SECRET_KEY=8f3b6c2e9a7d4f51b0e8c1d6a9f2e4b7c5d0a3e9b6f8c2d1a7e4f5b9c0
+      - LOG_LEVEL=DEBUG
+      - WEBHOOK_ENABLED=true
+      - WEBHOOK_URL=https://n8n.3624.ch/webhook/messaging
       - TZ=Europe/Zurich
+      - KEYCLOAK_SERVER_URL=https://auth.thun-tigers.net
+      - KEYCLOAK_REALM=tigers
+      - KEYCLOAK_CLIENT_ID=agenda
+      - KEYCLOAK_CLIENT_SECRET=Zm2TAFP1PiTfOR3dWbyB8VHEvRjSZbEA
+      - KEYCLOAK_ADMIN_ROLE=admin
+      - KEYCLOAK_REDIRECT_URI=https://agenda.thun-tigers.net/auth/callback
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/login"]
@@ -20,3 +29,7 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+
+volumes:
+  tt-agenda:
+    driver: local
