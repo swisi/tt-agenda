@@ -6,10 +6,26 @@ from datetime import timedelta
 from .routes import main, auth, admin
 from .models import User
 import json
+import os
+from dotenv import load_dotenv
+import logging
 
 def create_app(config_class=Config):
+    load_dotenv()  # Load .env file
+    
+    # Configure logging based on config
+    log_level = getattr(logging, config_class.LOG_LEVEL, logging.INFO)
+    formatter = logging.Formatter('[%(asctime)s +0000] [%(process)d] [%(levelname)s] %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+    handler = logging.StreamHandler()
+    handler.setFormatter(formatter)
+    logging.getLogger().addHandler(handler)
+    logging.getLogger().setLevel(log_level)
+    
     app = Flask(__name__)
     app.config.from_object(config_class)
+    
+    # Log the configured log level
+    app.logger.info(f"Application started with LOG_LEVEL: {config_class.LOG_LEVEL}")
 
     db.init_app(app)
 

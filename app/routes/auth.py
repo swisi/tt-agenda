@@ -1,8 +1,12 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from ..models import User
 from ..extensions import db
+import requests
+from ..config import Config
+import logging
 
 bp = Blueprint('auth', __name__)
+logger = logging.getLogger(__name__)
 
 @bp.route('/login', methods=['GET', 'POST'])
 def login():
