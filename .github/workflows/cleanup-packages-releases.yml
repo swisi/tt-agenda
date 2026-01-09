@@ -1,9 +1,7 @@
 name: Cleanup Packages and Releases
 
 on:
-  workflow_dispatch:
-  schedule:
-    - cron: "0 3 * * 0"
+  workflow_dispatch:  # Nur manuell ausführbar
 
 permissions:
   packages: write
@@ -13,109 +11,30 @@ jobs:
   cleanup:
     runs-on: ubuntu-latest
     steps:
-      - name: Cleanup packages
-        uses: actions/github-script@v7
+      # Docker-Pakete dieses Repositories: Nur 2 neueste Versionen behalten
+      - name: Cleanup Docker packages
+        uses: actions/delete-package-versions@v5
         with:
-          script: |
-            const owner = context.repo.owner;
-            const isOrg = context.payload.repository.owner.type === 'Organization';
-            const keepVersions = 1;  // Nur die neueste Version pro Paket behalten
-            const packageTypes = ['docker', 'npm', 'maven', 'rubygems', 'nuget'];
-
-            async function listPackages(package_type) {
-              if (isOrg) {
-                return github.paginate(github.rest.packages.listPackagesForOrganization, {
-                  org: owner,
-                  package_type,
-                  per_page: 100,
-                });
-              }
-              return github.paginate(github.rest.packages.listPackagesForUser, {
-                username: owner,
-                package_type,
-                per_page: 100,
-              });
-            }
-
-            async function listVersions(package_type, package_name) {
-              if (isOrg) {
-                return github.paginate(github.rest.packages.getAllPackageVersionsForPackageOwnedByOrg, {
-                  org: owner,
-                  package_type,
-                  package_name,
-                  per_page: 100,
-                });
-              }
-              return github.paginate(github.rest.packages.getAllPackageVersionsForPackageOwnedByUser, {
-                username: owner,
-                package_type,
-                package_name,
-                per_page: 100,
-              });
-            }
-
-            async function deleteVersion(package_type, package_name, version_id) {
-              if (isOrg) {
-                return github.rest.packages.deletePackageVersionForOrg({
-                  org: owner,
-                  package_type,
-                  package_name,
-                  package_version_id: version_id,
-                });
-              }
-              return github.rest.packages.deletePackageVersionForUser({
-                username: owner,
-                package_type,
-                package_name,
-                package_version_id: version_id,
-              });
-            }
-
-            for (const package_type of packageTypes) {
-              let packages = [];
-              try {
-                packages = await listPackages(package_type);
-                core.info(`Found ${packages.length} ${package_type} packages`);
-              } catch (error) {
-                core.info(`Skipping ${package_type}: ${error.message}`);
-                continue;
-              }
-
-              for (const pkg of packages) {
-                const versions = await listVersions(package_type, pkg.name);
-                const sorted = versions
-                  .slice()
-                  .sort((a, b) => new Date(b.created_at || b.updated_at) - new Date(a.created_at || a.updated_at));
-                const toDelete = sorted.slice(keepVersions);
-                
-                core.info(`Package ${pkg.name} has ${versions.length} versions, keeping ${keepVersions}, deleting ${toDelete.length}`);
-
-                for (const version of toDelete) {
-                  core.info(`Deleting ${package_type}/${pkg.name}@${version.id}`);
-                  await deleteVersion(package_type, pkg.name, version.id);
-                }
-              }
-            }
-
+          package-type: 'docker'
+          min-versions-to-keep: 2
+          
+      # Releases dieses Repositories: Nur 2 neueste behalten  
       - name: Cleanup releases
         uses: actions/github-script@v7
         with:
           script: |
             const owner = context.repo.owner;
             const repo = context.repo.repo;
-            const keepReleases = 2;  // Letzte 2 Releases behalten
+            const keepReleases = 2;
 
             const releases = await github.paginate(github.rest.repos.listReleases, {
-              owner,
-              repo,
-              per_page: 100,
+              owner, repo, per_page: 100
             });
             
             core.info(`Found ${releases.length} releases in ${owner}/${repo}`);
-
-            const sorted = releases
-              .slice()
-              .sort((a, b) => new Date(b.published_at || b.created_at) - new Date(a.published_at || a.created_at));
+            const sorted = releases.slice().sort((a, b) => 
+              new Date(b.published_at || b.created_at) - new Date(a.published_at || a.created_at)
+            );
             const toDelete = sorted.slice(keepReleases);
 
             core.info(`Keeping ${keepReleases} releases, deleting ${toDelete.length}`);
@@ -123,8 +42,6 @@ jobs:
             for (const release of toDelete) {
               core.info(`Deleting release ${release.name || release.tag_name} (${release.id})`);
               await github.rest.repos.deleteRelease({
-                owner,
-                repo,
-                release_id: release.id,
+                owner, repo, release_id: release.id
               });
             }
