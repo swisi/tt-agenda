@@ -1,5 +1,4 @@
-name: Cleanup Packages and Releases
-
+name: 90 Housekeeping PACKAGES
 on:
   workflow_dispatch:
   schedule:
@@ -19,7 +18,7 @@ jobs:
           script: |
             const owner = context.repo.owner;
             const isOrg = context.payload.repository.owner.type === 'Organization';
-            const keep = 3;
+            const keepVersions = 1;  // Nur die neueste Version pro Paket behalten
             const packageTypes = ['container', 'npm', 'maven', 'rubygems', 'nuget'];
 
             async function listPackages(package_type) {
@@ -85,7 +84,7 @@ jobs:
                 const sorted = versions
                   .slice()
                   .sort((a, b) => new Date(b.created_at || b.updated_at) - new Date(a.created_at || a.updated_at));
-                const toDelete = sorted.slice(keep);
+                const toDelete = sorted.slice(keepVersions);
 
                 for (const version of toDelete) {
                   core.info(`Deleting ${package_type}/${pkg.name}@${version.id}`);
@@ -100,7 +99,7 @@ jobs:
           script: |
             const owner = context.repo.owner;
             const repo = context.repo.repo;
-            const keep = 3;
+            const keepReleases = 2;  // Letzte 2 Releases behalten
 
             const releases = await github.paginate(github.rest.repos.listReleases, {
               owner,
@@ -111,7 +110,7 @@ jobs:
             const sorted = releases
               .slice()
               .sort((a, b) => new Date(b.published_at || b.created_at) - new Date(a.published_at || a.created_at));
-            const toDelete = sorted.slice(keep);
+            const toDelete = sorted.slice(keepReleases);
 
             for (const release of toDelete) {
               core.info(`Deleting release ${release.name || release.tag_name} (${release.id})`);
