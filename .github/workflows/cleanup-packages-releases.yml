@@ -1,4 +1,5 @@
-name: 90 Housekeeping PACKAGES
+name: Cleanup Packages and Releases
+
 on:
   workflow_dispatch:
   schedule:
@@ -19,7 +20,7 @@ jobs:
             const owner = context.repo.owner;
             const isOrg = context.payload.repository.owner.type === 'Organization';
             const keepVersions = 1;  // Nur die neueste Version pro Paket behalten
-            const packageTypes = ['container', 'npm', 'maven', 'rubygems', 'nuget'];
+            const packageTypes = ['docker', 'npm', 'maven', 'rubygems', 'nuget'];
 
             async function listPackages(package_type) {
               if (isOrg) {
@@ -74,6 +75,7 @@ jobs:
               let packages = [];
               try {
                 packages = await listPackages(package_type);
+                core.info(`Found ${packages.length} ${package_type} packages`);
               } catch (error) {
                 core.info(`Skipping ${package_type}: ${error.message}`);
                 continue;
@@ -85,6 +87,8 @@ jobs:
                   .slice()
                   .sort((a, b) => new Date(b.created_at || b.updated_at) - new Date(a.created_at || a.updated_at));
                 const toDelete = sorted.slice(keepVersions);
+                
+                core.info(`Package ${pkg.name} has ${versions.length} versions, keeping ${keepVersions}, deleting ${toDelete.length}`);
 
                 for (const version of toDelete) {
                   core.info(`Deleting ${package_type}/${pkg.name}@${version.id}`);
@@ -106,11 +110,15 @@ jobs:
               repo,
               per_page: 100,
             });
+            
+            core.info(`Found ${releases.length} releases in ${owner}/${repo}`);
 
             const sorted = releases
               .slice()
               .sort((a, b) => new Date(b.published_at || b.created_at) - new Date(a.published_at || a.created_at));
             const toDelete = sorted.slice(keepReleases);
+
+            core.info(`Keeping ${keepReleases} releases, deleting ${toDelete.length}`);
 
             for (const release of toDelete) {
               core.info(`Deleting release ${release.name || release.tag_name} (${release.id})`);
