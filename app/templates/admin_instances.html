@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">
+        <i class="bi bi-calendar2-week me-2"></i>Angepasste Trainings
+    </h1>
+    <div class="page-actions">
+        <a href="{{ url_for('main.index') }}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left me-1"></i>Zurück zur Übersicht
+        </a>
+        <a href="{{ url_for('admin.admin_trainings') }}" class="btn btn-outline-primary">
+            <i class="bi bi-list-check me-1"></i>Templates
+        </a>
+    </div>
+</div>
+
+{% if instances|length == 0 %}
+<div class="text-center py-5">
+    <i class="bi bi-inbox empty-state-icon"></i>
+    <h3 class="mt-3 text-muted">Keine angepassten Trainings vorhanden</h3>
+    <p class="text-muted">Erstellen Sie angepasste Termine in den Templates oder in der Live-Ansicht</p>
+</div>
+{% else %}
+<div class="table-responsive">
+    <table class="table table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>Datum</th>
+                <th>Training</th>
+                <th>Status</th>
+                <th>Aktivitäten</th>
+                <th class="text-end">Aktionen</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for instance in instances %}
+            <tr>
+                <td>
+                    <strong>{{ instance.date.strftime('%d.%m.%Y') }}</strong>
+                    <div class="text-muted"><small>{{ weekdays[instance.date.weekday()] }}</small></div>
+                </td>
+                <td>{{ instance.training.name }}</td>
+                <td>
+                    {% if instance.status == 'cancelled' %}
+                    <span class="badge bg-danger">Abgesagt</span>
+                    {% else %}
+                    <span class="badge bg-warning text-dark">Angepasst</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <span class="badge bg-info">{{ instance.activities|length }} Aktivitäten</span>
+                </td>
+                <td class="text-end">
+                    <div class="d-flex justify-content-end gap-1">
+                        {% if instance.status != 'cancelled' %}
+                        <a href="{{ url_for('admin.edit_training_instance', id=instance.id) }}"
+                           class="btn btn-sm btn-outline-primary"
+                           title="Bearbeiten"
+                           data-bs-toggle="tooltip">
+                            <i class="bi bi-pencil-fill"></i>
+                        </a>
+                        {% endif %}
+                        <form method="POST" action="{{ url_for('admin.delete_training_instance', id=instance.id) }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit"
+                                    class="btn btn-sm btn-outline-secondary"
+                                    title="Zurücksetzen"
+                                    data-bs-toggle="tooltip"
+                                    onclick="return confirm('Angepassten Termin wirklich entfernen?');">
+                                <i class="bi bi-arrow-counterclockwise"></i>
+                            </button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{% block scripts %}
+<script>
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    })
+</script>
+{% endblock %}
+{% endblock %}

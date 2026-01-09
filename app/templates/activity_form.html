@@ -8,16 +8,25 @@
                 <h4 class="mb-0">{{ 'Aktivität bearbeiten' if activity else 'Neue Aktivität' }}</h4>
             </div>
             <div class="card-body">
-                <form method="POST" action="{{ url_for('admin.edit_activity', id=activity.id) if activity else url_for('admin.add_activity', training_id=training.id) }}" id="activityForm" onsubmit="return prepareFormSubmit()">
+                {% set is_instance = instance is defined and instance %}
+                <form method="POST" action="{% if is_instance %}{{ url_for('admin.edit_instance_activity', id=activity.id) if activity else url_for('admin.add_instance_activity', instance_id=instance.id) }}{% else %}{{ url_for('admin.edit_activity', id=activity.id) if activity else url_for('admin.add_activity', training_id=training.id) }}{% endif %}" id="activityForm" onsubmit="return prepareFormSubmit()">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    {% if training %}
                     <input type="hidden" name="training_id" value="{{ training.id }}">
+                    {% endif %}
+                    {% if is_instance %}
+                    <input type="hidden" name="training_instance_id" value="{{ instance.id }}">
+                    {% endif %}
                         
                         <div class="mb-3">
                             <label class="form-label">Typ</label>
                             <select name="activity_type" class="form-select" id="activity_type" onchange="updateFormSections()" required>
-                                <option value="team" {% if activity and activity.activity_type == 'team' %}selected{% endif %}>Team</option>
-                                <option value="prepractice" {% if activity and activity.activity_type == 'prepractice' %}selected{% endif %}>Prepractice</option>
-                                <option value="individual" {% if activity and activity.activity_type == 'individual' %}selected{% endif %}>Individual</option>
-                                <option value="group" {% if activity and activity.activity_type == 'group' %}selected{% endif %}>Group</option>
+                                {% for key in ACTIVITY_TYPE_ORDER %}
+                                {% set definition = ACTIVITY_TYPE_DEFS.get(key) %}
+                                <option value="{{ key }}" {% if activity and activity.activity_type == key %}selected{% endif %}>
+                                    {{ definition.label }}
+                                </option>
+                                {% endfor %}
                             </select>
                         </div>
                         
@@ -28,7 +37,7 @@
                         
                         
                         <!-- Topic Section (Team/Prepractice) -->
-                        <div class="mb-3" id="topic_section" style="display: {% if activity and activity.activity_type in ['team', 'prepractice'] %}block{% elif not activity %}block{% else %}none{% endif %};">
+                        <div class="mb-3" id="topic_section" style="display: {% if activity and activity.activity_type in TEAM_LIKE_TYPES %}block{% elif not activity %}block{% else %}none{% endif %};">
                             <label class="form-label">Thema</label>
                             <input type="text" name="topic" class="form-control" value="{{ activity.topic if activity and activity.topic else '' }}">
                         </div>
@@ -98,7 +107,7 @@
                         </div>
                         
                         <div class="d-flex justify-content-between mt-4">
-                            <a href="{{ url_for('admin.edit_training', id=training.id) }}" class="btn btn-secondary">Abbrechen</a>
+                            <a href="{% if is_instance %}{{ url_for('admin.edit_training_instance', id=instance.id) }}{% else %}{{ training_edit_url if training_edit_url is defined else url_for('admin.edit_training', id=training.id) }}{% endif %}" class="btn btn-secondary">Abbrechen</a>
                             <button type="submit" class="btn btn-primary">Speichern</button>
                         </div>
                 </form>
@@ -120,11 +129,15 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('combo_count').value = initialCount;
 });
 
+const teamLikeTypes = {{ TEAM_LIKE_TYPES|tojson|safe }};
+const individualTypes = {{ ['individual']|tojson|safe }};
+const groupTypes = {{ ['group']|tojson|safe }};
+
 function updateFormSections() {
     const type = document.getElementById('activity_type').value;
-    document.getElementById('topic_section').style.display = (type === 'team' || type === 'prepractice') ? 'block' : 'none';
-    document.getElementById('individual_section').style.display = (type === 'individual') ? 'block' : 'none';
-    document.getElementById('group_section').style.display = (type === 'group') ? 'block' : 'none';
+    document.getElementById('topic_section').style.display = teamLikeTypes.includes(type) ? 'block' : 'none';
+    document.getElementById('individual_section').style.display = individualTypes.includes(type) ? 'block' : 'none';
+    document.getElementById('group_section').style.display = groupTypes.includes(type) ? 'block' : 'none';
 }
 
 function updateIndividualMode() {

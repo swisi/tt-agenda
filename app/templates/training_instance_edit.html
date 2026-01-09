@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Training am {{ instance.date.strftime('%d.%m.%Y') }} bearbeiten</h1>
+    <p class="text-muted mb-0">{{ training.name }}</p>
+</div>
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Aktivitäten</h5>
+        <a href="{{ url_for('admin.edit_training', id=training.id) }}" class="btn btn-sm btn-outline-secondary">Zurück zum Template</a>
+    </div>
+    <div class="card-body">
+        <div id="activities-list">
+            {% for activity in activities %}
+            <div class="card activity-card mb-2 activity-type-{{ activity.activity_type }}">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="me-3 d-flex flex-column gap-1 activity-controls">
+                            {% if not loop.first %}
+                            <form method="POST" action="{{ url_for('admin.move_instance_activity_up', id=activity.id) }}" class="inline-form">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-sm btn-primary" title="Nach oben">
+                                    <i class="bi bi-arrow-up-circle-fill"></i>
+                                </button>
+                            </form>
+                            {% else %}
+                            <div class="activity-control-spacer"></div>
+                            {% endif %}
+                            {% if not loop.last %}
+                            <form method="POST" action="{{ url_for('admin.move_instance_activity_down', id=activity.id) }}" class="inline-form">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-sm btn-primary" title="Nach unten">
+                                    <i class="bi bi-arrow-down-circle-fill"></i>
+                                </button>
+                            </form>
+                            {% else %}
+                            <div class="activity-control-spacer"></div>
+                            {% endif %}
+                        </div>
+                        <div class="flex-grow-1">
+                            {% if activity.activity_type == 'team' and activity.topic %}
+                            <h5 class="mb-1">{{ activity.topic }}</h5>
+                            <p class="text-muted mb-2"><small><span class="badge bg-info">{{ activity.activity_type }}</span></small></p>
+                            {% elif activity.activity_type == 'prepractice' and activity.topic %}
+                            <h5 class="mb-1">{{ activity.topic }}</h5>
+                            <p class="text-muted mb-2"><small><span class="badge bg-warning">{{ activity.activity_type }}</span></small></p>
+                            {% elif activity.activity_type == 'individual' and activity.topics_json %}
+                            {% set topics = activity.topics_json|parse_groups %}
+                            {% set topic_values = topics.values()|list %}
+                            {% if topic_values and topic_values|length > 0 %}
+                                {% set first_topic = topic_values[0] %}
+                                {% set all_same = topic_values|select('equalto', first_topic)|list|length == topic_values|length %}
+                                {% if all_same %}
+                                <h5 class="mb-1">{{ first_topic }}</h5>
+                                {% else %}
+                                <h5 class="mb-1">Individual (verschiedene Themen)</h5>
+                                {% endif %}
+                            {% else %}
+                            <h5 class="mb-1">Individual</h5>
+                            {% endif %}
+                            <p class="text-muted mb-2"><small><span class="badge bg-success">{{ activity.activity_type }}</span></small></p>
+                            {% elif activity.activity_type == 'group' and activity.topics_json %}
+                            {% set combinations = activity.topics_json|parse_groups %}
+                            {% if combinations and combinations|length > 0 %}
+                            <h5 class="mb-1">{{ combinations[0].topic }}</h5>
+                            {% if combinations|length > 1 %}
+                            <p class="text-muted mb-1"><small>+ {{ combinations|length - 1 }} weitere Gruppe(n)</small></p>
+                            {% endif %}
+                            {% else %}
+                            <h5 class="mb-1">Group</h5>
+                            {% endif %}
+                            <p class="text-muted mb-2"><small><span class="badge bg-primary">{{ activity.activity_type }}</span></small></p>
+                            {% else %}
+                            <h5 class="mb-1">{{ activity.activity_type }}</h5>
+                            {% endif %}
+
+                            <p class="mb-1"><strong>Zeit:</strong> {{ activity.start_time.strftime('%H:%M') }} ({{ activity.duration }} Min)</p>
+
+                            {% if activity.activity_type == 'individual' and activity.topics_json %}
+                            {% set topics = activity.topics_json|parse_groups %}
+                            {% set topic_values = topics.values()|list %}
+                            {% if topic_values and topic_values|length > 0 %}
+                                {% set first_topic = topic_values[0] %}
+                                {% set all_same = topic_values|select('equalto', first_topic)|list|length == topic_values|length %}
+                                {% if not all_same %}
+                                <details class="mt-2">
+                                    <summary class="text-primary summary-toggle"><small>Themen anzeigen</small></summary>
+                                    <ul class="mb-0 mt-1">
+                                        {% for group, topic in topics.items() %}
+                                        <li><small>{{ group }}: {{ topic }}</small></li>
+                                        {% endfor %}
+                                    </ul>
+                                </details>
+                                {% endif %}
+                            {% endif %}
+                            {% elif activity.activity_type == 'group' and activity.topics_json %}
+                            {% set combinations = activity.topics_json|parse_groups %}
+                            {% if combinations and combinations|length > 1 %}
+                            <details class="mt-2">
+                                <summary class="text-primary summary-toggle"><small>Alle Gruppen anzeigen</small></summary>
+                                <ul class="mb-0 mt-1">
+                                    {% for combo in combinations %}
+                                    <li><small>{{ combo.groups|join(' & ') }}: {{ combo.topic }}</small></li>
+                                    {% endfor %}
+                                </ul>
+                            </details>
+                            {% endif %}
+                            {% endif %}
+                        </div>
+                        <div>
+                            <a href="{{ url_for('admin.edit_instance_activity', id=activity.id) }}" class="btn btn-sm btn-primary me-2">Bearbeiten</a>
+                            <form method="POST" action="{{ url_for('admin.delete_instance_activity', id=activity.id) }}" class="inline-form" onsubmit="return confirm('Wirklich löschen?');">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-sm btn-danger">Löschen</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            {% if not activities %}
+            <p class="text-muted">Noch keine Aktivitäten vorhanden.</p>
+            {% endif %}
+        </div>
+
+        <a href="{{ url_for('admin.add_instance_activity', instance_id=instance.id) }}" class="btn btn-success mt-3">
+            <i class="bi bi-plus-circle me-1"></i>Aktivität hinzufügen
+        </a>
+    </div>
+</div>
+{% endblock %}

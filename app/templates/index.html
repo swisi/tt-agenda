@@ -42,13 +42,19 @@
     <div class="row">
         {% for item in upcoming_trainings %}
         <div class="col-md-4 mb-3">
-            <div class="card h-100 card-clickable {% if item.is_running %}border-danger{% endif %}" 
-                 style="{% if item.is_running %}border-width: 3px;{% endif %}"
+            <div class="card h-100 card-clickable {% if item.is_running %}border-danger{% elif item.is_individual %}border-warning{% endif %}" 
+                 style="{% if item.is_running %}border-width: 3px;{% elif item.is_individual %}border-width: 2px;{% endif %}"
                  onclick="window.location.href='{{ url_for('main.live', training_id=item.training.id, date=item.date.strftime('%Y-%m-%d')) }}';">
                 <div class="card-header {% if item.is_running %}bg-danger text-white{% elif item.is_upcoming %}bg-primary text-white{% endif %}">
                     <h6 class="mb-0">
                         {% if item.is_running %}🔴 LÄUFT JETZT{% elif item.is_upcoming %}⏰ HEUTE{% else %}📅{% endif %}
                         {{ item.training.name }}
+                        {% if item.is_individual %}
+                        <span class="badge bg-warning text-dark ms-2">Angepasst</span>
+                        {% endif %}
+                        {% if item.is_free %}
+                        <span class="badge bg-secondary ms-2">Einmalig</span>
+                        {% endif %}
                     </h6>
                 </div>
                 <div class="card-body">
@@ -66,7 +72,7 @@
                     </div>
                     <div class="mb-2">
                         <i class="bi bi-list-task me-2"></i>
-                        {{ item.training.activities|length }} Aktivitäten
+                        {{ item.activities_count }} Aktivitäten
                     </div>
                     {% if item.is_running %}
                     <span class="badge bg-danger w-100">LÄUFT JETZT</span>

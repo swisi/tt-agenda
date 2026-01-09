@@ -1,4 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
+from urllib.parse import urljoin, urlparse
 from ..models import User
 from ..extensions import db
 import requests
@@ -7,6 +8,11 @@ import logging
 
 bp = Blueprint('auth', __name__)
 logger = logging.getLogger(__name__)
+
+def is_safe_url(target):
+    ref_url = urlparse(request.host_url)
+    test_url = urlparse(urljoin(request.host_url, target))
+    return test_url.scheme in ('http', 'https') and ref_url.netloc == test_url.netloc
 
 @bp.route('/login', methods=['GET', 'POST'])
 def login():
@@ -21,6 +27,8 @@ def login():
             session['user_role'] = user.role
             flash('Erfolgreich angemeldet!', 'success')
             next_page = request.args.get('next')
+            if next_page and not is_safe_url(next_page):
+                next_page = None
             return redirect(next_page or url_for('main.index'))
         else:
             flash('Ungültiger Benutzername oder Passwort.', 'danger')

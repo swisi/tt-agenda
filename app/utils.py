@@ -3,11 +3,41 @@ from flask import session, flash, redirect, url_for, request
 from functools import wraps
 import json
 from typing import List, Tuple, Optional, Dict, Any
-from .models import Activity, Training
+from .models import Activity, ActivityInstance, Training, TrainingInstance
 from .extensions import db
 
 WEEKDAYS = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag']
-POSITION_GROUPS = ['OL', 'DL', 'LB', 'RB','DB', 'TE', 'WR', 'QB']
+POSITION_GROUPS = ['OL', 'DL', 'LB', 'RB', 'DB', 'TE', 'WR', 'QB']
+
+ACTIVITY_TYPE_DEFS = {
+    'team': {
+        'label': 'Team',
+        'behavior': 'team',
+        'badge_class': 'bg-info'
+    },
+    'prepractice': {
+        'label': 'Prepractice',
+        'behavior': 'team',
+        'badge_class': 'bg-warning'
+    },
+    'individual': {
+        'label': 'Individual',
+        'behavior': 'individual',
+        'badge_class': 'bg-success'
+    },
+    'group': {
+        'label': 'Group',
+        'behavior': 'group',
+        'badge_class': 'bg-primary'
+    }
+}
+
+ACTIVITY_TYPE_ORDER = ['team', 'prepractice', 'individual', 'group']
+TEAM_LIKE_TYPES = [k for k, v in ACTIVITY_TYPE_DEFS.items() if v['behavior'] == 'team']
+
+def get_activity_behavior(activity_type: str) -> str:
+    definition = ACTIVITY_TYPE_DEFS.get(activity_type, {})
+    return definition.get('behavior', 'team')
 
 try:
     from .activity_colors import get_activity_color, LIGHT_MODE_COLORS, DARK_MODE_COLORS
@@ -65,15 +95,24 @@ def get_training_timeline(training: Training, base_date: datetime.date) -> Tuple
     if not activities:
         return None, None, None, None
 
-    timeline = build_activity_timeline(activities, base_date)
+    timeline, start_dt, end_dt = get_timeline_from_activities(activities, base_date)
     if not timeline:
         return activities, None, None, None
 
-    return activities, timeline, timeline[0][1], timeline[-1][2]
+    return activities, timeline, start_dt, end_dt
 
-def get_next_training_dates(training, limit=3):
+def get_timeline_from_activities(activities: List[Activity], base_date: datetime.date) -> Tuple[Optional[List[Tuple[Activity, datetime, datetime]]], Optional[datetime], Optional[datetime]]:
+    """Berechnet die Timeline aus einer gegebenen Aktivitätsliste."""
+    if not activities:
+        return None, None, None
+    timeline = build_activity_timeline(activities, base_date)
+    if not timeline:
+        return None, None, None
+    return timeline, timeline[0][1], timeline[-1][2]
+
+def get_next_training_dates(training, activities: Optional[List[Activity]] = None, limit=3, now: Optional[datetime] = None):
     """Berechnet die nächsten Trainingstermine für ein Training."""
-    now = datetime.now()
+    now = now or datetime.now()
     today = now.date()
     dates = []
 
@@ -87,7 +126,8 @@ def get_next_training_dates(training, limit=3):
 
     while current <= training.end_date and len(dates) < target_limit:
         if current == today:
-            activities = Activity.query.filter_by(training_id=training.id).order_by(Activity.order_index, Activity.id).all()
+            if activities is None:
+                activities = Activity.query.filter_by(training_id=training.id).order_by(Activity.order_index, Activity.id).all()
             if activities:
                 timeline = build_activity_timeline(activities, today)
                 if timeline and now < timeline[-1][2]:
@@ -97,6 +137,116 @@ def get_next_training_dates(training, limit=3):
         current += timedelta(days=7)
 
     return dates
+
+def resolve_activities_for_date(training: Training, date: datetime.date, activities_by_training: Dict[int, List[Activity]], instances_by_key: Dict[tuple, TrainingInstance], instance_activities_by_id: Dict[int, List[ActivityInstance]]):
+    instance = instances_by_key.get((training.id, date))
+    if instance:
+        if instance.status == 'cancelled':
+            return [], True
+        return instance_activities_by_id.get(instance.id, []), False
+    return activities_by_training.get(training.id, []), False
+
+def get_current_training_status(trainings: List[Training], activities_by_training: Dict[int, List[Activity]], instances_by_key: Dict[tuple, TrainingInstance], instance_activities_by_id: Dict[int, List[ActivityInstance]], now: datetime):
+    """Ermittelt laufendes oder nächstes Training basierend auf vorhandenen Aktivitäten."""
+    today = now.date()
+    yesterday = today - timedelta(days=1)
+    today_weekday = today.weekday()
+
+    current_training = None
+    current_activity = None
+    next_activity = None
+    training_status = None
+    upcoming_start = None
+    current_date = None
+    current_activities = None
+    current_start_dt = None
+
+    for training in trainings:
+        activities = activities_by_training.get(training.id, [])
+        for candidate_date in (yesterday, today):
+            if training.weekday != candidate_date.weekday():
+                continue
+            if not (training.start_date <= candidate_date <= training.end_date):
+                continue
+
+            activities, is_cancelled = resolve_activities_for_date(training, candidate_date, activities_by_training, instances_by_key, instance_activities_by_id)
+            if is_cancelled:
+                continue
+            timeline, start_dt, end_dt = get_timeline_from_activities(activities, candidate_date)
+            if not timeline:
+                continue
+
+            if start_dt <= now < end_dt:
+                current_training = training
+                training_status = 'running'
+                for i, (activity, activity_start, activity_end) in enumerate(timeline):
+                    if activity_start <= now < activity_end:
+                        current_activity = activity
+                        if i + 1 < len(timeline):
+                            next_activity = timeline[i + 1][0]
+                        break
+                    if now < activity_start:
+                        next_activity = activity
+                        break
+                current_date = candidate_date
+                current_activities = activities
+                current_start_dt = start_dt
+                return current_training, current_activity, next_activity, training_status, current_date, current_activities, current_start_dt
+
+        if training.weekday == today_weekday and training.start_date <= today <= training.end_date:
+            activities, is_cancelled = resolve_activities_for_date(training, today, activities_by_training, instances_by_key, instance_activities_by_id)
+            if is_cancelled:
+                continue
+            timeline, start_dt, _end_dt = get_timeline_from_activities(activities, today)
+            if timeline and now < start_dt:
+                if upcoming_start is None or start_dt < upcoming_start:
+                    current_training = training
+                    training_status = 'upcoming'
+                    next_activity = timeline[0][0]
+                    current_activity = None
+                    upcoming_start = start_dt
+                    current_date = today
+                    current_activities = activities
+                    current_start_dt = start_dt
+
+    return current_training, current_activity, next_activity, training_status, current_date, current_activities, current_start_dt
+
+def get_upcoming_trainings(trainings: List[Training], activities_by_training: Dict[int, List[Activity]], instances_by_key: Dict[tuple, TrainingInstance], instance_activities_by_id: Dict[int, List[ActivityInstance]], now: datetime):
+    """Baut die Liste aller kommenden Trainings für die Übersicht."""
+    today = now.date()
+    upcoming_trainings = []
+
+    for training in trainings:
+        template_activities = activities_by_training.get(training.id, [])
+        next_dates = get_next_training_dates(training, activities=template_activities, limit=None, now=now)
+        for date in next_dates:
+            instance = instances_by_key.get((training.id, date))
+            activities, is_cancelled = resolve_activities_for_date(training, date, activities_by_training, instances_by_key, instance_activities_by_id)
+            if is_cancelled:
+                continue
+            timeline, start_dt, end_dt = get_timeline_from_activities(activities, date)
+            if not timeline:
+                continue
+
+            is_today = date == today
+            is_running = is_today and start_dt <= now < end_dt
+            is_upcoming = is_today and now < start_dt
+
+            upcoming_trainings.append({
+                'training': training,
+                'date': date,
+                'start_time': start_dt.time(),
+                'end_time': end_dt.time(),
+                'is_today': is_today,
+                'is_running': is_running,
+                'is_upcoming': is_upcoming,
+                'activities_count': len(activities),
+                'is_individual': bool(instance and instance.status == 'active'),
+                'is_free': bool(training.is_hidden)
+            })
+
+    upcoming_trainings.sort(key=lambda x: (x['date'], x['start_time']))
+    return upcoming_trainings
 
 def get_text_color_for_bg(bg_color):
     """Berechnet die passende Textfarbe (schwarz/weiß) basierend auf der Hintergrundfarbe."""
@@ -113,7 +263,7 @@ def get_text_color_for_bg(bg_color):
         return 'black'
 
 def build_group_cells(activity: Activity) -> List[Dict[str, Any]]:
-    all_groups = ['OL', 'DL', 'LB', 'RB', 'DB', 'WR', 'TE', 'QB']
+    all_groups = POSITION_GROUPS
     group_tone_map = {
         'OL': 0,
         'DL': 1,
@@ -136,7 +286,8 @@ def build_group_cells(activity: Activity) -> List[Dict[str, Any]]:
             return base_class
         return f"{base_class} group-tone-{tone}".strip()
 
-    if activity.activity_type in ['team', 'prepractice']:
+    behavior = get_activity_behavior(activity.activity_type)
+    if behavior == 'team':
         position_groups_list = json.loads(activity.position_groups) if activity.position_groups else all_groups
         cells.append({
             'colspan': 8,
@@ -146,9 +297,9 @@ def build_group_cells(activity: Activity) -> List[Dict[str, Any]]:
             'text_color': text_color,
             'groups': position_groups_list
         })
-    elif activity.activity_type == 'individual':
+    elif behavior == 'individual':
         cells.extend(_build_individual_cells(activity, all_groups, activity_color, text_color, with_tone_class))
-    elif activity.activity_type == 'group':
+    elif behavior == 'group':
         cells.extend(_build_group_cells(activity, all_groups, activity_color, text_color, with_tone_class))
 
     return cells
@@ -257,6 +408,37 @@ def recalculate_times(training_id):
             current_datetime += timedelta(minutes=activity.duration)
     else:
         current_time = training.start_time
+        for activity in activities:
+            activity.start_time = current_time
+            current_datetime = datetime.combine(datetime.today(), current_time)
+            current_datetime += timedelta(minutes=activity.duration)
+            current_time = current_datetime.time()
+
+    db.session.commit()
+
+def recalculate_instance_times(instance_id):
+    instance = TrainingInstance.query.get(instance_id)
+    if not instance:
+        return
+    activities = ActivityInstance.query.filter_by(training_instance_id=instance_id).order_by(ActivityInstance.order_index).all()
+
+    if not activities:
+        return
+
+    first_activity = activities[0]
+    if first_activity.activity_type == 'prepractice':
+        start_datetime = datetime.combine(datetime.today(), instance.start_time)
+        start_datetime -= timedelta(minutes=first_activity.duration)
+        first_activity.start_time = start_datetime.time()
+
+        current_datetime = datetime.combine(datetime.today(), first_activity.start_time)
+        current_datetime += timedelta(minutes=first_activity.duration)
+
+        for activity in activities[1:]:
+            activity.start_time = current_datetime.time()
+            current_datetime += timedelta(minutes=activity.duration)
+    else:
+        current_time = instance.start_time
         for activity in activities:
             activity.start_time = current_time
             current_datetime = datetime.combine(datetime.today(), current_time)

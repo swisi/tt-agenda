@@ -4,9 +4,9 @@ import json
 import os
 import sqlite3
 import tempfile
-from ..models import Training, Activity
+from ..models import Training, Activity, TrainingInstance, ActivityInstance
 from ..extensions import db
-from ..utils import admin_required, WEEKDAYS, POSITION_GROUPS, get_activity_color, recalculate_times
+from ..utils import admin_required, WEEKDAYS, POSITION_GROUPS, get_activity_behavior, get_activity_color, recalculate_times, recalculate_instance_times
 
 bp = Blueprint('admin', __name__)
 
@@ -21,11 +21,75 @@ def resolve_sqlite_db_path():
         return os.path.abspath(os.path.join(current_app.instance_path, relative))
     return os.path.abspath(uri.replace('sqlite://', ''))
 
+def training_edit_url(training):
+    endpoint = 'admin.edit_hidden_training' if training.is_hidden else 'admin.edit_training'
+    return url_for(endpoint, id=training.id)
+
 @bp.route('/admin/trainings')
 @admin_required
 def admin_trainings():
-    trainings = Training.query.all()
+    trainings = Training.query.filter_by(is_hidden=False).all()
     return render_template('admin_trainings.html', trainings=trainings, weekdays=WEEKDAYS)
+
+@bp.route('/admin/instances')
+@admin_required
+def admin_instances():
+    instances = TrainingInstance.query.order_by(TrainingInstance.date.desc()).all()
+    return render_template('admin_instances.html', instances=instances, weekdays=WEEKDAYS)
+
+@bp.route('/admin/hidden-trainings')
+@admin_required
+def admin_hidden_trainings():
+    trainings = Training.query.filter_by(is_hidden=True).order_by(Training.start_date.desc()).all()
+    return render_template('admin_hidden_trainings.html', trainings=trainings, weekdays=WEEKDAYS)
+
+@bp.route('/admin/hidden-trainings/new', methods=['GET', 'POST'])
+@admin_required
+def new_hidden_training():
+    if request.method == 'POST':
+        date_value = datetime.strptime(request.form['date'], '%Y-%m-%d').date()
+        training = Training(
+            name=request.form['name'],
+            weekday=date_value.weekday(),
+            start_date=date_value,
+            end_date=date_value,
+            start_time=datetime.strptime(request.form['start_time'], '%H:%M').time(),
+            is_hidden=True
+        )
+        db.session.add(training)
+        db.session.commit()
+        flash('Einmaliges Training erstellt!', 'success')
+        return redirect(url_for('admin.edit_hidden_training', id=training.id))
+    return render_template('hidden_training_form.html')
+
+@bp.route('/admin/hidden-trainings/<int:id>/edit', methods=['GET', 'POST'])
+@admin_required
+def edit_hidden_training(id):
+    training = Training.query.get_or_404(id)
+    if request.method == 'POST':
+        date_value = datetime.strptime(request.form['date'], '%Y-%m-%d').date()
+        training.name = request.form['name']
+        training.weekday = date_value.weekday()
+        training.start_date = date_value
+        training.end_date = date_value
+        training.start_time = datetime.strptime(request.form['start_time'], '%H:%M').time()
+        training.is_hidden = True
+        db.session.commit()
+        recalculate_times(id)
+        flash('Einmaliges Training aktualisiert!', 'success')
+        return redirect(url_for('admin.edit_hidden_training', id=id))
+
+    activities = Activity.query.filter_by(training_id=id).order_by(Activity.order_index).all()
+    return render_template('hidden_training_edit.html', training=training, activities=activities)
+
+@bp.route('/admin/hidden-trainings/<int:id>/delete', methods=['POST'])
+@admin_required
+def delete_hidden_training(id):
+    training = Training.query.get_or_404(id)
+    db.session.delete(training)
+    db.session.commit()
+    flash('Einmaliges Training gelöscht!', 'success')
+    return redirect(url_for('admin.admin_hidden_trainings'))
 
 @bp.route('/admin/backup', methods=['GET'])
 @admin_required
@@ -124,6 +188,8 @@ def new_training():
 @admin_required
 def edit_training(id):
     training = Training.query.get_or_404(id)
+    if training.is_hidden:
+        return redirect(url_for('admin.edit_hidden_training', id=id))
     if request.method == 'POST':
         old_start_time = training.start_time
         new_start_time = datetime.strptime(request.form['start_time'], '%H:%M').time()
@@ -143,6 +209,7 @@ def edit_training(id):
         
         return redirect(url_for('admin.edit_training', id=id))
     activities = Activity.query.filter_by(training_id=id).order_by(Activity.order_index).all()
+    instances = TrainingInstance.query.filter_by(training_id=id).order_by(TrainingInstance.date.asc()).all()
     activities_json = [{
         'id': a.id,
         'activity_type': a.activity_type,
@@ -152,7 +219,372 @@ def edit_training(id):
         'topics_json': a.topics_json,
         'color': a.color if hasattr(a, 'color') and a.color else get_activity_color(a.activity_type, 'light')
     } for a in activities]
-    return render_template('training_edit.html', training=training, activities=activities, activities_json=json.dumps(activities_json), weekdays=WEEKDAYS, position_groups=POSITION_GROUPS)
+    return render_template('training_edit.html', training=training, activities=activities, instances=instances, activities_json=json.dumps(activities_json), weekdays=WEEKDAYS, position_groups=POSITION_GROUPS)
+
+def _parse_instance_date(training):
+    date_str = request.form.get('date')
+    if not date_str:
+        flash('Datum fehlt.', 'warning')
+        return None
+    try:
+        instance_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+    except ValueError:
+        flash('Ungültiges Datum.', 'danger')
+        return None
+    if instance_date.weekday() != training.weekday:
+        flash('Datum passt nicht zum Wochentag des Trainings.', 'warning')
+        return None
+    if not (training.start_date <= instance_date <= training.end_date):
+        flash('Datum liegt außerhalb des Trainingszeitraums.', 'warning')
+        return None
+    return instance_date
+
+@bp.route('/training/<int:id>/instance/create', methods=['POST'])
+@admin_required
+def create_training_instance(id):
+    training = Training.query.get_or_404(id)
+    instance_date = _parse_instance_date(training)
+    if not instance_date:
+        return redirect(training_edit_url(training))
+
+    existing = TrainingInstance.query.filter_by(training_id=id, date=instance_date).first()
+    if existing:
+        if existing.status == 'cancelled':
+            existing.status = 'active'
+            if not existing.activities:
+                template_activities = Activity.query.filter_by(training_id=id).order_by(Activity.order_index).all()
+                for activity in template_activities:
+                    copied = ActivityInstance(
+                        training_instance_id=existing.id,
+                        activity_type=activity.activity_type,
+                        start_time=activity.start_time,
+                        duration=activity.duration,
+                        position_groups=activity.position_groups,
+                        topic=activity.topic,
+                        order_index=activity.order_index,
+                        topics_json=activity.topics_json,
+                        color=activity.color
+                    )
+                    db.session.add(copied)
+            db.session.commit()
+            flash('Angepasster Termin reaktiviert.', 'success')
+        else:
+            flash('Angepasster Termin existiert bereits.', 'warning')
+        return redirect(url_for('admin.edit_training_instance', id=existing.id))
+
+    instance = TrainingInstance(
+        training_id=id,
+        date=instance_date,
+        status='active',
+        start_time=training.start_time
+    )
+    db.session.add(instance)
+    db.session.flush()
+
+    template_activities = Activity.query.filter_by(training_id=id).order_by(Activity.order_index).all()
+    for activity in template_activities:
+        copied = ActivityInstance(
+            training_instance_id=instance.id,
+            activity_type=activity.activity_type,
+            start_time=activity.start_time,
+            duration=activity.duration,
+            position_groups=activity.position_groups,
+            topic=activity.topic,
+            order_index=activity.order_index,
+            topics_json=activity.topics_json,
+            color=activity.color
+        )
+        db.session.add(copied)
+
+    db.session.commit()
+    flash('Angepasster Termin erstellt.', 'success')
+    return redirect(url_for('admin.edit_training_instance', id=instance.id))
+
+@bp.route('/training/<int:id>/instance/cancel', methods=['POST'])
+@admin_required
+def cancel_training_instance(id):
+    training = Training.query.get_or_404(id)
+    instance_date = _parse_instance_date(training)
+    if not instance_date:
+        return redirect(training_edit_url(training))
+
+    instance = TrainingInstance.query.filter_by(training_id=id, date=instance_date).first()
+    if instance:
+        instance.status = 'cancelled'
+    else:
+        instance = TrainingInstance(
+            training_id=id,
+            date=instance_date,
+            status='cancelled',
+            start_time=training.start_time
+        )
+        db.session.add(instance)
+
+    db.session.commit()
+    flash('Termin abgesagt.', 'success')
+    return redirect(training_edit_url(training))
+
+@bp.route('/training/instance/<int:id>/delete', methods=['POST'])
+@admin_required
+def delete_training_instance(id):
+    instance = TrainingInstance.query.get_or_404(id)
+    training = instance.training
+    db.session.delete(instance)
+    db.session.commit()
+    flash('Angepasster Termin entfernt.', 'success')
+    return redirect(training_edit_url(training))
+
+@bp.route('/training/instance/<int:id>/edit', methods=['GET'])
+@admin_required
+def edit_training_instance(id):
+    instance = TrainingInstance.query.get_or_404(id)
+    activities = ActivityInstance.query.filter_by(training_instance_id=id).order_by(ActivityInstance.order_index).all()
+    return render_template('training_instance_edit.html', training=instance.training, instance=instance, activities=activities, weekdays=WEEKDAYS, position_groups=POSITION_GROUPS)
+
+@bp.route('/training/instance/<int:instance_id>/activity/add', methods=['GET', 'POST'])
+@admin_required
+def add_instance_activity(instance_id):
+    instance = TrainingInstance.query.get_or_404(instance_id)
+    if request.method == 'POST':
+        activity_type = request.form.get('activity_type')
+        duration = int(request.form.get('duration', 60))
+        color = get_activity_color(activity_type, 'light')
+
+        max_order = db.session.query(db.func.max(ActivityInstance.order_index)).filter_by(training_instance_id=instance_id).scalar() or -1
+
+        if max_order == -1:
+            if activity_type == 'prepractice':
+                start_datetime = datetime.combine(datetime.today(), instance.start_time)
+                start_datetime -= timedelta(minutes=duration)
+                start_time = start_datetime.time()
+            else:
+                start_time = instance.start_time
+        else:
+            last_activity = ActivityInstance.query.filter_by(training_instance_id=instance_id).order_by(ActivityInstance.order_index.desc()).first()
+            start_datetime = datetime.combine(datetime.today(), last_activity.start_time)
+            start_datetime += timedelta(minutes=last_activity.duration)
+            start_time = start_datetime.time()
+
+        topics_json = None
+        position_groups = []
+
+        behavior = get_activity_behavior(activity_type)
+        if behavior == 'team':
+            position_groups = POSITION_GROUPS
+            topic = request.form.get('topic', '')
+        elif behavior == 'individual':
+            position_groups = POSITION_GROUPS
+            mode = request.form.get('individual_mode', 'same')
+            topics_per_group = {}
+            if mode == 'same':
+                common_topic = request.form.get('individual_common_topic', '')
+                for group in POSITION_GROUPS:
+                    topics_per_group[group] = common_topic
+            else:
+                for group in POSITION_GROUPS:
+                    topics_per_group[group] = request.form.get(f'individual_topic_{group}', '')
+            topics_json = json.dumps(topics_per_group)
+            topic = None
+        elif behavior == 'group':
+            combinations = []
+            all_selected_groups = set()
+            i = 0
+            max_iterations = 100
+            found_any = False
+
+            while i < max_iterations:
+                combo_groups = request.form.getlist(f'combo_{i}_groups')
+                combo_topic = request.form.get(f'combo_{i}_topic', '').strip()
+
+                if not combo_groups and not combo_topic:
+                    if found_any:
+                        break
+                    i += 1
+                    continue
+
+                found_any = True
+
+                if combo_groups and combo_topic:
+                    combinations.append({'groups': combo_groups, 'topic': combo_topic})
+                    all_selected_groups.update(combo_groups)
+
+                i += 1
+
+            position_groups = list(all_selected_groups) if all_selected_groups else []
+            topics_json = json.dumps(combinations) if combinations else None
+            topic = None
+
+        activity = ActivityInstance(
+            training_instance_id=instance_id,
+            activity_type=activity_type,
+            start_time=start_time,
+            duration=duration,
+            position_groups=json.dumps(position_groups),
+            topic=topic,
+            order_index=max_order + 1,
+            topics_json=topics_json,
+            color=color
+        )
+        db.session.add(activity)
+        db.session.commit()
+
+        recalculate_instance_times(instance_id)
+        flash('Aktivität erfolgreich hinzugefügt!', 'success')
+        return redirect(url_for('admin.edit_training_instance', id=instance_id))
+
+    return render_template('activity_form.html', training=instance.training, instance=instance, activity=None, position_groups=POSITION_GROUPS, individual_mode_same=True, individual_common_topic='', individual_topics={})
+
+@bp.route('/training/instance/activity/<int:id>/edit', methods=['GET', 'POST'])
+@admin_required
+def edit_instance_activity(id):
+    activity = ActivityInstance.query.get_or_404(id)
+    instance = activity.training_instance
+    training = instance.training
+
+    individual_mode_same = True
+    individual_common_topic = ''
+    individual_topics = {}
+    if activity and activity.activity_type == 'individual' and activity.topics_json:
+        try:
+            topics = json.loads(activity.topics_json)
+            if isinstance(topics, dict):
+                individual_topics = topics
+                topic_values = list(topics.values())
+                if topic_values:
+                    first_topic = topic_values[0]
+                    individual_mode_same = all(t == first_topic for t in topic_values)
+                    individual_common_topic = first_topic if individual_mode_same else ''
+        except:
+            pass
+
+    if request.method == 'POST':
+        activity_type = request.form.get('activity_type')
+        duration = int(request.form.get('duration', 60))
+
+        topics_json = None
+        position_groups = []
+
+        behavior = get_activity_behavior(activity_type)
+        if behavior == 'team':
+            position_groups = POSITION_GROUPS
+            activity.topic = request.form.get('topic', '')
+        elif behavior == 'individual':
+            position_groups = POSITION_GROUPS
+            mode = request.form.get('individual_mode', 'same')
+            topics_per_group = {}
+            if mode == 'same':
+                common_topic = request.form.get('individual_common_topic', '')
+                for group in POSITION_GROUPS:
+                    topics_per_group[group] = common_topic
+            else:
+                for group in POSITION_GROUPS:
+                    topics_per_group[group] = request.form.get(f'individual_topic_{group}', '')
+            topics_json = json.dumps(topics_per_group)
+            activity.topic = None
+        elif behavior == 'group':
+            combinations = []
+            all_selected_groups = set()
+            combo_count = int(request.form.get('combo_count', 0))
+            max_iterations = max(combo_count + 5, 100)
+            found_any = False
+
+            i = 0
+            while i < max_iterations:
+                combo_groups = request.form.getlist(f'combo_{i}_groups')
+                combo_topic = request.form.get(f'combo_{i}_topic', '').strip()
+
+                if not combo_groups and not combo_topic:
+                    if found_any and i >= combo_count:
+                        break
+                    i += 1
+                    continue
+
+                found_any = True
+
+                if combo_groups and combo_topic:
+                    combinations.append({'groups': combo_groups, 'topic': combo_topic})
+                    all_selected_groups.update(combo_groups)
+
+                i += 1
+
+            position_groups = list(all_selected_groups) if all_selected_groups else []
+            topics_json = json.dumps(combinations) if combinations else None
+            activity.topic = None
+
+        activity.activity_type = activity_type
+        activity.duration = duration
+        activity.position_groups = json.dumps(position_groups)
+        activity.topics_json = topics_json
+        activity.color = get_activity_color(activity_type, 'light')
+
+        db.session.commit()
+        recalculate_instance_times(instance.id)
+        flash('Aktivität erfolgreich aktualisiert!', 'success')
+        return redirect(url_for('admin.edit_training_instance', id=instance.id))
+
+    return render_template('activity_form.html', training=training, instance=instance, activity=activity, position_groups=POSITION_GROUPS, individual_mode_same=individual_mode_same, individual_common_topic=individual_common_topic, individual_topics=individual_topics)
+
+@bp.route('/training/instance/activity/<int:id>/delete', methods=['POST'])
+@admin_required
+def delete_instance_activity(id):
+    activity = ActivityInstance.query.get_or_404(id)
+    instance_id = activity.training_instance_id
+
+    db.session.delete(activity)
+    db.session.commit()
+
+    recalculate_instance_times(instance_id)
+    flash('Aktivität erfolgreich gelöscht!', 'success')
+
+    return redirect(url_for('admin.edit_training_instance', id=instance_id))
+
+@bp.route('/training/instance/activity/<int:id>/move_up', methods=['POST'])
+@admin_required
+def move_instance_activity_up(id):
+    activity = ActivityInstance.query.get_or_404(id)
+    instance_id = activity.training_instance_id
+
+    prev_activity = ActivityInstance.query.filter(
+        ActivityInstance.training_instance_id == instance_id,
+        ActivityInstance.order_index < activity.order_index
+    ).order_by(ActivityInstance.order_index.desc()).first()
+
+    if prev_activity:
+        activity.order_index, prev_activity.order_index = prev_activity.order_index, activity.order_index
+        db.session.commit()
+        recalculate_instance_times(instance_id)
+        flash('Aktivität nach oben verschoben', 'success')
+    else:
+        activities = ActivityInstance.query.filter_by(training_instance_id=instance_id).order_by(ActivityInstance.order_index).all()
+        for i, act in enumerate(activities):
+            act.order_index = i
+        db.session.commit()
+
+    return redirect(url_for('admin.edit_training_instance', id=instance_id))
+
+@bp.route('/training/instance/activity/<int:id>/move_down', methods=['POST'])
+@admin_required
+def move_instance_activity_down(id):
+    activity = ActivityInstance.query.get_or_404(id)
+    instance_id = activity.training_instance_id
+
+    next_activity = ActivityInstance.query.filter(
+        ActivityInstance.training_instance_id == instance_id,
+        ActivityInstance.order_index > activity.order_index
+    ).order_by(ActivityInstance.order_index.asc()).first()
+
+    if next_activity:
+        activity.order_index, next_activity.order_index = next_activity.order_index, activity.order_index
+        db.session.commit()
+        recalculate_instance_times(instance_id)
+        flash('Aktivität nach unten verschoben', 'success')
+    else:
+        activities = ActivityInstance.query.filter_by(training_instance_id=instance_id).order_by(ActivityInstance.order_index).all()
+        for i, act in enumerate(activities):
+            act.order_index = i
+        db.session.commit()
+
+    return redirect(url_for('admin.edit_training_instance', id=instance_id))
 
 @bp.route('/training/<int:id>/delete', methods=['POST'])
 @admin_required
@@ -230,10 +662,11 @@ def add_activity():
         topics_json = None
         position_groups = []
         
-        if activity_type in ['team', 'prepractice']:
+        behavior = get_activity_behavior(activity_type)
+        if behavior == 'team':
             position_groups = POSITION_GROUPS
             topic = request.form.get('topic', '')
-        elif activity_type == 'individual':
+        elif behavior == 'individual':
             position_groups = POSITION_GROUPS
             mode = request.form.get('individual_mode', 'same')
             topics_per_group = {}
@@ -246,7 +679,7 @@ def add_activity():
                     topics_per_group[group] = request.form.get(f'individual_topic_{group}', '')
             topics_json = json.dumps(topics_per_group)
             topic = None
-        elif activity_type == 'group':
+        elif behavior == 'group':
             combinations = []
             all_selected_groups = set()
             i = 0
@@ -291,9 +724,9 @@ def add_activity():
 
         recalculate_times(training_id)
         flash('Aktivität erfolgreich hinzugefügt!', 'success')
-        return redirect(url_for('admin.edit_training', id=training_id))
+        return redirect(training_edit_url(training))
     
-    return render_template('activity_form.html', training=training, activity=None, position_groups=POSITION_GROUPS, individual_mode_same=True, individual_common_topic='', individual_topics={})
+    return render_template('activity_form.html', training=training, training_edit_url=training_edit_url(training), activity=None, position_groups=POSITION_GROUPS, individual_mode_same=True, individual_common_topic='', individual_topics={})
 
 @bp.route('/activity/<int:id>/edit', methods=['GET', 'POST'])
 @admin_required
@@ -324,10 +757,11 @@ def edit_activity(id):
         topics_json = None
         position_groups = []
         
-        if activity_type in ['team', 'prepractice']:
+        behavior = get_activity_behavior(activity_type)
+        if behavior == 'team':
             position_groups = POSITION_GROUPS
             activity.topic = request.form.get('topic', '')
-        elif activity_type == 'individual':
+        elif behavior == 'individual':
             position_groups = POSITION_GROUPS
             mode = request.form.get('individual_mode', 'same')
             topics_per_group = {}
@@ -340,7 +774,7 @@ def edit_activity(id):
                     topics_per_group[group] = request.form.get(f'individual_topic_{group}', '')
             topics_json = json.dumps(topics_per_group)
             activity.topic = None
-        elif activity_type == 'group':
+        elif behavior == 'group':
             combinations = []
             all_selected_groups = set()
             combo_count = int(request.form.get('combo_count', 0))
@@ -379,9 +813,9 @@ def edit_activity(id):
         db.session.commit()
         recalculate_times(activity.training_id)
         flash('Aktivität erfolgreich aktualisiert!', 'success')
-        return redirect(url_for('admin.edit_training', id=activity.training_id))
+        return redirect(training_edit_url(training))
     
-    return render_template('activity_form.html', training=training, activity=activity, position_groups=POSITION_GROUPS, individual_mode_same=individual_mode_same, individual_common_topic=individual_common_topic, individual_topics=individual_topics)
+    return render_template('activity_form.html', training=training, training_edit_url=training_edit_url(training), activity=activity, position_groups=POSITION_GROUPS, individual_mode_same=individual_mode_same, individual_common_topic=individual_common_topic, individual_topics=individual_topics)
 
 @bp.route('/activity/<int:id>/update', methods=['POST'])
 @admin_required
@@ -438,7 +872,7 @@ def delete_activity(id):
     
     if request.is_json:
         return jsonify({'success': True})
-    return redirect(url_for('admin.edit_training', id=training_id))
+    return redirect(training_edit_url(activity.training))
 
 @bp.route('/activity/<int:id>/move_up', methods=['POST'])
 @admin_required
@@ -465,7 +899,7 @@ def move_activity_up(id):
             act.order_index = i
         db.session.commit()
     
-    return redirect(url_for('admin.edit_training', id=training_id))
+    return redirect(training_edit_url(activity.training))
 
 @bp.route('/activity/<int:id>/move_down', methods=['POST'])
 @admin_required
@@ -492,4 +926,4 @@ def move_activity_down(id):
             act.order_index = i
         db.session.commit()
     
-    return redirect(url_for('admin.edit_training', id=training_id))
+    return redirect(training_edit_url(activity.training))

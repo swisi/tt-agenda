@@ -8,11 +8,34 @@ class Training(db.Model):
     start_date = db.Column(db.Date, nullable=False)
     end_date = db.Column(db.Date, nullable=False)
     start_time = db.Column(db.Time, nullable=False)
+    is_hidden = db.Column(db.Boolean, default=False, nullable=False)
     activities = db.relationship('Activity', backref='training', lazy=True, cascade='all, delete-orphan')
+    instances = db.relationship('TrainingInstance', backref='training', lazy=True, cascade='all, delete-orphan')
 
 class Activity(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     training_id = db.Column(db.Integer, db.ForeignKey('training.id'), nullable=False)
+    activity_type = db.Column(db.String(20), nullable=False)
+    start_time = db.Column(db.Time, nullable=False)
+    duration = db.Column(db.Integer, nullable=False)
+    position_groups = db.Column(db.String(500), nullable=False)
+    topic = db.Column(db.String(200))
+    order_index = db.Column(db.Integer, default=0)
+    topics_json = db.Column(db.Text)
+    color = db.Column(db.String(7), default='#10b981')
+
+class TrainingInstance(db.Model):
+    __table_args__ = (db.UniqueConstraint('training_id', 'date', name='uq_training_instance_date'),)
+    id = db.Column(db.Integer, primary_key=True)
+    training_id = db.Column(db.Integer, db.ForeignKey('training.id'), nullable=False)
+    date = db.Column(db.Date, nullable=False, index=True)
+    status = db.Column(db.String(20), default='active', nullable=False)
+    start_time = db.Column(db.Time, nullable=False)
+    activities = db.relationship('ActivityInstance', backref='training_instance', lazy=True, cascade='all, delete-orphan')
+
+class ActivityInstance(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    training_instance_id = db.Column(db.Integer, db.ForeignKey('training_instance.id'), nullable=False)
     activity_type = db.Column(db.String(20), nullable=False)
     start_time = db.Column(db.Time, nullable=False)
     duration = db.Column(db.Integer, nullable=False)

@@ -8,6 +8,7 @@
 <div class="card mb-4">
     <div class="card-body">
         <form method="POST" class="compact-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="row">
                 <div class="col-md-6 mb-3">
                     <label class="form-label">Name</label>
@@ -48,6 +49,68 @@
     </div>
 </div>
 
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Angepasste Termine</h5>
+    </div>
+    <div class="card-body">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label">Datum</label>
+                <input type="date" class="form-control" form="create-instance-form" name="date" required>
+            </div>
+            <div class="col-md-8 d-flex gap-2">
+                <form id="create-instance-form" method="POST" action="{{ url_for('admin.create_training_instance', id=training.id) }}" class="d-inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-gear me-1"></i>Anpassen
+                    </button>
+                </form>
+                <form method="POST" action="{{ url_for('admin.cancel_training_instance', id=training.id) }}" class="d-inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="date" value="" id="cancel-date-input">
+                    <button type="submit" class="btn btn-outline-danger" onclick="setCancelDate()">
+                        <i class="bi bi-x-circle me-1"></i>Termin absagen
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        {% if instances %}
+        <div class="mt-4">
+            <h6 class="text-muted">Vorhandene angepasste Termine</h6>
+            <div class="list-group">
+                {% for instance in instances %}
+                <div class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>{{ instance.date.strftime('%d.%m.%Y') }}</strong>
+                        {% if instance.status == 'cancelled' %}
+                        <span class="badge bg-danger ms-2">Abgesagt</span>
+                        {% else %}
+                        <span class="badge bg-success ms-2">Angepasst</span>
+                        {% endif %}
+                    </div>
+                    <div class="d-flex gap-2">
+                        {% if instance.status != 'cancelled' %}
+                        <a class="btn btn-sm btn-outline-primary" href="{{ url_for('admin.edit_training_instance', id=instance.id) }}">
+                            Bearbeiten
+                        </a>
+                        {% endif %}
+                        <form method="POST" action="{{ url_for('admin.delete_training_instance', id=instance.id) }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-sm btn-outline-secondary">
+                                Zurücksetzen
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
 <div class="card">
     <div class="card-header">
         <h5 class="mb-0">Aktivitäten</h5>
@@ -62,6 +125,7 @@
                 <div class="me-3 d-flex flex-column gap-1 activity-controls">
                     {% if not loop.first %}
                     <form method="POST" action="{{ url_for('admin.move_activity_up', id=activity.id) }}" class="inline-form">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="btn btn-sm btn-primary" title="Nach oben">
                             <i class="bi bi-arrow-up-circle-fill"></i>
                         </button>
@@ -71,6 +135,7 @@
                     {% endif %}
                     {% if not loop.last %}
                     <form method="POST" action="{{ url_for('admin.move_activity_down', id=activity.id) }}" class="inline-form">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="btn btn-sm btn-primary" title="Nach unten">
                             <i class="bi bi-arrow-down-circle-fill"></i>
                         </button>
@@ -154,6 +219,7 @@
                 <div>
                     <a href="{{ url_for('admin.edit_activity', id=activity.id) }}" class="btn btn-sm btn-primary me-2">Bearbeiten</a>
                     <form method="POST" action="{{ url_for('admin.delete_activity', id=activity.id) }}" class="inline-form" onsubmit="return confirm('Wirklich löschen?');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="btn btn-sm btn-danger">Löschen</button>
                     </form>
                 </div>
@@ -171,4 +237,16 @@
 </a>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function setCancelDate() {
+    const dateInput = document.querySelector('#create-instance-form input[name="date"]');
+    const cancelInput = document.getElementById('cancel-date-input');
+    if (dateInput && cancelInput) {
+        cancelInput.value = dateInput.value;
+    }
+}
+</script>
 {% endblock %}

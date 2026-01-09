@@ -36,6 +36,7 @@
             <strong>Achtung:</strong> Die aktuelle Datenbank wird überschrieben. Bitte vorher ein Backup erstellen.
         </div>
         <form method="POST" action="{{ url_for('admin.admin_backup_restore') }}" enctype="multipart/form-data">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="mb-3">
                 <label class="form-label">Backup-Datei (.db)</label>
                 <input type="file" name="backup_file" class="form-control" accept=".db,.sqlite,.sqlite3" required>

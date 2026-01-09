@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, session, current_app
-from datetime import datetime, timedelta
-from ..models import Training, Activity
-from ..utils import login_required, get_next_training_dates, build_activity_timeline, get_training_timeline, WEEKDAYS, POSITION_GROUPS
+from datetime import datetime
+from ..models import Training, Activity, TrainingInstance, ActivityInstance
+from ..utils import login_required, get_current_training_status, get_upcoming_trainings, get_timeline_from_activities, WEEKDAYS, POSITION_GROUPS
 import logging
 import requests
 
@@ -35,91 +35,28 @@ def index():
             session.permanent = True  # Sicherstellen, dass die Session permanent ist
 
         trainings = Training.query.all()
-        
+        training_ids = [training.id for training in trainings]
+        activities_by_training = {training.id: [] for training in trainings}
+        if training_ids:
+            activities = Activity.query.filter(Activity.training_id.in_(training_ids)).order_by(Activity.training_id, Activity.order_index).all()
+            for activity in activities:
+                activities_by_training[activity.training_id].append(activity)
+
+        instances_by_key = {}
+        instance_activities_by_id = {}
+        if training_ids:
+            instances = TrainingInstance.query.filter(TrainingInstance.training_id.in_(training_ids)).all()
+            instance_ids = [instance.id for instance in instances]
+            instances_by_key = {(instance.training_id, instance.date): instance for instance in instances}
+            if instance_ids:
+                instance_activities = ActivityInstance.query.filter(ActivityInstance.training_instance_id.in_(instance_ids)).order_by(ActivityInstance.training_instance_id, ActivityInstance.order_index).all()
+                for activity in instance_activities:
+                    instance_activities_by_id.setdefault(activity.training_instance_id, []).append(activity)
+
         now = datetime.now()
-        today = now.date()
-        yesterday = today - timedelta(days=1)
-        today_weekday = today.weekday()
-        
-        current_training = None
-        current_activity = None
-        next_activity = None
-        training_status = None
-        upcoming_start = None
-        
-        upcoming_trainings = []
-        
-        for training in trainings:
-            next_dates = get_next_training_dates(training, limit=None)
-            for date in next_dates:
-                activities = Activity.query.filter_by(training_id=training.id).order_by(Activity.order_index).all()
-                if activities:
-                    timeline = build_activity_timeline(activities, date)
-                    if not timeline:
-                        continue
 
-                    training_start_datetime = timeline[0][1]
-                    training_end_datetime = timeline[-1][2]
-                    
-                    is_today = date == today
-                    is_running = False
-                    is_upcoming = False
-                    
-                    if is_today:
-                        if now >= training_start_datetime and now < training_end_datetime:
-                            is_running = True
-                        elif now < training_start_datetime:
-                            is_upcoming = True
-                    
-                    upcoming_trainings.append({
-                        'training': training,
-                        'date': date,
-                        'start_time': training_start_datetime.time(),
-                        'end_time': training_end_datetime.time(),
-                        'is_today': is_today,
-                        'is_running': is_running,
-                        'is_upcoming': is_upcoming
-                    })
-        
-        upcoming_trainings.sort(key=lambda x: (x['date'], x['start_time']))
-        
-        for training in trainings:
-            for candidate_date in (yesterday, today):
-                if training.weekday != candidate_date.weekday():
-                    continue
-                if not (training.start_date <= candidate_date <= training.end_date):
-                    continue
-
-                activities, timeline, start_dt, end_dt = get_training_timeline(training, candidate_date)
-                if not timeline:
-                    continue
-
-                if start_dt <= now < end_dt:
-                    current_training = training
-                    training_status = 'running'
-
-                    for i, (activity, activity_start, activity_end) in enumerate(timeline):
-                        if activity_start <= now < activity_end:
-                            current_activity = activity
-                            if i + 1 < len(timeline):
-                                next_activity = timeline[i + 1][0]
-                            break
-                        elif now < activity_start:
-                            next_activity = activity
-                            break
-                    break
-            if training_status == 'running':
-                break
-
-            if training.weekday == today_weekday and training.start_date <= today <= training.end_date:
-                activities, timeline, start_dt, end_dt = get_training_timeline(training, today)
-                if timeline and now < start_dt:
-                    if upcoming_start is None or start_dt < upcoming_start:
-                        current_training = training
-                        training_status = 'upcoming'
-                        next_activity = timeline[0][0]
-                        current_activity = None
-                        upcoming_start = start_dt
+        upcoming_trainings = get_upcoming_trainings(trainings, activities_by_training, instances_by_key, instance_activities_by_id, now)
+        current_training, current_activity, next_activity, training_status, current_date, current_activities, _current_start_dt = get_current_training_status(trainings, activities_by_training, instances_by_key, instance_activities_by_id, now)
         
         return render_template('index.html', 
                              trainings=trainings, 
@@ -130,6 +67,8 @@ def index():
                              current_activity=current_activity,
                              next_activity=next_activity,
                              training_status=training_status,
+                             display_activities=current_activities,
+                             current_date=current_date,
                              now=now)
     except Exception as e:
         logger.error(f"Error in index route: {str(e)}")
@@ -140,17 +79,30 @@ def index():
 def live():
     try:
         trainings = Training.query.all()
-        
+        training_ids = [training.id for training in trainings]
+        activities_by_training = {training.id: [] for training in trainings}
+        if training_ids:
+            activities = Activity.query.filter(Activity.training_id.in_(training_ids)).order_by(Activity.training_id, Activity.order_index).all()
+            for activity in activities:
+                activities_by_training[activity.training_id].append(activity)
+
+        instances_by_key = {}
+        instance_activities_by_id = {}
+        if training_ids:
+            instances = TrainingInstance.query.filter(TrainingInstance.training_id.in_(training_ids)).all()
+            instance_ids = [instance.id for instance in instances]
+            instances_by_key = {(instance.training_id, instance.date): instance for instance in instances}
+            if instance_ids:
+                instance_activities = ActivityInstance.query.filter(ActivityInstance.training_instance_id.in_(instance_ids)).order_by(ActivityInstance.training_instance_id, ActivityInstance.order_index).all()
+                for activity in instance_activities:
+                    instance_activities_by_id.setdefault(activity.training_instance_id, []).append(activity)
+
         now = datetime.now()
         today = now.date()
-        yesterday = today - timedelta(days=1)
-        today_weekday = today.weekday()
-        
         current_training = None
         current_activity = None
         next_activity = None
         training_status = None
-        upcoming_start = None
 
         selected_training_id = request.args.get('training_id', type=int)
         selected_date_str = request.args.get('date')
@@ -161,12 +113,18 @@ def live():
             except ValueError:
                 selected_date = None
 
+        display_activities = None
         if selected_training_id and selected_date:
             training = Training.query.get_or_404(selected_training_id)
             if training.start_date <= selected_date <= training.end_date and training.weekday == selected_date.weekday():
-                activities, timeline, start_dt, end_dt = get_training_timeline(training, selected_date)
+                instance = instances_by_key.get((training.id, selected_date))
+                if instance and instance.status == 'cancelled':
+                    timeline, start_dt, end_dt = None, None, None
+                else:
+                    display_activities = instance_activities_by_id.get(instance.id, []) if instance else activities_by_training.get(training.id, [])
+                    timeline, start_dt, end_dt = get_timeline_from_activities(display_activities, selected_date)
             else:
-                activities, timeline, start_dt, end_dt = None, None, None, None
+                timeline, start_dt, end_dt = None, None, None
 
             if timeline:
                 current_training = training
@@ -192,46 +150,12 @@ def live():
                                  current_activity=current_activity,
                                  next_activity=next_activity,
                                  training_status=training_status,
+                                 display_activities=display_activities,
+                                 current_date=selected_date,
                                  now=now)
-        
-        for training in trainings:
-            for candidate_date in (yesterday, today):
-                if training.weekday != candidate_date.weekday():
-                    continue
-                if not (training.start_date <= candidate_date <= training.end_date):
-                    continue
 
-                activities, timeline, start_dt, end_dt = get_training_timeline(training, candidate_date)
-                if not timeline:
-                    continue
+        current_training, current_activity, next_activity, training_status, current_date, current_activities, _current_start_dt = get_current_training_status(trainings, activities_by_training, instances_by_key, instance_activities_by_id, now)
 
-                if start_dt <= now < end_dt:
-                    current_training = training
-                    training_status = 'running'
-
-                    for i, (activity, activity_start, activity_end) in enumerate(timeline):
-                        if activity_start <= now < activity_end:
-                            current_activity = activity
-                            if i + 1 < len(timeline):
-                                next_activity = timeline[i + 1][0]
-                            break
-                        elif now < activity_start:
-                            next_activity = activity
-                            break
-                    break
-            if training_status == 'running':
-                break
-
-            if training.weekday == today_weekday and training.start_date <= today <= training.end_date:
-                activities, timeline, start_dt, end_dt = get_training_timeline(training, today)
-                if timeline and now < start_dt:
-                    if upcoming_start is None or start_dt < upcoming_start:
-                        current_training = training
-                        training_status = 'upcoming'
-                        next_activity = timeline[0][0]
-                        current_activity = None
-                        upcoming_start = start_dt
-        
         return render_template('live.html', 
                              weekdays=WEEKDAYS,
                              position_groups=POSITION_GROUPS,
@@ -239,6 +163,8 @@ def live():
                              current_activity=current_activity,
                              next_activity=next_activity,
                              training_status=training_status,
+                             display_activities=current_activities,
+                             current_date=current_date,
                              now=now)
     except Exception as e:
         logger.error(f"Error in live route: {str(e)}")
