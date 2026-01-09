@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 import logging
 import secrets
 from sqlalchemy import text
+from sqlalchemy.exc import OperationalError
 
 def create_app(config_class=Config):
     load_dotenv()  # Load .env file
@@ -138,7 +139,12 @@ def create_app(config_class=Config):
 
     with app.app_context():
         if app.config.get('AUTO_CREATE_DB'):
-            db.create_all()
+            try:
+                db.create_all()
+            except OperationalError as exc:
+                if 'already exists' not in str(exc).lower():
+                    raise
+                app.logger.warning('DB init race condition detected; continuing.')
             if db.engine.dialect.name == 'sqlite':
                 table_exists = db.session.execute(
                     text("SELECT name FROM sqlite_master WHERE type='table' AND name='activity_type'")
