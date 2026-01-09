@@ -44,6 +44,10 @@
             {% for activity in activities %}
             <div class="card activity-card mb-2 activity-type-{{ activity.activity_type }}">
                 <div class="card-body">
+                    {% set activity_def = ACTIVITY_TYPE_DEFS.get(activity.activity_type, {}) %}
+                    {% set activity_label = activity_def.label if activity_def else activity.activity_type %}
+                    {% set activity_behavior = activity_def.behavior if activity_def else '' %}
+                    {% set activity_badge_class = activity_def.badge_class if activity_def else 'bg-secondary' %}
                     <div class="d-flex align-items-center">
                         <div class="me-3 d-flex flex-column gap-1 activity-controls">
                             {% if not loop.first %}
@@ -68,13 +72,10 @@
                             {% endif %}
                         </div>
                         <div class="flex-grow-1">
-                            {% if activity.activity_type == 'team' and activity.topic %}
+                            {% if activity_behavior == 'team' and activity.topic %}
                             <h5 class="mb-1">{{ activity.topic }}</h5>
-                            <p class="text-muted mb-2"><small><span class="badge bg-info">{{ activity.activity_type }}</span></small></p>
-                            {% elif activity.activity_type == 'prepractice' and activity.topic %}
-                            <h5 class="mb-1">{{ activity.topic }}</h5>
-                            <p class="text-muted mb-2"><small><span class="badge bg-warning">{{ activity.activity_type }}</span></small></p>
-                            {% elif activity.activity_type == 'individual' and activity.topics_json %}
+                            <p class="text-muted mb-2"><small><span class="badge {{ activity_badge_class }}">{{ activity_label }}</span></small></p>
+                            {% elif activity_behavior == 'individual' and activity.topics_json %}
                             {% set topics = activity.topics_json|parse_groups %}
                             {% set topic_values = topics.values()|list %}
                             {% if topic_values and topic_values|length > 0 %}
@@ -83,13 +84,13 @@
                                 {% if all_same %}
                                 <h5 class="mb-1">{{ first_topic }}</h5>
                                 {% else %}
-                                <h5 class="mb-1">Individual (verschiedene Themen)</h5>
+                                <h5 class="mb-1">{{ activity_label }} (verschiedene Themen)</h5>
                                 {% endif %}
                             {% else %}
-                            <h5 class="mb-1">Individual</h5>
+                            <h5 class="mb-1">{{ activity_label }}</h5>
                             {% endif %}
-                            <p class="text-muted mb-2"><small><span class="badge bg-success">{{ activity.activity_type }}</span></small></p>
-                            {% elif activity.activity_type == 'group' and activity.topics_json %}
+                            <p class="text-muted mb-2"><small><span class="badge {{ activity_badge_class }}">{{ activity_label }}</span></small></p>
+                            {% elif activity_behavior == 'group' and activity.topics_json %}
                             {% set combinations = activity.topics_json|parse_groups %}
                             {% if combinations and combinations|length > 0 %}
                             <h5 class="mb-1">{{ combinations[0].topic }}</h5>
@@ -97,16 +98,16 @@
                             <p class="text-muted mb-1"><small>+ {{ combinations|length - 1 }} weitere Gruppe(n)</small></p>
                             {% endif %}
                             {% else %}
-                            <h5 class="mb-1">Group</h5>
+                            <h5 class="mb-1">{{ activity_label }}</h5>
                             {% endif %}
-                            <p class="text-muted mb-2"><small><span class="badge bg-primary">{{ activity.activity_type }}</span></small></p>
+                            <p class="text-muted mb-2"><small><span class="badge {{ activity_badge_class }}">{{ activity_label }}</span></small></p>
                             {% else %}
-                            <h5 class="mb-1">{{ activity.activity_type }}</h5>
+                            <h5 class="mb-1">{{ activity_label }}</h5>
                             {% endif %}
 
                             <p class="mb-1"><strong>Zeit:</strong> {{ activity.start_time.strftime('%H:%M') }} ({{ activity.duration }} Min)</p>
 
-                            {% if activity.activity_type == 'individual' and activity.topics_json %}
+                            {% if activity_behavior == 'individual' and activity.topics_json %}
                             {% set topics = activity.topics_json|parse_groups %}
                             {% set topic_values = topics.values()|list %}
                             {% if topic_values and topic_values|length > 0 %}
@@ -123,7 +124,7 @@
                                 </details>
                                 {% endif %}
                             {% endif %}
-                            {% elif activity.activity_type == 'group' and activity.topics_json %}
+                            {% elif activity_behavior == 'group' and activity.topics_json %}
                             {% set combinations = activity.topics_json|parse_groups %}
                             {% if combinations and combinations|length > 1 %}
                             <details class="mt-2">

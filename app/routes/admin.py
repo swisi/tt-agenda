@@ -4,7 +4,7 @@ import json
 import os
 import sqlite3
 import tempfile
-from ..models import Training, Activity, TrainingInstance, ActivityInstance
+from ..models import Training, Activity, TrainingInstance, ActivityInstance, ActivityType
 from ..extensions import db
 from ..utils import admin_required, WEEKDAYS, POSITION_GROUPS, get_activity_behavior, get_activity_color, recalculate_times, recalculate_instance_times
 
@@ -42,6 +42,25 @@ def admin_instances():
 def admin_hidden_trainings():
     trainings = Training.query.filter_by(is_hidden=True).order_by(Training.start_date.desc()).all()
     return render_template('admin_hidden_trainings.html', trainings=trainings, weekdays=WEEKDAYS)
+
+@bp.route('/admin/activity-types', methods=['GET', 'POST'])
+@admin_required
+def admin_activity_types():
+    activity_types = ActivityType.query.order_by(ActivityType.sort_order).all()
+    if request.method == 'POST':
+        for activity_type in activity_types:
+            activity_type.label = request.form.get(f'label_{activity_type.key}', activity_type.label).strip()
+            activity_type.behavior = request.form.get(f'behavior_{activity_type.key}', activity_type.behavior).strip()
+            activity_type.badge_class = request.form.get(f'badge_class_{activity_type.key}', activity_type.badge_class).strip()
+            activity_type.light_color = request.form.get(f'light_color_{activity_type.key}', activity_type.light_color).strip()
+            activity_type.dark_color = request.form.get(f'dark_color_{activity_type.key}', activity_type.dark_color).strip()
+            sort_order = request.form.get(f'sort_order_{activity_type.key}', str(activity_type.sort_order)).strip()
+            if sort_order.isdigit():
+                activity_type.sort_order = int(sort_order)
+        db.session.commit()
+        flash('Aktivitätstypen aktualisiert.', 'success')
+        return redirect(url_for('admin.admin_activity_types'))
+    return render_template('admin_activity_types.html', activity_types=activity_types)
 
 @bp.route('/admin/hidden-trainings/new', methods=['GET', 'POST'])
 @admin_required
@@ -444,7 +463,7 @@ def edit_instance_activity(id):
     individual_mode_same = True
     individual_common_topic = ''
     individual_topics = {}
-    if activity and activity.activity_type == 'individual' and activity.topics_json:
+    if activity and get_activity_behavior(activity.activity_type) == 'individual' and activity.topics_json:
         try:
             topics = json.loads(activity.topics_json)
             if isinstance(topics, dict):
@@ -737,7 +756,7 @@ def edit_activity(id):
     individual_mode_same = True
     individual_common_topic = ''
     individual_topics = {}
-    if activity and activity.activity_type == 'individual' and activity.topics_json:
+    if activity and get_activity_behavior(activity.activity_type) == 'individual' and activity.topics_json:
         try:
             topics = json.loads(activity.topics_json)
             if isinstance(topics, dict):
@@ -830,9 +849,10 @@ def update_activity(id):
     activity.color = data.get('color', activity.color if hasattr(activity, 'color') else '#10b981')
 
     topics_json = None
-    if data['activity_type'] == 'individual':
+    behavior = get_activity_behavior(data['activity_type'])
+    if behavior == 'individual':
         topics_json = json.dumps(data.get('topics_per_group', {}))
-    elif data['activity_type'] == 'group':
+    elif behavior == 'group':
         topics_json = json.dumps(data.get('group_combinations', []))
     activity.topics_json = topics_json
 

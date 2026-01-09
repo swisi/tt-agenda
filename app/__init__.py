@@ -1,10 +1,11 @@
 from flask import Flask, abort, request, session
 from .config import Config
 from .extensions import db
-from .utils import get_activity_color, LIGHT_MODE_COLORS, DARK_MODE_COLORS, ACTIVITY_TYPE_DEFS, ACTIVITY_TYPE_ORDER, TEAM_LIKE_TYPES
+from .utils import get_activity_color, ACTIVITY_TYPE_DEFAULTS, get_activity_type_defs, get_activity_type_order, get_team_like_types
+from .activity_colors import get_activity_color_map
 from datetime import timedelta
 from .routes import main, auth, admin
-from .models import User
+from .models import User, ActivityType
 import json
 from dotenv import load_dotenv
 import logging
@@ -46,14 +47,16 @@ def create_app(config_class=Config):
     # Context processors and filters
     @app.context_processor
     def inject_colors():
+        activity_defs = get_activity_type_defs()
         return {
-            'LIGHT_MODE_COLORS': LIGHT_MODE_COLORS,
-            'DARK_MODE_COLORS': DARK_MODE_COLORS,
+            'LIGHT_MODE_COLORS': get_activity_color_map('light'),
+            'DARK_MODE_COLORS': get_activity_color_map('dark'),
             'get_activity_color': get_activity_color,
             'timedelta': timedelta,
-            'ACTIVITY_TYPE_DEFS': ACTIVITY_TYPE_DEFS,
-            'ACTIVITY_TYPE_ORDER': ACTIVITY_TYPE_ORDER,
-            'TEAM_LIKE_TYPES': TEAM_LIKE_TYPES
+            'ACTIVITY_TYPE_DEFS': activity_defs,
+            'ACTIVITY_TYPE_ORDER': get_activity_type_order(),
+            'TEAM_LIKE_TYPES': get_team_like_types(),
+            'ACTIVITY_TYPE_BEHAVIORS': {key: value.get('behavior') for key, value in activity_defs.items()}
         }
 
     def generate_csrf_token():
@@ -102,15 +105,60 @@ def create_app(config_class=Config):
         from .utils import build_group_cells
         return build_group_cells(activity)
 
+    def ensure_activity_types():
+        if not ACTIVITY_TYPE_DEFAULTS:
+            return
+        defaults_by_key = {item['key']: item for item in ACTIVITY_TYPE_DEFAULTS}
+        rows = ActivityType.query.all()
+        existing_keys = {row.key for row in rows}
+        missing = [item for item in ACTIVITY_TYPE_DEFAULTS if item['key'] not in existing_keys]
+        if missing:
+            for item in missing:
+                db.session.add(ActivityType(**item))
+            db.session.commit()
+            rows = ActivityType.query.all()
+
+        changed = False
+        for row in rows:
+            defaults = defaults_by_key.get(row.key)
+            if not defaults:
+                continue
+            for field in ('label', 'behavior', 'badge_class', 'sort_order'):
+                if getattr(row, field, None) in (None, ''):
+                    setattr(row, field, defaults[field])
+                    changed = True
+            if row.light_color in (None, '', '#E8E8E8') and defaults.get('light_color'):
+                row.light_color = defaults['light_color']
+                changed = True
+            if row.dark_color in (None, '', '#4A4A4A') and defaults.get('dark_color'):
+                row.dark_color = defaults['dark_color']
+                changed = True
+        if changed:
+            db.session.commit()
+
     with app.app_context():
         if app.config.get('AUTO_CREATE_DB'):
             db.create_all()
             if db.engine.dialect.name == 'sqlite':
+                table_exists = db.session.execute(
+                    text("SELECT name FROM sqlite_master WHERE type='table' AND name='activity_type'")
+                ).fetchone()
+                if table_exists:
+                    result = db.session.execute(text("PRAGMA table_info(activity_type)")).fetchall()
+                    existing_columns = {row[1] for row in result}
+                    if 'light_color' not in existing_columns:
+                        db.session.execute(text("ALTER TABLE activity_type ADD COLUMN light_color VARCHAR(7) NOT NULL DEFAULT '#E8E8E8'"))
+                    if 'dark_color' not in existing_columns:
+                        db.session.execute(text("ALTER TABLE activity_type ADD COLUMN dark_color VARCHAR(7) NOT NULL DEFAULT '#4A4A4A'"))
+
                 result = db.session.execute(text("PRAGMA table_info(training)")).fetchall()
                 existing_columns = {row[1] for row in result}
                 if 'is_hidden' not in existing_columns:
                     db.session.execute(text("ALTER TABLE training ADD COLUMN is_hidden BOOLEAN NOT NULL DEFAULT 0"))
                     db.session.commit()
+                else:
+                    db.session.commit()
+            ensure_activity_types()
         if app.config.get('CREATE_DEFAULT_USERS') and User.query.count() == 0:
             # Create default users if not exist
             try:

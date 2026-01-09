@@ -9,6 +9,8 @@
             </div>
             <div class="card-body">
                 {% set is_instance = instance is defined and instance %}
+                {% set activity_def = ACTIVITY_TYPE_DEFS.get(activity.activity_type, {}) if activity else {} %}
+                {% set activity_behavior = activity_def.behavior if activity_def else '' %}
                 <form method="POST" action="{% if is_instance %}{{ url_for('admin.edit_instance_activity', id=activity.id) if activity else url_for('admin.add_instance_activity', instance_id=instance.id) }}{% else %}{{ url_for('admin.edit_activity', id=activity.id) if activity else url_for('admin.add_activity', training_id=training.id) }}{% endif %}" id="activityForm" onsubmit="return prepareFormSubmit()">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     {% if training %}
@@ -43,7 +45,7 @@
                         </div>
                         
                         <!-- Individual Section -->
-                        <div class="mb-3" id="individual_section" style="display: {% if activity and activity.activity_type == 'individual' %}block{% else %}none{% endif %};">
+                        <div class="mb-3" id="individual_section" style="display: {% if activity and activity_behavior == 'individual' %}block{% else %}none{% endif %};">
                             <label class="form-label">Themen pro Gruppe</label>
                             <div class="form-check mb-2">
                                 <input class="form-check-input" type="radio" name="individual_mode" id="individual_same" value="same" {% if individual_mode_same %}checked{% endif %} onchange="updateIndividualMode()">
@@ -67,7 +69,7 @@
                         </div>
                         
                         <!-- Group Section -->
-                        <div class="mb-3" id="group_section" style="display: {% if activity and activity.activity_type == 'group' %}block{% else %}none{% endif %};">
+                        <div class="mb-3" id="group_section" style="display: {% if activity and activity_behavior == 'group' %}block{% else %}none{% endif %};">
                             <label class="form-label">Gruppen-Kombinationen</label>
                             <div id="group_combinations_list">
                                 {% if activity and activity.topics_json %}
@@ -130,8 +132,9 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 const teamLikeTypes = {{ TEAM_LIKE_TYPES|tojson|safe }};
-const individualTypes = {{ ['individual']|tojson|safe }};
-const groupTypes = {{ ['group']|tojson|safe }};
+const activityTypeBehaviors = {{ ACTIVITY_TYPE_BEHAVIORS|tojson|safe }};
+const individualTypes = Object.keys(activityTypeBehaviors).filter(key => activityTypeBehaviors[key] === 'individual');
+const groupTypes = Object.keys(activityTypeBehaviors).filter(key => activityTypeBehaviors[key] === 'group');
 
 function updateFormSections() {
     const type = document.getElementById('activity_type').value;

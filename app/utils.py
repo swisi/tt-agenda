@@ -3,41 +3,104 @@ from flask import session, flash, redirect, url_for, request
 from functools import wraps
 import json
 from typing import List, Tuple, Optional, Dict, Any
-from .models import Activity, ActivityInstance, Training, TrainingInstance
+from .models import Activity, ActivityInstance, Training, TrainingInstance, ActivityType
 from .extensions import db
 
 WEEKDAYS = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag']
 POSITION_GROUPS = ['OL', 'DL', 'LB', 'RB', 'DB', 'TE', 'WR', 'QB']
 
-ACTIVITY_TYPE_DEFS = {
-    'team': {
+ACTIVITY_TYPE_DEFAULTS = [
+    {
+        'key': 'team',
         'label': 'Team',
         'behavior': 'team',
-        'badge_class': 'bg-info'
+        'badge_class': 'bg-info',
+        'light_color': '#C6B8FF',
+        'dark_color': '#8B7BFF',
+        'sort_order': 1
     },
-    'prepractice': {
+    {
+        'key': 'prepractice',
         'label': 'Prepractice',
         'behavior': 'team',
-        'badge_class': 'bg-warning'
+        'badge_class': 'bg-warning',
+        'light_color': '#FFE0B3',
+        'dark_color': '#FB923C',
+        'sort_order': 2
     },
-    'individual': {
+    {
+        'key': 'individual',
         'label': 'Individual',
         'behavior': 'individual',
-        'badge_class': 'bg-success'
+        'badge_class': 'bg-success',
+        'light_color': '#BFE9D3',
+        'dark_color': '#34D399',
+        'sort_order': 3
     },
-    'group': {
+    {
+        'key': 'group',
         'label': 'Group',
         'behavior': 'group',
-        'badge_class': 'bg-primary'
+        'badge_class': 'bg-primary',
+        'light_color': '#B7D4FF',
+        'dark_color': '#60A5FA',
+        'sort_order': 4
     }
-}
+]
 
-ACTIVITY_TYPE_ORDER = ['team', 'prepractice', 'individual', 'group']
-TEAM_LIKE_TYPES = [k for k, v in ACTIVITY_TYPE_DEFS.items() if v['behavior'] == 'team']
+def _activity_type_defaults_by_key():
+    return {item['key']: item for item in ACTIVITY_TYPE_DEFAULTS}
+
+def get_activity_type_defs():
+    try:
+        rows = ActivityType.query.order_by(ActivityType.sort_order).all()
+    except Exception:
+        rows = []
+
+    if not rows:
+        defaults = _activity_type_defaults_by_key()
+        return {
+            key: {
+                'label': value['label'],
+                'behavior': value['behavior'],
+                'badge_class': value['badge_class']
+            }
+            for key, value in defaults.items()
+        }
+
+    return {
+        row.key: {
+            'label': row.label,
+            'behavior': row.behavior,
+            'badge_class': row.badge_class
+        }
+        for row in rows
+    }
+
+def get_activity_type_order():
+    try:
+        rows = ActivityType.query.order_by(ActivityType.sort_order).all()
+    except Exception:
+        rows = []
+
+    if not rows:
+        return [item['key'] for item in sorted(ACTIVITY_TYPE_DEFAULTS, key=lambda d: d['sort_order'])]
+
+    return [row.key for row in rows]
+
+def get_team_like_types():
+    defs = get_activity_type_defs()
+    return [key for key, value in defs.items() if value.get('behavior') == 'team']
 
 def get_activity_behavior(activity_type: str) -> str:
-    definition = ACTIVITY_TYPE_DEFS.get(activity_type, {})
-    return definition.get('behavior', 'team')
+    try:
+        row = ActivityType.query.filter_by(key=activity_type).first()
+    except Exception:
+        row = None
+    if row and row.behavior:
+        return row.behavior
+    defaults = _activity_type_defaults_by_key()
+    return defaults.get(activity_type, {}).get('behavior', 'team')
 
 try:
     from .activity_colors import get_activity_color, LIGHT_MODE_COLORS, DARK_MODE_COLORS

@@ -17,7 +17,7 @@ from app.models import User
 def main():
     benutzer_alt = input("Benutzer (alt): ").strip()
     benutzer_neu = input("Benutzer (neu, leer lassen für keine Umbenennung): ").strip()
-    passwort_neu = getpass.getpass("Neues Passwort: ").strip() # Tiger-Coach!2026
+    passwort_neu = getpass.getpass("Neues Passwort: ").strip() # Tiger-Coach!2026 oder Tiger-Admin!2026
 
     if not benutzer_alt:
         print("Abbruch: kein alter Benutzername angegeben.")

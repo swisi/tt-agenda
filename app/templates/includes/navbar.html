@@ -35,17 +35,17 @@
                                 </a>
                             </li>
                             <li>
+                                <a class="dropdown-item py-2" href="{{ url_for('admin.admin_activity_types') }}">
+                                    <i class="bi bi-tags me-2 text-muted"></i>Aktivitätstypen
+                                </a>
+                            </li>
+                            <li>
                                 <a class="dropdown-item py-2" href="{{ url_for('admin.admin_backup') }}">
                                     <i class="bi bi-database-down me-2 text-muted"></i>Backup &amp; Restore
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
                             {% endif %}
-                            <li>
-                                <a class="dropdown-item py-2" href="#" data-bs-toggle="modal" data-bs-target="#colorModal">
-                                    <i class="bi bi-palette me-2 text-muted"></i>Farben
-                                </a>
-                            </li>
                         </ul>
                     </li>
                 </ul>

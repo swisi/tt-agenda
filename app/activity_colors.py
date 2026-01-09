@@ -19,6 +19,28 @@ DARK_MODE_COLORS = {
     'group': '#60A5FA'         # Bright Blue
 }
 
+def _get_color_from_db(activity_type, theme):
+    try:
+        from .models import ActivityType
+        row = ActivityType.query.filter_by(key=activity_type).first()
+        if not row:
+            return None
+        return row.dark_color if theme == 'dark' else row.light_color
+    except Exception:
+        return None
+
+def get_activity_color_map(theme='light'):
+    try:
+        from .models import ActivityType
+        rows = ActivityType.query.all()
+        if not rows:
+            raise RuntimeError('No activity types configured')
+        if theme == 'dark':
+            return {row.key: row.dark_color for row in rows}
+        return {row.key: row.light_color for row in rows}
+    except Exception:
+        return DARK_MODE_COLORS.copy() if theme == 'dark' else LIGHT_MODE_COLORS.copy()
+
 def get_activity_color(activity_type, theme='light'):
     """
     Gibt die Farbe für einen Aktivitätstyp zurück.
@@ -30,6 +52,9 @@ def get_activity_color(activity_type, theme='light'):
     Returns:
         Hex-Farbcode als String
     """
+    db_color = _get_color_from_db(activity_type, theme)
+    if db_color:
+        return db_color
     color_map = DARK_MODE_COLORS if theme == 'dark' else LIGHT_MODE_COLORS
     return color_map.get(activity_type, '#E8E8E8' if theme == 'light' else '#4A4A4A')
 

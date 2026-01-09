@@ -13,18 +13,16 @@
     <style>
         /* Aktivitätsfarben als CSS-Variablen - Light Mode */
         :root {
-            --color-team: {{ LIGHT_MODE_COLORS.get('team', '#A8D5E2') }};
-            --color-prepractice: {{ LIGHT_MODE_COLORS.get('prepractice', '#FFD6CC') }};
-            --color-individual: {{ LIGHT_MODE_COLORS.get('individual', '#D4E4C5') }};
-            --color-group: {{ LIGHT_MODE_COLORS.get('group', '#FFE5B4') }};
+            {% for key in ACTIVITY_TYPE_ORDER %}
+            --color-{{ key }}: {{ LIGHT_MODE_COLORS.get(key, '#E8E8E8') }};
+            {% endfor %}
         }
 
         /* Aktivitätsfarben für Dark Mode */
         [data-theme="dark"] {
-            --color-team: {{ DARK_MODE_COLORS.get('team', '#4A90A4') }};
-            --color-prepractice: {{ DARK_MODE_COLORS.get('prepractice', '#C97A6B') }};
-            --color-individual: {{ DARK_MODE_COLORS.get('individual', '#7A9B6B') }};
-            --color-group: {{ DARK_MODE_COLORS.get('group', '#C9A86B') }};
+            {% for key in ACTIVITY_TYPE_ORDER %}
+            --color-{{ key }}: {{ DARK_MODE_COLORS.get(key, '#4A4A4A') }};
+            {% endfor %}
         }
     </style>
 </head>
@@ -71,14 +69,13 @@
                                 </a>
                             </li>
                             <li>
-                                <a class="dropdown-item py-2" href="{{ url_for('admin.admin_backup') }}">
-                                    <i class="bi bi-database-down me-2 text-muted"></i>Backup &amp; Restore
+                                <a class="dropdown-item py-2" href="{{ url_for('admin.admin_activity_types') }}">
+                                    <i class="bi bi-tags me-2 text-muted"></i>Aktivitätstypen
                                 </a>
                             </li>
-                            <li><hr class="dropdown-divider"></li>
                             <li>
-                                <a class="dropdown-item py-2" href="#" data-bs-toggle="modal" data-bs-target="#colorModal">
-                                    <i class="bi bi-palette me-2 text-muted"></i>Farben
+                                <a class="dropdown-item py-2" href="{{ url_for('admin.admin_backup') }}">
+                                    <i class="bi bi-database-down me-2 text-muted"></i>Backup &amp; Restore
                                 </a>
                             </li>
                         </ul>
@@ -131,138 +128,14 @@
         {% block content %}{% endblock %}
     </div>
     
-    <!-- Farb-Konfigurations-Modal -->
-    <div class="modal fade" id="colorModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content modal-surface">
-                <div class="modal-header border-bottom border-light">
-                    <h5 class="modal-title"><i class="bi bi-palette me-2"></i>Aktivitätsfarben anpassen</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-4">
-                        <h6 class="mb-3 border-bottom pb-2">Light Mode</h6>
-                        <div class="d-flex align-items-center justify-content-between mb-2">
-                            <span>Team</span>
-                            <input type="color" class="form-control form-control-color" data-color-input data-theme="light" data-activity="team" title="Team Farbe auswählen">
-                        </div>
-                        <div class="d-flex align-items-center justify-content-between mb-2">
-                            <span>Prepractice</span>
-                            <input type="color" class="form-control form-control-color" data-color-input data-theme="light" data-activity="prepractice" title="Prepractice Farbe auswählen">
-                        </div>
-                        <div class="d-flex align-items-center justify-content-between mb-2">
-                            <span>Individual</span>
-                            <input type="color" class="form-control form-control-color" data-color-input data-theme="light" data-activity="individual" title="Individual Farbe auswählen">
-                        </div>
-                        <div class="d-flex align-items-center justify-content-between mb-2">
-                            <span>Group</span>
-                            <input type="color" class="form-control form-control-color" data-color-input data-theme="light" data-activity="group" title="Group Farbe auswählen">
-                        </div>
-                    </div>
-                    
-                    <div class="mb-2">
-                        <h6 class="mb-3 border-bottom pb-2">Dark Mode</h6>
-                        <div class="d-flex align-items-center justify-content-between mb-2">
-                            <span>Team</span>
-                            <input type="color" class="form-control form-control-color" data-color-input data-theme="dark" data-activity="team" title="Team Farbe auswählen">
-                        </div>
-                        <div class="d-flex align-items-center justify-content-between mb-2">
-                            <span>Prepractice</span>
-                            <input type="color" class="form-control form-control-color" data-color-input data-theme="dark" data-activity="prepractice" title="Prepractice Farbe auswählen">
-                        </div>
-                        <div class="d-flex align-items-center justify-content-between mb-2">
-                            <span>Individual</span>
-                            <input type="color" class="form-control form-control-color" data-color-input data-theme="dark" data-activity="individual" title="Individual Farbe auswählen">
-                        </div>
-                        <div class="d-flex align-items-center justify-content-between mb-2">
-                            <span>Group</span>
-                            <input type="color" class="form-control form-control-color" data-color-input data-theme="dark" data-activity="group" title="Group Farbe auswählen">
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer border-top border-light">
-                    <button type="button" class="btn btn-outline-danger me-auto" id="resetActivityColors">
-                        <i class="bi bi-arrow-counterclockwise me-1"></i>Zurücksetzen
-                    </button>
-                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Fertig</button>
-                </div>
-            </div>
-        </div>
-    </div>
-    
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     {% block scripts %}{% endblock %}
     <script>
-        // Theme Toggle mit dynamischen Farben
+        // Theme Toggle
         const themeToggle = document.getElementById('themeToggle');
         const themeIcon = document.getElementById('themeIcon');
         const themeLabel = document.getElementById('themeLabel');
         const html = document.documentElement;
-        
-        // Farbkonfiguration aus Python
-        const lightColors = {
-            team: '{{ LIGHT_MODE_COLORS.get("team", "#A8D5E2") }}',
-            prepractice: '{{ LIGHT_MODE_COLORS.get("prepractice", "#FFD6CC") }}',
-            individual: '{{ LIGHT_MODE_COLORS.get("individual", "#D4E4C5") }}',
-            group: '{{ LIGHT_MODE_COLORS.get("group", "#FFE5B4") }}'
-        };
-        
-        const darkColors = {
-            team: '{{ DARK_MODE_COLORS.get("team", "#4A90A4") }}',
-            prepractice: '{{ DARK_MODE_COLORS.get("prepractice", "#C97A6B") }}',
-            individual: '{{ DARK_MODE_COLORS.get("individual", "#7A9B6B") }}',
-            group: '{{ DARK_MODE_COLORS.get("group", "#C9A86B") }}'
-        };
-        
-        const activityColorVersion = '2025-01-02';
-
-        function ensureColorVersion() {
-            const storedVersion = localStorage.getItem('activityColors_version');
-            if (storedVersion !== activityColorVersion) {
-                localStorage.removeItem('activityColors_light');
-                localStorage.removeItem('activityColors_dark');
-                localStorage.setItem('activityColors_version', activityColorVersion);
-            }
-        }
-
-        function getStoredColors(theme) {
-            try {
-                const stored = localStorage.getItem(`activityColors_${theme}`);
-                return stored ? JSON.parse(stored) : {};
-            } catch (error) {
-                return {};
-            }
-        }
-
-        function setStoredColors(theme, colors) {
-            localStorage.setItem(`activityColors_${theme}`, JSON.stringify(colors));
-        }
-
-        function getMergedColors(theme) {
-            const base = theme === 'dark' ? darkColors : lightColors;
-            const overrides = getStoredColors(theme);
-            return { ...base, ...overrides };
-        }
-
-        function updateActivityColors(theme) {
-            const colors = getMergedColors(theme);
-            html.style.setProperty('--color-team', colors.team);
-            html.style.setProperty('--color-prepractice', colors.prepractice);
-            html.style.setProperty('--color-individual', colors.individual);
-            html.style.setProperty('--color-group', colors.group);
-        }
-
-        function syncColorInputs() {
-            const inputs = document.querySelectorAll('[data-color-input]');
-            inputs.forEach(input => {
-                const theme = input.getAttribute('data-theme');
-                const activity = input.getAttribute('data-activity');
-                const colors = getMergedColors(theme);
-                if (colors[activity]) {
-                    input.value = colors[activity];
-                }
-            });
-        }
         
         // Lade gespeichertes Theme oder verwende System-Präferenz
         const savedTheme = localStorage.getItem('theme') || 
@@ -271,7 +144,6 @@
         function setTheme(theme) {
             html.setAttribute('data-theme', theme);
             localStorage.setItem('theme', theme);
-            updateActivityColors(theme);
             if (theme === 'dark') {
                 themeIcon.className = 'bi bi-sun-fill';
                 if (themeLabel) {
@@ -285,38 +157,12 @@
             }
         }
         
-        ensureColorVersion();
         setTheme(savedTheme);
-        syncColorInputs();
         
         themeToggle.addEventListener('click', () => {
             const currentTheme = html.getAttribute('data-theme');
             setTheme(currentTheme === 'dark' ? 'light' : 'dark');
-            syncColorInputs();
         });
-
-        document.querySelectorAll('[data-color-input]').forEach(input => {
-            input.addEventListener('input', (event) => {
-                const theme = event.target.getAttribute('data-theme');
-                const activity = event.target.getAttribute('data-activity');
-                const stored = getStoredColors(theme);
-                stored[activity] = event.target.value;
-                setStoredColors(theme, stored);
-                if (html.getAttribute('data-theme') === theme) {
-                    updateActivityColors(theme);
-                }
-            });
-        });
-
-        const resetButton = document.getElementById('resetActivityColors');
-        if (resetButton) {
-            resetButton.addEventListener('click', () => {
-                localStorage.removeItem('activityColors_light');
-                localStorage.removeItem('activityColors_dark');
-                updateActivityColors(html.getAttribute('data-theme'));
-                syncColorInputs();
-            });
-        }
     </script>
 </body>
 </html>

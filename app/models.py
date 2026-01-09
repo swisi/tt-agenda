@@ -45,6 +45,16 @@ class ActivityInstance(db.Model):
     topics_json = db.Column(db.Text)
     color = db.Column(db.String(7), default='#10b981')
 
+class ActivityType(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    key = db.Column(db.String(40), unique=True, nullable=False)
+    label = db.Column(db.String(100), nullable=False)
+    behavior = db.Column(db.String(20), nullable=False)
+    badge_class = db.Column(db.String(50), nullable=False)
+    light_color = db.Column(db.String(7), nullable=False, default='#E8E8E8')
+    dark_color = db.Column(db.String(7), nullable=False, default='#4A4A4A')
+    sort_order = db.Column(db.Integer, default=0, nullable=False)
+
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
