@@ -1,0 +1,139 @@
+<div class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead class="table-dark">
+            <tr>
+                <th>Name</th>
+                <th>Typ</th>
+                <th>Datum/Wochentag</th>
+                <th>Startzeit</th>
+                <th>Status</th>
+                <th class="text-end">Aktionen</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for training in trainings %}
+            <tr>
+                <td><strong>{{ training.name }}</strong></td>
+                <td><span class="badge bg-primary">Template</span></td>
+                <td>
+                    <i class="bi bi-calendar-week me-1"></i>
+                    {{ weekdays[training.weekday] }}
+                    {% if training.start_date and training.end_date %}
+                    <br><small class="text-muted">{{ training.start_date.strftime('%d.%m.%Y') }} - {{ training.end_date.strftime('%d.%m.%Y') }}</small>
+                    {% endif %}
+                </td>
+                <td><i class="bi bi-clock me-1"></i>{{ training.start_time.strftime('%H:%M') }}</td>
+                <td>
+                    {% set today = datetime.date.today() %}
+                    {% if training.end_date >= today %}
+                    <span class="badge bg-success">Aktiv</span>
+                    {% else %}
+                    <span class="badge bg-secondary">Beendet</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <div class="d-flex justify-content-end gap-1">
+                        <a href="{{ url_for('admin.edit_training', id=training.id) }}" class="btn btn-sm btn-outline-primary" title="Bearbeiten">
+                            <i class="bi bi-pencil-fill"></i>
+                        </a>
+                        <form method="POST" action="{{ url_for('admin.copy_training', id=training.id) }}" class="inline-form">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-sm btn-outline-secondary" title="Duplizieren">
+                                <i class="bi bi-files"></i>
+                            </button>
+                        </form>
+                        <form method="POST" action="{{ url_for('admin.delete_training', id=training.id) }}" class="inline-form"
+                              onsubmit="return confirm('Training &quot;{{ training.name }}&quot; wirklich löschen?');">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Löschen">
+                                <i class="bi bi-trash-fill"></i>
+                            </button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+
+            {% for training in hidden_trainings %}
+            <tr>
+                <td><strong>{{ training.name }}</strong></td>
+                <td><span class="badge bg-warning text-dark">Einmalig</span></td>
+                <td>
+                    <i class="bi bi-calendar-event me-1"></i>
+                    {{ training.start_date.strftime('%d.%m.%Y') }}
+                    <br><small class="text-muted">{{ weekdays[training.weekday] }}</small>
+                </td>
+                <td><i class="bi bi-clock me-1"></i>{{ training.start_time.strftime('%H:%M') }}</td>
+                <td>
+                    {% set today = datetime.date.today() %}
+                    {% if training.start_date >= today %}
+                    <span class="badge bg-success">Aktiv</span>
+                    {% else %}
+                    <span class="badge bg-secondary">Beendet</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <div class="d-flex justify-content-end gap-1">
+                        <a href="{{ url_for('admin.edit_hidden_training', id=training.id) }}" class="btn btn-sm btn-outline-primary" title="Bearbeiten">
+                            <i class="bi bi-pencil-fill"></i>
+                        </a>
+                        <form method="POST" action="{{ url_for('admin.copy_hidden_training', id=training.id) }}" class="inline-form">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-sm btn-outline-secondary" title="Duplizieren">
+                                <i class="bi bi-files"></i>
+                            </button>
+                        </form>
+                        <form method="POST" action="{{ url_for('admin.delete_hidden_training', id=training.id) }}" class="inline-form"
+                              onsubmit="return confirm('Training &quot;{{ training.name }}&quot; wirklich löschen?');">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Löschen">
+                                <i class="bi bi-trash-fill"></i>
+                            </button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+
+            {% for instance in instances %}
+            <tr>
+                <td><strong>{{ instance.training.name }}</strong></td>
+                <td><span class="badge bg-info">Angepasst</span></td>
+                <td>
+                    <i class="bi bi-calendar-event me-1"></i>
+                    {{ instance.date.strftime('%d.%m.%Y') }}
+                    <br><small class="text-muted">{{ weekdays[instance.date.weekday()] }}</small>
+                </td>
+                <td><i class="bi bi-clock me-1"></i>{{ instance.start_time.strftime('%H:%M') }}</td>
+                <td>
+                    {% if instance.status == 'cancelled' %}
+                    <span class="badge bg-danger">Abgesagt</span>
+                    {% else %}
+                    <span class="badge bg-success">Aktiv</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <div class="d-flex justify-content-end gap-1">
+                        <a href="{{ url_for('admin.edit_training_instance', id=instance.id) }}" class="btn btn-sm btn-outline-primary" title="Bearbeiten">
+                            <i class="bi bi-pencil-fill"></i>
+                        </a>
+                        <form method="POST" action="{{ url_for('admin.copy_training_instance', id=instance.id) }}" class="inline-form">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-sm btn-outline-secondary" title="Duplizieren">
+                                <i class="bi bi-files"></i>
+                            </button>
+                        </form>
+                        <form method="POST" action="{{ url_for('admin.delete_training_instance', id=instance.id) }}" class="inline-form"
+                              onsubmit="return confirm('Angepassten Termin wirklich entfernen?');">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Löschen">
+                                <i class="bi bi-trash-fill"></i>
+                            </button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

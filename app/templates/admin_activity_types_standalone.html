@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header mb-4">
+    <h1 class="page-title">
+        <i class="bi bi-tags me-2"></i>Aktivitätstypen
+    </h1>
+    <div class="page-actions">
+        <a href="{{ url_for('main.index') }}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left me-1"></i>Zurück zur Übersicht
+        </a>
+    </div>
+</div>
+
+<p class="text-muted mb-4">Verwalten Sie die verschiedenen Aktivitätstypen und deren Darstellung</p>
+
+<form method="POST" action="{{ url_for('admin.admin_activity_types') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="table-responsive">
+        <table class="table">
+            <thead class="table-dark">
+                <tr>
+                    <th>Key</th>
+                    <th>Label</th>
+                    <th>Verhalten</th>
+                    <th>Badge-Klasse</th>
+                    <th>Light Color</th>
+                    <th>Dark Color</th>
+                    <th>Reihenfolge</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for at in activity_types %}
+                <tr>
+                    <td><code>{{ at.key }}</code></td>
+                    <td><input type="text" name="label_{{ at.key }}" value="{{ at.label }}" class="form-control form-control-sm"></td>
+                    <td><input type="text" name="behavior_{{ at.key }}" value="{{ at.behavior }}" class="form-control form-control-sm"></td>
+                    <td><input type="text" name="badge_class_{{ at.key }}" value="{{ at.badge_class }}" class="form-control form-control-sm"></td>
+                    <td><input type="color" name="light_color_{{ at.key }}" value="{{ at.light_color }}" class="form-control form-control-sm"></td>
+                    <td><input type="color" name="dark_color_{{ at.key }}" value="{{ at.dark_color }}" class="form-control form-control-sm"></td>
+                    <td><input type="number" name="sort_order_{{ at.key }}" value="{{ at.sort_order }}" class="form-control form-control-sm" style="width: 80px;"></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="mt-3">
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-check-circle me-1"></i>Änderungen speichern
+        </button>
+    </div>
+</form>
+{% endblock %}

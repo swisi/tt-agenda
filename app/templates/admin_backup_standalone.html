@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header mb-4">
+    <h1 class="page-title">
+        <i class="bi bi-database-down me-2"></i>Backup & Restore
+    </h1>
+    <div class="page-actions">
+        <a href="{{ url_for('main.index') }}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left me-1"></i>Zurück zur Übersicht
+        </a>
+    </div>
+</div>
+
+<p class="text-muted mb-4">Sichern und wiederherstellen Sie Ihre Datenbank</p>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-download me-2"></i>Backup erstellen</h5>
+            </div>
+            <div class="card-body">
+                <p>Laden Sie eine Sicherungskopie Ihrer Datenbank herunter.</p>
+                {% if db_exists %}
+                <a href="{{ url_for('admin.admin_backup_download') }}" class="btn btn-primary">
+                    <i class="bi bi-download me-1"></i>Backup herunterladen
+                </a>
+                <div class="mt-3 text-muted">
+                    <small><i class="bi bi-info-circle me-1"></i>Die Datei wird als SQLite-Datenbank heruntergeladen</small>
+                </div>
+                {% else %}
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle me-2"></i>Datenbank nicht gefunden.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-upload me-2"></i>Backup wiederherstellen</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('admin.admin_backup_restore') }}" enctype="multipart/form-data">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="mb-3">
+                        <label class="form-label">Backup-Datei auswählen</label>
+                        <input type="file" name="backup_file" class="form-control" accept=".db" required>
+                        <div class="form-text">Nur SQLite-Datenbanken (.db) werden unterstützt</div>
+                    </div>
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        <strong>Achtung:</strong> Dies überschreibt alle aktuellen Daten unwiderruflich!
+                    </div>
+                    <button type="submit" class="btn btn-danger" onclick="return confirm('Wirklich alle Daten mit diesem Backup ersetzen? Diese Aktion kann nicht rückgängig gemacht werden!');">
+                        <i class="bi bi-upload me-1"></i>Backup hochladen und wiederherstellen
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="alert alert-info mt-4">
+    <h5><i class="bi bi-lightbulb me-2"></i>Empfehlungen</h5>
+    <ul class="mb-0">
+        <li>Erstellen Sie regelmäßig Backups Ihrer Datenbank</li>
+        <li>Bewahren Sie Backups an einem sicheren Ort auf</li>
+        <li>Testen Sie die Wiederherstellung in einer Testumgebung</li>
+        <li>Notieren Sie sich das Datum und den Zeitpunkt Ihrer Backups</li>
+    </ul>
+</div>
+{% endblock %}

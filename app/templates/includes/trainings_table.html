@@ -1,0 +1,76 @@
+<div class="table-responsive">
+    <table class="table table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>Name</th>
+                <th>Wochentag</th>
+                <th>Zeitraum</th>
+                <th>Startzeit</th>
+                <th>Aktivitäten</th>
+                <th class="text-end">Aktionen</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if trainings|length == 0 %}
+            <tr>
+                <td colspan="6" class="text-center text-muted py-4">
+                    <i class="bi bi-inbox me-2"></i>Keine Trainings gefunden
+                </td>
+            </tr>
+            {% endif %}
+            {% for training in trainings %}
+            <tr>
+                <td>
+                    <strong>{{ training.name }}</strong>
+                </td>
+                <td>
+                    <span class="badge bg-primary">{{ weekdays[training.weekday] }}</span>
+                </td>
+                <td>
+                    <small>{{ training.start_date.strftime('%d.%m.%Y') }} - {{ training.end_date.strftime('%d.%m.%Y') }}</small>
+                </td>
+                <td>
+                    <i class="bi bi-clock me-1"></i>{{ training.start_time.strftime('%H:%M') }}
+                </td>
+                <td>
+                    <span class="badge bg-info">{{ training.activities|length }} Aktivitäten</span>
+                </td>
+                <td>
+                    <div class="d-flex justify-content-end gap-1">
+                        <a href="{{ url_for('admin.edit_training', id=training.id) }}" 
+                           class="btn btn-sm btn-outline-primary" 
+                           title="Bearbeiten"
+                           data-bs-toggle="tooltip">
+                            <i class="bi bi-pencil-fill"></i>
+                        </a>
+                        <form method="POST" 
+                              action="{{ url_for('admin.copy_training', id=training.id) }}" 
+                              class="inline-form"
+                              onsubmit="return confirm('Training &quot;{{ training.name }}&quot; wirklich kopieren?');">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" 
+                                    class="btn btn-sm btn-outline-secondary" 
+                                    title="Kopieren"
+                                    data-bs-toggle="tooltip">
+                                <i class="bi bi-files"></i>
+                            </button>
+                        </form>
+                        <form method="POST" 
+                              action="{{ url_for('admin.delete_training', id=training.id) }}" 
+                              class="inline-form"
+                              onsubmit="return confirm('Training &quot;{{ training.name }}&quot; wirklich löschen? Alle Aktivitäten werden ebenfalls gelöscht!');">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" 
+                                    class="btn btn-sm btn-outline-danger" 
+                                    title="Löschen"
+                                    data-bs-toggle="tooltip">
+                                <i class="bi bi-trash-fill"></i>
+                            </button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

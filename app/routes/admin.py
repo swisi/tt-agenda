@@ -25,23 +25,89 @@ def training_edit_url(training):
     endpoint = 'admin.edit_hidden_training' if training.is_hidden else 'admin.edit_training'
     return url_for(endpoint, id=training.id)
 
+@bp.route('/admin')
+@admin_required
+def admin_overview():
+    """Konsolidierte Admin-Übersicht mit allen Verwaltungsbereichen"""
+    trainings = Training.query.filter_by(is_hidden=False).all()
+    hidden_trainings = Training.query.filter_by(is_hidden=True).order_by(Training.start_date.desc()).all()
+    instances = TrainingInstance.query.order_by(TrainingInstance.date.desc()).all()
+    activity_types = ActivityType.query.order_by(ActivityType.sort_order).all()
+    
+    # Prüfe ob Datenbank existiert für Backup-Funktion
+    db_path = resolve_sqlite_db_path()
+    db_exists = db_path and os.path.exists(db_path)
+    
+    return render_template('admin_overview.html', 
+                         trainings=trainings,
+                         hidden_trainings=hidden_trainings,
+                         instances=instances,
+                         activity_types=activity_types,
+                         db_exists=db_exists,
+                         weekdays=WEEKDAYS)
+
 @bp.route('/admin/trainings')
 @admin_required
 def admin_trainings():
-    trainings = Training.query.filter_by(is_hidden=False).all()
-    return render_template('admin_trainings.html', trainings=trainings, weekdays=WEEKDAYS)
+    """Alle Trainings in einer Ansicht: Templates, Einmalig, Angepasst"""
+    import datetime
+    q = request.args.get('q', '').strip()
+    type_filter = request.args.get('type', 'all')
+    
+    # Templates - sortiert nach start_date absteigend (neueste zuerst)
+    trainings_query = Training.query.filter_by(is_hidden=False)
+    if q:
+        trainings_query = trainings_query.filter(Training.name.ilike(f"%{q}%"))
+    trainings = trainings_query.order_by(Training.start_date.desc()).all() if type_filter in ['all', 'template'] else []
+    
+    # Einmalig - sortiert nach start_date absteigend (neueste zuerst)
+    hidden_query = Training.query.filter_by(is_hidden=True)
+    if q:
+        hidden_query = hidden_query.filter(Training.name.ilike(f"%{q}%"))
+    hidden_trainings = hidden_query.order_by(Training.start_date.desc()).all() if type_filter in ['all', 'hidden'] else []
+    
+    # Angepasst - sortiert nach date absteigend (neueste zuerst)
+    instances_query = TrainingInstance.query
+    if q:
+        instances_query = instances_query.join(Training).filter(Training.name.ilike(f"%{q}%"))
+    instances = instances_query.order_by(TrainingInstance.date.desc()).all() if type_filter in ['all', 'instance'] else []
+    
+    return render_template('admin_trainings.html', 
+                         trainings=trainings,
+                         hidden_trainings=hidden_trainings,
+                         instances=instances,
+                         weekdays=WEEKDAYS,
+                         datetime=datetime)
 
-@bp.route('/admin/instances')
+@bp.route('/admin/trainings/partial')
 @admin_required
-def admin_instances():
-    instances = TrainingInstance.query.order_by(TrainingInstance.date.desc()).all()
-    return render_template('admin_instances.html', instances=instances, weekdays=WEEKDAYS)
-
-@bp.route('/admin/hidden-trainings')
-@admin_required
-def admin_hidden_trainings():
-    trainings = Training.query.filter_by(is_hidden=True).order_by(Training.start_date.desc()).all()
-    return render_template('admin_hidden_trainings.html', trainings=trainings, weekdays=WEEKDAYS)
+def trainings_partial():
+    """HTMX Partial für Trainings-Filter"""
+    import datetime
+    q = request.args.get('q', '').strip()
+    type_filter = request.args.get('type', 'all')
+    
+    trainings_query = Training.query.filter_by(is_hidden=False)
+    if q:
+        trainings_query = trainings_query.filter(Training.name.ilike(f"%{q}%"))
+    trainings = trainings_query.order_by(Training.start_date.desc()).all() if type_filter in ['all', 'template'] else []
+    
+    hidden_query = Training.query.filter_by(is_hidden=True)
+    if q:
+        hidden_query = hidden_query.filter(Training.name.ilike(f"%{q}%"))
+    hidden_trainings = hidden_query.order_by(Training.start_date.desc()).all() if type_filter in ['all', 'hidden'] else []
+    
+    instances_query = TrainingInstance.query
+    if q:
+        instances_query = instances_query.join(Training).filter(Training.name.ilike(f"%{q}%"))
+    instances = instances_query.order_by(TrainingInstance.date.desc()).all() if type_filter in ['all', 'instance'] else []
+    
+    return render_template('includes/all_trainings_table.html', 
+                         trainings=trainings,
+                         hidden_trainings=hidden_trainings,
+                         instances=instances,
+                         weekdays=WEEKDAYS,
+                         datetime=datetime)
 
 @bp.route('/admin/activity-types', methods=['GET', 'POST'])
 @admin_required
@@ -60,7 +126,15 @@ def admin_activity_types():
         db.session.commit()
         flash('Aktivitätstypen aktualisiert.', 'success')
         return redirect(url_for('admin.admin_activity_types'))
-    return render_template('admin_activity_types.html', activity_types=activity_types)
+    return render_template('admin_activity_types_standalone.html', activity_types=activity_types)
+
+@bp.route('/admin/backup', methods=['GET'])
+@admin_required
+def admin_backup():
+    """Backup & Restore Seite"""
+    db_path = resolve_sqlite_db_path()
+    db_exists = db_path and os.path.exists(db_path)
+    return render_template('admin_backup_standalone.html', db_exists=db_exists)
 
 @bp.route('/admin/hidden-trainings/new', methods=['GET', 'POST'])
 @admin_required
@@ -108,14 +182,7 @@ def delete_hidden_training(id):
     db.session.delete(training)
     db.session.commit()
     flash('Einmaliges Training gelöscht!', 'success')
-    return redirect(url_for('admin.admin_hidden_trainings'))
-
-@bp.route('/admin/backup', methods=['GET'])
-@admin_required
-def admin_backup():
-    db_path = resolve_sqlite_db_path()
-    db_exists = bool(db_path and os.path.exists(db_path))
-    return render_template('admin_backup.html', db_path=db_path, db_exists=db_exists, db_backend='sqlite')
+    return redirect(url_for('admin.admin_trainings'))
 
 @bp.route('/admin/backup/download', methods=['GET'])
 @admin_required
@@ -646,6 +713,76 @@ def copy_training(id):
     
     db.session.commit()
     flash(f'Training "{original_training.name}" wurde erfolgreich kopiert!', 'success')
+    return redirect(url_for('admin.admin_trainings'))
+
+@bp.route('/hidden-training/<int:id>/copy', methods=['POST'])
+@admin_required
+def copy_hidden_training(id):
+    """Kopiert ein einmaliges Training"""
+    original_training = Training.query.get_or_404(id)
+    
+    new_training = Training(
+        name=f"{original_training.name} (Kopie)",
+        weekday=original_training.weekday,
+        start_date=original_training.start_date,
+        end_date=original_training.end_date,
+        start_time=original_training.start_time,
+        is_hidden=True
+    )
+    db.session.add(new_training)
+    db.session.flush()
+    
+    original_activities = Activity.query.filter_by(training_id=id).order_by(Activity.order_index).all()
+    for activity in original_activities:
+        new_activity = Activity(
+            training_id=new_training.id,
+            activity_type=activity.activity_type,
+            start_time=activity.start_time,
+            duration=activity.duration,
+            position_groups=activity.position_groups,
+            topic=activity.topic,
+            order_index=activity.order_index,
+            topics_json=activity.topics_json,
+            color=activity.color
+        )
+        db.session.add(new_activity)
+    
+    db.session.commit()
+    flash(f'Einmaliges Training "{original_training.name}" wurde erfolgreich kopiert!', 'success')
+    return redirect(url_for('admin.admin_trainings'))
+
+@bp.route('/training-instance/<int:id>/copy', methods=['POST'])
+@admin_required
+def copy_training_instance(id):
+    """Kopiert eine angepasste Trainingsinstanz"""
+    original_instance = TrainingInstance.query.get_or_404(id)
+    
+    new_instance = TrainingInstance(
+        training_id=original_instance.training_id,
+        date=original_instance.date,
+        start_time=original_instance.start_time,
+        status=original_instance.status
+    )
+    db.session.add(new_instance)
+    db.session.flush()
+    
+    original_activities = ActivityInstance.query.filter_by(training_instance_id=id).order_by(ActivityInstance.order_index).all()
+    for activity in original_activities:
+        new_activity = ActivityInstance(
+            training_instance_id=new_instance.id,
+            activity_type=activity.activity_type,
+            start_time=activity.start_time,
+            duration=activity.duration,
+            position_groups=activity.position_groups,
+            topic=activity.topic,
+            order_index=activity.order_index,
+            topics_json=activity.topics_json,
+            color=activity.color
+        )
+        db.session.add(new_activity)
+    
+    db.session.commit()
+    flash(f'Angepasster Termin für "{original_instance.training.name}" wurde erfolgreich kopiert!', 'success')
     return redirect(url_for('admin.admin_trainings'))
 
 @bp.route('/activity/add', methods=['GET', 'POST'])

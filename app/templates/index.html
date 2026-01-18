@@ -1,23 +1,9 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="page-header">
-    <h1 class="page-title">Trainings Übersicht</h1>
-    <div class="page-actions">
-        <a href="{{ url_for('main.live') }}" class="btn btn-danger">
-            <i class="bi bi-broadcast me-1"></i>Live Training
-        </a>
-        {% if session.get('user_role') == 'admin' %}
-        <a href="{{ url_for('admin.admin_trainings') }}" class="btn btn-primary">
-            <i class="bi bi-gear-fill me-1"></i>Trainings verwalten
-        </a>
-        {% endif %}
-    </div>
-</div>
-
 <!-- Aktuelles Training (kompakt) -->
 {% if current_training %}
-<div class="alert hero-alert {% if training_status == 'running' %}alert-danger{% else %}alert-primary{% endif %} d-flex justify-content-between align-items-center">
+<div class="alert hero-alert {% if training_status == 'running' %}alert-danger{% else %}alert-primary{% endif %} d-flex justify-content-between align-items-center mb-4">
     <div>
         <strong>
             {% if training_status == 'running' %}

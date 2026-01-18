@@ -95,12 +95,14 @@
                     <tr class="{% if is_current %}activity-current-row{% elif is_next %}activity-next-row{% elif is_finished %}activity-finished-row{% elif loop.index % 2 == 0 %}table-row-even{% else %}table-row-odd{% endif %}">
                         <td class="time-cell">
                             {{ activity.start_time.strftime('%H:%M') }}
+                        </td>
+                        <td class="time-cell">{{ '%02d:%02d'|format(end_hour, end_min) }}</td>
+                        <td class="time-cell">
+                            {{ activity.duration }}
                             {% if is_current %}
                                 <span class="live-indicator">🔴</span>
                             {% endif %}
                         </td>
-                        <td class="time-cell">{{ '%02d:%02d'|format(end_hour, end_min) }}</td>
-                        <td class="time-cell">{{ activity.duration }}</td>
                         
                         {% set cells = activity|build_group_cells %}
                         {% for cell in cells %}
