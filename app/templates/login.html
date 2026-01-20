@@ -1,52 +1,148 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="de" data-theme="light" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Trainingsverwaltung</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <title>Anmelden - Trainingsverwaltung</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        html { scroll-behavior: smooth; }
+        [data-theme="dark"] { color-scheme: dark; }
+    </style>
 </head>
-<body class="login-page">
-    <div class="login-card">
-        <div class="login-header">
-            <i class="bi bi-trophy-fill"></i>
-            <h1>Trainingsverwaltung</h1>
-            <p class="text-muted">Bitte melden Sie sich an</p>
-        </div>
-
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+<body class="bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 text-slate-900 dark:text-slate-50 min-h-screen flex items-center justify-center">
+    <div class="w-full max-w-md px-4">
+        <!-- Login Card -->
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl overflow-hidden">
+            <!-- Header Gradient -->
+            <div class="h-2 bg-gradient-to-r from-indigo-600 to-purple-600"></div>
+            
+            <!-- Content -->
+            <div class="p-8 sm:p-10">
+                <!-- Logo -->
+                <div class="text-center mb-8">
+                    <div class="inline-flex items-center justify-center w-16 h-16 bg-indigo-100 dark:bg-indigo-900/50 rounded-2xl mb-4">
+                        <i class="bi bi-trophy-fill text-2xl text-indigo-600 dark:text-indigo-400"></i>
+                    </div>
+                    <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-2">Thun Tigers</h1>
+                    <p class="text-slate-600 dark:text-slate-400">Trainingsverwaltung</p>
                 </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-
-        <form method="POST">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <div class="mb-3">
-                <label class="form-label">Benutzername</label>
-                <input type="text" name="username" class="form-control" required autofocus>
+                
+                <!-- Flash Messages -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                    <div class="mb-6 space-y-3">
+                        {% for category, message in messages %}
+                        <div class="p-4 rounded-lg border-l-4 flex items-center gap-3 {% if category == 'success' %}bg-green-50 dark:bg-green-900/30 border-green-500 text-green-800 dark:text-green-200{% elif category == 'danger' or category == 'error' %}bg-red-50 dark:bg-red-900/30 border-red-500 text-red-800 dark:text-red-200{% else %}bg-blue-50 dark:bg-blue-900/30 border-blue-500 text-blue-800 dark:text-blue-200{% endif %}">
+                            {% if category == 'success' %}
+                            <i class="bi bi-check-circle-fill"></i>
+                            {% elif category == 'danger' or category == 'error' %}
+                            <i class="bi bi-exclamation-circle-fill"></i>
+                            {% else %}
+                            <i class="bi bi-info-circle-fill"></i>
+                            {% endif %}
+                            <span class="text-sm">{{ message }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                {% endwith %}
+                
+                <!-- Login Form -->
+                <form method="POST" class="space-y-4">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    
+                    <!-- Username -->
+                    <div>
+                        <label for="username" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                            <i class="bi bi-person-circle mr-2"></i>Benutzername
+                        </label>
+                        <input 
+                            type="text" 
+                            id="username"
+                            name="username" 
+                            class="w-full px-4 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition" 
+                            placeholder="Benutzername eingeben"
+                            required 
+                            autofocus
+                        >
+                    </div>
+                    
+                    <!-- Password -->
+                    <div>
+                        <label for="password" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                            <i class="bi bi-lock-fill mr-2"></i>Passwort
+                        </label>
+                        <input 
+                            type="password" 
+                            id="password"
+                            name="password" 
+                            class="w-full px-4 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition" 
+                            placeholder="Passwort eingeben"
+                            required
+                        >
+                    </div>
+                    
+                    <!-- Submit Button -->
+                    <button 
+                        type="submit" 
+                        class="w-full px-4 py-2.5 mt-6 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 dark:from-indigo-500 dark:to-purple-500 dark:hover:from-indigo-600 dark:hover:to-purple-600 text-white font-medium rounded-lg transition shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+                    >
+                        <i class="bi bi-box-arrow-in-right"></i>
+                        <span>Anmelden</span>
+                    </button>
+                </form>
+                
+                <!-- Footer -->
+                <p class="text-center text-sm text-slate-600 dark:text-slate-400 mt-8">
+                    © 2026 <strong>Thun Tigers</strong> – Trainingsverwaltung
+                </p>
             </div>
-            <div class="mb-3">
-                <label class="form-label">Passwort</label>
-                <input type="password" name="password" class="form-control" required>
-            </div>
-            <button type="submit" class="btn btn-primary">
-                <i class="bi bi-box-arrow-in-right me-2"></i>Anmelden
-            </button>
-        </form>
-
+        </div>
     </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Theme Toggle (Bottom Right) -->
+    <button 
+        id="themeToggle" 
+        class="fixed bottom-4 right-4 p-3 text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 bg-white dark:bg-slate-800 rounded-full shadow-lg hover:shadow-xl transition"
+        title="Design-Modus wechseln"
+    >
+        <i class="bi bi-moon-fill" id="themeIcon"></i>
+    </button>
+    
+    <script>
+        // Theme Toggle
+        const themeToggle = document.getElementById('themeToggle');
+        const themeIcon = document.getElementById('themeIcon');
+        const html = document.documentElement;
+        
+        const savedTheme = localStorage.getItem('theme') || 
+            (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        
+        function setTheme(theme) {
+            html.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+            
+            if (theme === 'dark') {
+                document.documentElement.classList.add('dark');
+                themeIcon.className = 'bi bi-sun-fill';
+            } else {
+                document.documentElement.classList.remove('dark');
+                themeIcon.className = 'bi bi-moon-fill';
+            }
+        }
+        
+        setTheme(savedTheme);
+        
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = html.getAttribute('data-theme');
+            setTheme(currentTheme === 'dark' ? 'light' : 'dark');
+        });
+    </script>
 </body>
 </html>

@@ -1,88 +1,98 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="page-header">
-    <h1 class="page-title">
-        <i class="bi bi-tags me-2"></i>Aktivitätstypen
-    </h1>
-    <div class="page-actions">
-        <a href="{{ url_for('admin.admin_trainings') }}" class="btn btn-secondary">
-            <i class="bi bi-arrow-left me-1"></i>Zurück zur Verwaltung
+<div class="max-w-6xl mx-auto">
+    <div class="mb-6 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <div class="h-11 w-11 rounded-full bg-indigo-600/15 text-indigo-600 dark:text-indigo-200 flex items-center justify-center">
+                <i class="bi bi-tags"></i>
+            </div>
+            <div>
+                <p class="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Admin</p>
+                <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Aktivitätstypen</h1>
+                <p class="text-sm text-slate-600 dark:text-slate-400">Verwalten Sie Labels, Verhalten und Farben der Aktivitätstypen.</p>
+            </div>
+        </div>
+        <a href="{{ url_for('admin.admin_trainings') }}" class="px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition text-sm font-semibold inline-flex items-center gap-2">
+            <i class="bi bi-arrow-left"></i> Zur Verwaltung
         </a>
     </div>
+
+    <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-md p-6">
+        <form method="POST" class="space-y-4">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead class="bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white">
+                        <tr>
+                            <th class="px-4 py-3 text-left font-semibold">Schlüssel</th>
+                            <th class="px-4 py-3 text-left font-semibold">Label</th>
+                            <th class="px-4 py-3 text-left font-semibold">Verhalten</th>
+                            <th class="px-4 py-3 text-left font-semibold">Badge</th>
+                            <th class="px-4 py-3 text-left font-semibold">Hell</th>
+                            <th class="px-4 py-3 text-left font-semibold">Dunkel</th>
+                            <th class="px-4 py-3 text-left font-semibold">Reihenfolge</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+                        {% for activity_type in activity_types %}
+                        <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/40 transition">
+                            <td class="px-4 py-3 font-mono text-slate-700 dark:text-slate-200">{{ activity_type.key }}</td>
+                            <td class="px-4 py-3">
+                                <input class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                       name="label_{{ activity_type.key }}"
+                                       value="{{ activity_type.label }}"
+                                       required>
+                            </td>
+                            <td class="px-4 py-3">
+                                <select class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent" name="behavior_{{ activity_type.key }}" required>
+                                    <option value="team" {% if activity_type.behavior == 'team' %}selected{% endif %}>Team</option>
+                                    <option value="individual" {% if activity_type.behavior == 'individual' %}selected{% endif %}>Individual</option>
+                                    <option value="group" {% if activity_type.behavior == 'group' %}selected{% endif %}>Group</option>
+                                </select>
+                            </td>
+                            <td class="px-4 py-3">
+                                <input class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                       name="badge_class_{{ activity_type.key }}"
+                                       value="{{ activity_type.badge_class }}"
+                                       required>
+                            </td>
+                            <td class="px-4 py-3">
+                                <input type="color"
+                                       class="h-10 w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700"
+                                       name="light_color_{{ activity_type.key }}"
+                                       value="{{ activity_type.light_color }}"
+                                       title="Hell">
+                            </td>
+                            <td class="px-4 py-3">
+                                <input type="color"
+                                       class="h-10 w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700"
+                                       name="dark_color_{{ activity_type.key }}"
+                                       value="{{ activity_type.dark_color }}"
+                                       title="Dunkel">
+                            </td>
+                            <td class="px-4 py-3 w-28">
+                                <input type="number"
+                                       class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-right"
+                                       name="sort_order_{{ activity_type.key }}"
+                                       value="{{ activity_type.sort_order }}"
+                                       min="0"
+                                       step="1"
+                                       required>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="flex justify-end">
+                <button class="inline-flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white font-semibold rounded-lg transition transform hover:scale-105 shadow" type="submit">
+                    <i class="bi bi-check-circle"></i> Speichern
+                </button>
+            </div>
+        </form>
+    </div>
 </div>
-
-<form method="POST">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <div class="table-responsive">
-        <table class="table table-hover align-middle">
-            <thead class="table-dark">
-                <tr>
-                    <th>Schlüssel</th>
-                    <th>Label</th>
-                    <th>Verhalten</th>
-                    <th>Badge</th>
-                    <th>Hell</th>
-                    <th>Dunkel</th>
-                    <th class="text-end">Reihenfolge</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for activity_type in activity_types %}
-                <tr>
-                    <td><code>{{ activity_type.key }}</code></td>
-                    <td>
-                        <input class="form-control"
-                               name="label_{{ activity_type.key }}"
-                               value="{{ activity_type.label }}"
-                               required>
-                    </td>
-                    <td>
-                        <select class="form-select" name="behavior_{{ activity_type.key }}" required>
-                            <option value="team" {% if activity_type.behavior == 'team' %}selected{% endif %}>Team</option>
-                            <option value="individual" {% if activity_type.behavior == 'individual' %}selected{% endif %}>Individual</option>
-                            <option value="group" {% if activity_type.behavior == 'group' %}selected{% endif %}>Group</option>
-                        </select>
-                    </td>
-                    <td>
-                        <input class="form-control"
-                               name="badge_class_{{ activity_type.key }}"
-                               value="{{ activity_type.badge_class }}"
-                               required>
-                    </td>
-                    <td>
-                        <input type="color"
-                               class="form-control form-control-color"
-                               name="light_color_{{ activity_type.key }}"
-                               value="{{ activity_type.light_color }}"
-                               title="Hell">
-                    </td>
-                    <td>
-                        <input type="color"
-                               class="form-control form-control-color"
-                               name="dark_color_{{ activity_type.key }}"
-                               value="{{ activity_type.dark_color }}"
-                               title="Dunkel">
-                    </td>
-                    <td class="text-end">
-                        <input type="number"
-                               class="form-control text-end"
-                               name="sort_order_{{ activity_type.key }}"
-                               value="{{ activity_type.sort_order }}"
-                               min="0"
-                               step="1"
-                               required>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    <div class="d-flex justify-content-end">
-        <button class="btn btn-primary" type="submit">
-            <i class="bi bi-check-circle me-1"></i>Speichern
-        </button>
-    </div>
-</form>
-
 {% endblock %}

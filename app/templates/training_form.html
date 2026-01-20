@@ -1,47 +1,128 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="page-header">
-    <h1 class="page-title">Neues Training</h1>
+<div class="mb-8">
+    <h1 class="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
+        <div class="flex items-center justify-center w-12 h-12 bg-indigo-100 dark:bg-indigo-900/50 rounded-lg">
+            <i class="bi bi-plus-circle text-indigo-600 dark:text-indigo-400 text-xl"></i>
+        </div>
+        Neues Training erstellen
+    </h1>
 </div>
-<div class="card">
-    <div class="card-body">
-        <form method="POST" class="compact-form">
+
+<div class="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+    <div class="p-6 sm:p-8">
+        <form method="POST" class="space-y-6">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label class="form-label">Name</label>
-                    <input type="text" name="name" class="form-control" required>
+            
+            <!-- Name und Wochentag -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="name" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                        <i class="bi bi-tag mr-2"></i>Trainingsname
+                    </label>
+                    <input 
+                        type="text" 
+                        id="name"
+                        name="name" 
+                        class="w-full px-4 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition" 
+                        placeholder="z.B. Grundtraining"
+                        required
+                    >
                 </div>
-                <div class="col-md-3 mb-3">
-                    <label class="form-label">Wochentag</label>
-                    <select name="weekday" class="form-select" required>
+                
+                <div>
+                    <label for="weekday" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                        <i class="bi bi-calendar3 mr-2"></i>Wochentag
+                    </label>
+                    <select 
+                        id="weekday"
+                        name="weekday" 
+                        class="w-full px-4 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                        required
+                    >
                         {% for i in range(7) %}
                         <option value="{{ i }}">{{ weekdays[i] }}</option>
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-md-3 mb-3">
-                    <label class="form-label">Startzeit</label>
-                    <input type="time" name="start_time" class="form-control" required>
+            </div>
+            
+            <!-- Start-/Endzeit -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="start_time" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                        <i class="bi bi-clock mr-2"></i>Startzeit
+                    </label>
+                    <input 
+                        type="time" 
+                        id="start_time"
+                        name="start_time" 
+                        class="w-full px-4 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                        required
+                    >
+                </div>
+                
+                <div>
+                    <label for="end_time" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                        <i class="bi bi-clock-history mr-2"></i>Endzeit
+                    </label>
+                    <input 
+                        type="time" 
+                        id="end_time"
+                        name="end_time" 
+                        class="w-full px-4 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                        required
+                    >
                 </div>
             </div>
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label class="form-label">Startdatum</label>
-                    <input type="date" name="start_date" class="form-control" required>
-                </div>
-                <div class="col-md-6 mb-3">
-                    <label class="form-label">Enddatum</label>
-                    <input type="date" name="end_date" class="form-control" required>
+            
+            <!-- Datumsbereich -->
+            <div>
+                <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4 flex items-center gap-2">
+                    <i class="bi bi-calendar-range"></i>Zeitraum
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="start_date" class="block text-sm font-medium text-slate-700 dark:text-slate-400 mb-2">
+                            Startdatum
+                        </label>
+                        <input 
+                            type="date" 
+                            id="start_date"
+                            name="start_date" 
+                            class="w-full px-4 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                            required
+                        >
+                    </div>
+                    <div>
+                        <label for="end_date" class="block text-sm font-medium text-slate-700 dark:text-slate-400 mb-2">
+                            Enddatum
+                        </label>
+                        <input 
+                            type="date" 
+                            id="end_date"
+                            name="end_date" 
+                            class="w-full px-4 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                            required
+                        >
+                    </div>
                 </div>
             </div>
-            <div class="mt-3">
-                <button type="submit" class="btn btn-primary">
-                    <i class="bi bi-save me-1"></i>Speichern
+            
+            <!-- Action Buttons -->
+            <div class="flex gap-3 pt-6 border-t border-slate-200 dark:border-slate-700">
+                <button 
+                    type="submit" 
+                    class="flex-1 px-6 py-3 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-700 hover:to-indigo-600 dark:from-indigo-500 dark:to-indigo-400 dark:hover:from-indigo-600 dark:hover:to-indigo-500 text-white font-semibold rounded-lg transition shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+                >
+                    <i class="bi bi-save"></i>Speichern
                 </button>
-                <a href="{{ url_for('main.index') }}" class="btn btn-secondary">
-                    <i class="bi bi-x-circle me-1"></i>Abbrechen
+                <a 
+                    href="{{ url_for('main.index') }}" 
+                    class="flex-1 px-6 py-3 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 font-semibold rounded-lg transition flex items-center justify-center gap-2"
+                >
+                    <i class="bi bi-x-circle"></i>Abbrechen
                 </a>
             </div>
         </form>

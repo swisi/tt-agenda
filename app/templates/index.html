@@ -1,78 +1,140 @@
 {% extends "base.html" %}
 
 {% block content %}
-<!-- Aktuelles Training (kompakt) -->
+<!-- Aktuelles Training Hero Card -->
 {% if current_training %}
-<div class="alert hero-alert {% if training_status == 'running' %}alert-danger{% else %}alert-primary{% endif %} d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <strong>
-            {% if training_status == 'running' %}
-                🔴 LIVE: {{ current_training.name }}
-            {% else %}
-                ⏰ Heute: {{ current_training.name }} (startet um {{ current_training.start_time.strftime('%H:%M') }} Uhr)
-            {% endif %}
-        </strong>
+<div class="mb-8">
+    {% if training_status == 'running' %}
+    <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-red-600 to-red-500 dark:from-red-700 dark:to-red-600 shadow-2xl">
+        <div class="absolute inset-0 opacity-10">
+            <div class="absolute top-0 left-0 w-40 h-40 bg-white rounded-full -translate-x-1/2 -translate-y-1/2"></div>
+            <div class="absolute bottom-0 right-0 w-40 h-40 bg-white rounded-full translate-x-1/2 translate-y-1/2"></div>
+        </div>
+        <div class="relative px-6 sm:px-8 py-8 sm:py-10">
+            <div class="flex items-center justify-between">
+                <div>
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="inline-flex items-center justify-center w-8 h-8 bg-red-500 dark:bg-red-400 rounded-full animate-pulse">
+                            <span class="w-3 h-3 bg-white rounded-full"></span>
+                        </span>
+                        <p class="text-red-100 text-sm font-semibold uppercase tracking-wide">LÄUFT JETZT</p>
+                    </div>
+                    <h2 class="text-3xl sm:text-4xl font-bold text-white mb-2">{{ current_training.name }}</h2>
+                    <p class="text-red-100">Training läuft gerade – Klicke auf "Live-Ansicht" um zu sehen!</p>
+                </div>
+                <a href="{{ url_for('main.live') }}" class="hidden sm:block px-8 py-3 bg-white dark:bg-slate-800 text-red-600 dark:text-red-400 font-semibold rounded-lg hover:shadow-lg hover:scale-105 transition">
+                    <i class="bi bi-broadcast mr-2"></i>Live-Ansicht
+                </a>
+            </div>
+            <a href="{{ url_for('main.live') }}" class="mt-4 sm:hidden block w-full px-6 py-3 bg-white dark:bg-slate-800 text-red-600 dark:text-red-400 font-semibold rounded-lg text-center hover:shadow-lg transition">
+                <i class="bi bi-broadcast mr-2"></i>Live-Ansicht
+            </a>
+        </div>
     </div>
-    <a href="{{ url_for('main.live') }}" class="btn btn-sm {% if training_status == 'running' %}btn-danger{% else %}btn-primary{% endif %}">
-        <i class="bi bi-arrow-right-circle me-1"></i>Zur Live-Ansicht
-    </a>
+    {% else %}
+    <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-600 to-blue-600 dark:from-indigo-700 dark:to-blue-700 shadow-lg">
+        <div class="absolute inset-0 opacity-10">
+            <div class="absolute top-0 left-0 w-40 h-40 bg-white rounded-full -translate-x-1/2 -translate-y-1/2"></div>
+        </div>
+        <div class="relative px-6 sm:px-8 py-8">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-indigo-100 text-sm font-semibold uppercase tracking-wide mb-2">⏰ Heute</p>
+                    <h2 class="text-3xl font-bold text-white mb-2">{{ current_training.name }}</h2>
+                    <p class="text-indigo-100">Startet um <strong>{{ current_training.start_time.strftime('%H:%M') }}</strong> Uhr</p>
+                </div>
+                <a href="{{ url_for('main.live', training_id=current_training.id, date=today.strftime('%Y-%m-%d')) }}" class="hidden sm:block px-8 py-3 bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 font-semibold rounded-lg hover:shadow-lg hover:scale-105 transition">
+                    <i class="bi bi-arrow-right-circle mr-2"></i>Zu Live-Ansicht
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 </div>
 {% endif %}
 
-<!-- Nächste 3 Trainings -->
+<!-- Nächste Trainings -->
 {% if upcoming_trainings and upcoming_trainings|length > 0 %}
-<div class="mb-4">
-    <h3 class="mb-3">
-        <i class="bi bi-calendar-check me-2"></i>Nächste Trainings
-    </h3>
-    <div class="row">
+<div>
+    <div class="flex items-center gap-3 mb-6">
+        <div class="flex items-center justify-center w-10 h-10 bg-indigo-100 dark:bg-indigo-900/50 rounded-lg">
+            <i class="bi bi-calendar-check text-indigo-600 dark:text-indigo-400"></i>
+        </div>
+        <h3 class="text-2xl font-bold text-slate-900 dark:text-white">Nächste Trainings</h3>
+    </div>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {% for item in upcoming_trainings %}
-        <div class="col-md-4 mb-3">
-            <div class="card h-100 card-clickable {% if item.is_running %}border-danger{% elif item.is_individual %}border-warning{% endif %}" 
-                 style="{% if item.is_running %}border-width: 3px;{% elif item.is_individual %}border-width: 2px;{% endif %}"
-                 onclick="window.location.href='{{ url_for('main.live', training_id=item.training.id, date=item.date.strftime('%Y-%m-%d')) }}';">
-                <div class="card-header {% if item.is_running %}bg-danger text-white{% elif item.is_upcoming %}bg-primary text-white{% endif %}">
-                    <h6 class="mb-0">
-                        {% if item.is_running %}🔴 LÄUFT JETZT{% elif item.is_upcoming %}⏰ HEUTE{% else %}📅{% endif %}
-                        {{ item.training.name }}
+        <div class="group">
+            <a href="{{ url_for('main.live', training_id=item.training.id, date=item.date.strftime('%Y-%m-%d')) }}" class="block h-full">
+                <div class="h-full bg-white dark:bg-slate-800 rounded-xl shadow-md hover:shadow-xl hover:-translate-y-2 transition p-6 border-l-4 {% if item.is_running %}border-red-500{% elif item.is_individual %}border-yellow-500{% elif item.is_free %}border-purple-500{% else %}border-indigo-500{% endif %}">
+                    <!-- Status Badge -->
+                    <div class="mb-4 flex gap-2 flex-wrap">
+                        {% if item.is_running %}
+                        <span class="inline-flex items-center gap-1 px-3 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 text-xs font-semibold rounded-full">
+                            <span class="inline-block w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+                            LÄUFT JETZT
+                        </span>
+                        {% elif item.is_upcoming %}
+                        <span class="inline-flex items-center gap-1 px-3 py-1 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 text-xs font-semibold rounded-full">
+                            <i class="bi bi-hourglass-split text-sm"></i>
+                            HEUTE
+                        </span>
+                        {% else %}
+                        <span class="inline-flex items-center gap-1 px-3 py-1 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold rounded-full">
+                            <i class="bi bi-calendar"></i>
+                            GEPLANT
+                        </span>
+                        {% endif %}
+                        
                         {% if item.is_individual %}
-                        <span class="badge bg-warning text-dark ms-2">Angepasst</span>
+                        <span class="inline-flex items-center gap-1 px-3 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 text-xs font-semibold rounded-full">
+                            <i class="bi bi-pencil-fill text-sm"></i>
+                            ANGEPASST
+                        </span>
                         {% endif %}
+                        
                         {% if item.is_free %}
-                        <span class="badge bg-secondary ms-2">Einmalig</span>
+                        <span class="inline-flex items-center gap-1 px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-xs font-semibold rounded-full">
+                            <i class="bi bi-star-fill text-sm"></i>
+                            EINMALIG
+                        </span>
                         {% endif %}
-                    </h6>
+                    </div>
+                    
+                    <!-- Title -->
+                    <h4 class="text-xl font-bold text-slate-900 dark:text-white mb-4 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition">
+                        {{ item.training.name }}
+                    </h4>
+                    
+                    <!-- Info Grid -->
+                    <div class="space-y-3 text-sm text-slate-600 dark:text-slate-400">
+                        <div class="flex items-center gap-3">
+                            <i class="bi bi-calendar-event text-indigo-500 dark:text-indigo-400 w-5"></i>
+                            <span>{{ item.date.strftime('%d.%m.%Y') }} ({{ weekdays[item.training.weekday] }})</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <i class="bi bi-clock text-indigo-500 dark:text-indigo-400 w-5"></i>
+                            <span>{{ item.start_time.strftime('%H:%M') }} - {{ item.end_time.strftime('%H:%M') }} Uhr</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <i class="bi bi-list-task text-indigo-500 dark:text-indigo-400 w-5"></i>
+                            <span>{{ item.activities_count }} Aktivitäten</span>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <div class="mb-2">
-                        <i class="bi bi-calendar3 me-2"></i>
-                        <strong>{{ item.date.strftime('%d.%m.%Y') }}</strong>
-                    </div>
-                    <div class="mb-2">
-                        <i class="bi bi-calendar-week me-2"></i>
-                        {{ weekdays[item.training.weekday] }}
-                    </div>
-                    <div class="mb-2">
-                        <i class="bi bi-clock me-2"></i>
-                        {{ item.start_time.strftime('%H:%M') }} - {{ item.end_time.strftime('%H:%M') }}
-                    </div>
-                    <div class="mb-2">
-                        <i class="bi bi-list-task me-2"></i>
-                        {{ item.activities_count }} Aktivitäten
-                    </div>
-                    {% if item.is_running %}
-                    <span class="badge bg-danger w-100">LÄUFT JETZT</span>
-                    {% elif item.is_upcoming %}
-                    <span class="badge bg-primary w-100">STARTET HEUTE</span>
-                    {% else %}
-                    <span class="badge bg-secondary w-100">GEPLANT</span>
-                    {% endif %}
-                </div>
-            </div>
+            </a>
         </div>
         {% endfor %}
     </div>
 </div>
+{% else %}
+<div class="text-center py-16">
+    <div class="inline-flex items-center justify-center w-16 h-16 bg-slate-100 dark:bg-slate-700 rounded-full mb-4">
+        <i class="bi bi-calendar-x text-2xl text-slate-400 dark:text-slate-500"></i>
+    </div>
+    <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-2">Keine Trainings geplant</h3>
+    <p class="text-slate-600 dark:text-slate-400">Es gibt derzeit keine bevorstehenden Trainings</p>
+</div>
 {% endif %}
-
 {% endblock %}

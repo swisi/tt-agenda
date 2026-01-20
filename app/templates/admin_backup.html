@@ -1,50 +1,108 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="page-header">
-    <h1 class="page-title">
-        <i class="bi bi-database-down me-2"></i>Backup &amp; Restore
-    </h1>
-    <div class="page-actions">
-        <a href="{{ url_for('admin.admin_trainings') }}" class="btn btn-secondary">
-            <i class="bi bi-arrow-left me-1"></i>Zurück zur Verwaltung
-        </a>
-    </div>
-</div>
-
-<div class="card mb-4">
-    <div class="card-body">
-        <h5 class="mb-2">Backup erstellen</h5>
-        <p class="text-muted mb-3">Lädt eine sichere Kopie der aktuellen Datenbank herunter.</p>
-        {% if db_exists %}
-        <a href="{{ url_for('admin.admin_backup_download') }}" class="btn btn-primary">
-            <i class="bi bi-download me-1"></i>Backup herunterladen
-        </a>
-        {% else %}
-        <div class="alert alert-warning mb-0">
-            <i class="bi bi-exclamation-triangle me-1"></i>Keine Datenbank gefunden.
-        </div>
-        {% endif %}
-    </div>
-</div>
-
-<div class="card">
-    <div class="card-body">
-        <h5 class="mb-2">Backup wiederherstellen</h5>
-        <p class="text-muted">Lädt eine Backup-Datei hoch und ersetzt die aktuelle Datenbank.</p>
-        <div class="alert alert-danger">
-            <strong>Achtung:</strong> Die aktuelle Datenbank wird überschrieben. Bitte vorher ein Backup erstellen.
-        </div>
-        <form method="POST" action="{{ url_for('admin.admin_backup_restore') }}" enctype="multipart/form-data">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <div class="mb-3">
-                <label class="form-label">Backup-Datei (.db)</label>
-                <input type="file" name="backup_file" class="form-control" accept=".db,.sqlite,.sqlite3" required>
+<div class="max-w-6xl mx-auto space-y-6">
+    <div class="flex items-start justify-between gap-4">
+        <div class="space-y-1">
+            <div class="flex items-center gap-3">
+                <div class="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-500/80 to-cyan-400/80 flex items-center justify-center text-white shadow-lg shadow-blue-900/30">
+                    <i class="bi bi-database-down text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-semibold text-slate-100">Backup &amp; Restore</h1>
+                    <p class="text-sm text-slate-400">Sichern und wiederherstellen Sie die Datenbank sicher.</p>
+                </div>
             </div>
-            <button type="submit" class="btn btn-danger">
-                <i class="bi bi-upload me-1"></i>Restore starten
-            </button>
-        </form>
+        </div>
+        <a href="{{ url_for('admin.admin_trainings') }}" class="inline-flex items-center gap-2 text-sm font-medium text-slate-200 hover:text-white px-3 py-2 rounded-lg border border-white/10 hover:border-white/20 bg-white/5 transition">
+            <i class="bi bi-arrow-left"></i>
+            Zurück zur Verwaltung
+        </a>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-4">
+        <div class="rounded-2xl border border-white/5 bg-slate-900/60 backdrop-blur px-6 py-6 shadow-xl shadow-black/30">
+            <div class="flex items-center justify-between mb-3">
+                <div>
+                    <p class="text-sm text-slate-400">Backup erstellen</p>
+                    <h2 class="text-lg font-semibold text-slate-100">Aktuelle Datenbank sichern</h2>
+                </div>
+                <span class="inline-flex items-center gap-2 text-xs text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full">
+                    <i class="bi bi-shield-check"></i>
+                    Empfohlen
+                </span>
+            </div>
+            <p class="text-sm text-slate-300 mb-4">Lädt eine verschlüsselte SQLite-Datei der aktuellen Datenbank herunter.</p>
+            {% if db_exists %}
+            <a href="{{ url_for('admin.admin_backup_download') }}" class="inline-flex items-center justify-center gap-2 w-full md:w-auto px-4 py-2.5 rounded-lg text-sm font-semibold text-white bg-gradient-to-r from-blue-500 via-cyan-500 to-emerald-400 hover:from-blue-400 hover:via-cyan-400 hover:to-emerald-300 shadow-lg shadow-cyan-900/40 transition">
+                <i class="bi bi-download"></i>
+                Backup herunterladen
+            </a>
+            <p class="text-xs text-slate-400 mt-3 flex items-center gap-2">
+                <i class="bi bi-info-circle"></i>
+                Die Datei wird als SQLite-Datenbank gespeichert.
+            </p>
+            {% else %}
+            <div class="flex items-start gap-3 rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-amber-100">
+                <i class="bi bi-exclamation-triangle-fill text-lg"></i>
+                <div>
+                    <p class="font-semibold">Keine Datenbank gefunden</p>
+                    <p class="text-sm text-amber-50/90">Bitte prüfen Sie die Instanz bevor Sie ein Backup erstellen.</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="rounded-2xl border border-white/5 bg-slate-900/60 backdrop-blur px-6 py-6 shadow-xl shadow-black/30">
+            <div class="flex items-center justify-between mb-3">
+                <div>
+                    <p class="text-sm text-slate-400">Backup wiederherstellen</p>
+                    <h2 class="text-lg font-semibold text-slate-100">Bestehendes Backup einspielen</h2>
+                </div>
+                <span class="inline-flex items-center gap-2 text-xs text-rose-200 bg-rose-500/10 border border-rose-500/30 px-3 py-1 rounded-full">
+                    <i class="bi bi-fire"></i>
+                    Kritisch
+                </span>
+            </div>
+            <p class="text-sm text-slate-300">Lädt eine Backup-Datei hoch und ersetzt die aktuelle Datenbank.</p>
+            <div class="flex items-start gap-3 rounded-lg border border-rose-500/40 bg-rose-500/10 px-4 py-3 text-rose-50 mt-3">
+                <i class="bi bi-exclamation-octagon-fill text-lg"></i>
+                <div>
+                    <p class="font-semibold">Achtung: Überschreibt alle aktuellen Daten.</p>
+                    <p class="text-sm text-rose-50/90">Stellen Sie sicher, dass Sie vorher ein Backup erstellt haben.</p>
+                </div>
+            </div>
+            <form method="POST" action="{{ url_for('admin.admin_backup_restore') }}" enctype="multipart/form-data" class="mt-4 space-y-4">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="space-y-2">
+                    <label class="text-sm font-medium text-slate-200">Backup-Datei (.db, .sqlite)</label>
+                    <input type="file" name="backup_file" accept=".db,.sqlite,.sqlite3" required class="block w-full text-sm text-slate-200 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-gradient-to-r file:from-blue-500 file:to-cyan-500 file:text-white hover:file:from-blue-400 hover:file:to-cyan-400 border border-white/10 rounded-lg bg-white/5 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/50" />
+                    <p class="text-xs text-slate-400">Nur SQLite-Datenbanken werden unterstützt. Die aktuelle Datenbank wird ersetzt.</p>
+                </div>
+                <button type="submit" class="inline-flex items-center justify-center gap-2 w-full md:w-auto px-4 py-2.5 rounded-lg text-sm font-semibold text-white bg-gradient-to-r from-rose-500 via-orange-500 to-amber-400 hover:from-rose-400 hover:via-orange-400 hover:to-amber-300 shadow-lg shadow-rose-900/40 transition" onclick="return confirm('Wirklich alle Daten mit diesem Backup ersetzen? Diese Aktion kann nicht rückgängig gemacht werden!');">
+                    <i class="bi bi-upload"></i>
+                    Backup hochladen &amp; wiederherstellen
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="rounded-2xl border border-white/5 bg-slate-900/60 backdrop-blur px-6 py-5 shadow-xl shadow-black/30">
+        <div class="flex items-start gap-3 text-slate-200">
+            <i class="bi bi-lightbulb text-xl text-amber-300"></i>
+            <div class="space-y-2">
+                <div>
+                    <p class="text-sm text-slate-400">Empfehlungen</p>
+                    <h3 class="text-lg font-semibold">Best Practices für Backups</h3>
+                </div>
+                <ul class="list-disc list-inside space-y-1 text-sm text-slate-300">
+                    <li>Regelmäßig Backups erstellen und extern sichern.</li>
+                    <li>Wiederherstellung in einer Testumgebung prüfen.</li>
+                    <li>Backup-Datum und -Zeitpunkt dokumentieren.</li>
+                    <li>Nur vertrauenswürdige Backup-Dateien hochladen.</li>
+                </ul>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}
