@@ -54,6 +54,7 @@ def index():
                     instance_activities_by_id.setdefault(activity.training_instance_id, []).append(activity)
 
         now = datetime.now()
+        today = now.date()
 
         upcoming_trainings = get_upcoming_trainings(trainings, activities_by_training, instances_by_key, instance_activities_by_id, now)
         current_training, current_activity, next_activity, training_status, current_date, current_activities, _current_start_dt = get_current_training_status(trainings, activities_by_training, instances_by_key, instance_activities_by_id, now)
