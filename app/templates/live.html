@@ -250,6 +250,81 @@
 </div>
 
 <script>
+    // Wake Lock - Verhindert Bildschirm-Sperre auf Mobile
+    let wakeLock = null;
+    
+    async function requestWakeLock() {
+        try {
+            if ('wakeLock' in navigator) {
+                wakeLock = await navigator.wakeLock.request('screen');
+                console.log('Wake Lock aktiviert - Bildschirm bleibt an');
+                
+                wakeLock.addEventListener('release', () => {
+                    console.log('Wake Lock wurde freigegeben');
+                });
+            }
+        } catch (err) {
+            console.log('Wake Lock nicht unterstützt oder fehlgeschlagen:', err);
+        }
+    }
+    
+    // Wake Lock bei Sichtbarkeit erneut anfordern
+    document.addEventListener('visibilitychange', async () => {
+        if (document.visibilityState === 'visible' && wakeLock === null) {
+            await requestWakeLock();
+        }
+    });
+    
+    // Wake Lock beim Laden aktivieren
+    requestWakeLock();
+    
+    // Alarm Sound (Beep) bei 2:00 Minuten
+    let alarmPlayed = false;
+    
+    function playAlarmSound() {
+        // Erstelle einen Beep-Sound mit Web Audio API
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        // Beep-Frequenz und Lautstärke
+        oscillator.frequency.value = 800; // Hz
+        gainNode.gain.value = 0.3; // Lautstärke
+        
+        oscillator.type = 'sine';
+        oscillator.start();
+        
+        // 3 kurze Beeps
+        setTimeout(() => oscillator.stop(), 200);
+        setTimeout(() => {
+            const osc2 = audioContext.createOscillator();
+            const gain2 = audioContext.createGain();
+            osc2.connect(gain2);
+            gain2.connect(audioContext.destination);
+            osc2.frequency.value = 800;
+            gain2.gain.value = 0.3;
+            osc2.type = 'sine';
+            osc2.start();
+            setTimeout(() => osc2.stop(), 200);
+        }, 300);
+        setTimeout(() => {
+            const osc3 = audioContext.createOscillator();
+            const gain3 = audioContext.createGain();
+            osc3.connect(gain3);
+            gain3.connect(audioContext.destination);
+            osc3.frequency.value = 800;
+            gain3.gain.value = 0.3;
+            osc3.type = 'sine';
+            osc3.start();
+            setTimeout(() => osc3.stop(), 200);
+        }, 600);
+        
+        console.log('⏰ Alarm: 2 Minuten verbleibend!');
+    }
+
     // Countdown Timer
     {% if training_status == 'running' and current_activity %}
     (function() {
@@ -286,6 +361,12 @@
             const minutes = Math.floor(diff / 60000);
             const seconds = Math.floor((diff % 60000) / 1000);
             const display = String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
+            
+            // Alarm bei exakt 2:00 Minuten
+            if (display === '02:00' && !alarmPlayed) {
+                playAlarmSound();
+                alarmPlayed = true;
+            }
             
             if (document.getElementById('countdown-value-compact')) {
                 document.getElementById('countdown-value-compact').textContent = display;
