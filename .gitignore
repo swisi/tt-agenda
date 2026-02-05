@@ -30,6 +30,10 @@ ENV/
 instance/
 .webassets-cache
 
+# Node.js (should only be in shared/)
+node_modules/
+package-lock.json
+
 # Database
 *.db
 *.sqlite
