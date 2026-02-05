@@ -11,21 +11,41 @@ on:
 jobs:
   cleanup:
     runs-on: ubuntu-latest
-    permissions:
-      packages: write
     
     steps:
-      - name: Delete untagged and old packages
-        uses: actions/delete-package-versions@v4
-        with:
-          package-name: 'tt-agenda'
-          package-type: 'container'
-          min-versions-to-keep: ${{ github.event.inputs.keep_versions || '5' }}
-          delete-only-untagged-versions: true
+      - name: Delete untagged container versions
+        shell: bash
+        env:
+          REPO: ${{ github.repository }}
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          KEEP: ${{ github.event.inputs.keep_versions || '5' }}
+        run: |
+          # Alle Versionen abrufen
+          VERSIONS=$(curl -s \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: token $TOKEN" \
+            "https://api.github.com/user/packages/container/${{ github.event.repository.name }}/versions" | \
+            jq -r '.[] | select(.metadata.container.tags | length == 0) | .id')
+          
+          # Zähle die zu löschenden Versionen
+          DELETE_COUNT=$(echo "$VERSIONS" | grep -c . || echo 0)
+          
+          if [ $DELETE_COUNT -gt 0 ]; then
+            echo "Lösche $DELETE_COUNT ungetaggte Versionen..."
+            echo "$VERSIONS" | while read VERSION_ID; do
+              curl -s -X DELETE \
+                -H "Accept: application/vnd.github+json" \
+                -H "Authorization: token $TOKEN" \
+                "https://api.github.com/user/packages/container/${{ github.event.repository.name }}/versions/$VERSION_ID"
+              echo "✓ Version $VERSION_ID gelöscht"
+            done
+          else
+            echo "Keine ungetaggten Versionen zum Löschen gefunden"
+          fi
       
       - name: Cleanup Summary
         run: |
           echo "## Package Cleanup abgeschlossen! 🧹" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Bewahrte Versionen:** \`${{ github.event.inputs.keep_versions || '5' }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "**Gelöschte Versionen:** Alle ungetaggten Versionen außer den letzten ${{ github.event.inputs.keep_versions || '5' }}" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Ungetaggte Versionen wurden entfernt" >> $GITHUB_STEP_SUMMARY
+          echo "⭐ Die letzten Versionen mit Tags bleiben erhalten" >> $GITHUB_STEP_SUMMARY

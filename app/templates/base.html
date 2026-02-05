@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="de" data-theme="light" class="scroll-smooth">
+<html lang="de" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -38,7 +38,6 @@
             const system = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
             const theme = stored || system;
             const htmlEl = document.documentElement;
-            htmlEl.setAttribute('data-theme', theme);
             if (theme === 'dark') {
                 htmlEl.classList.add('dark');
             } else {
@@ -53,7 +52,6 @@
     <style>
         * { font-family: 'Inter', sans-serif; }
         html { scroll-behavior: smooth; }
-        [data-theme="dark"] { color-scheme: dark; }
         
         /* Aktivitätsfarben als CSS-Variablen */
         :root {
@@ -62,7 +60,7 @@
             {% endfor %}
         }
         
-        [data-theme="dark"] {
+        html.dark {
             {% for key in ACTIVITY_TYPE_ORDER %}
             --color-{{ key }}: {{ DARK_MODE_COLORS.get(key, '#4A4A4A') }};
             {% endfor %}
@@ -234,14 +232,13 @@
             (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
         
         function setTheme(theme) {
-            html.setAttribute('data-theme', theme);
             localStorage.setItem('theme', theme);
             
             if (theme === 'dark') {
-                document.documentElement.classList.add('dark');
+                html.classList.add('dark');
                 themeIcon.className = 'bi bi-sun-fill';
             } else {
-                document.documentElement.classList.remove('dark');
+                html.classList.remove('dark');
                 themeIcon.className = 'bi bi-moon-fill';
             }
         }
@@ -251,8 +248,8 @@
         
         // Toggle theme on click
         themeToggle.addEventListener('click', () => {
-            const currentTheme = html.getAttribute('data-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            const isDark = html.classList.contains('dark');
+            const newTheme = isDark ? 'light' : 'dark';
             setTheme(newTheme);
         });
         

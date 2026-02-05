@@ -125,14 +125,13 @@
             (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
         
         function setTheme(theme) {
-            html.setAttribute('data-theme', theme);
             localStorage.setItem('theme', theme);
             
             if (theme === 'dark') {
-                document.documentElement.classList.add('dark');
+                html.classList.add('dark');
                 themeIcon.className = 'bi bi-sun-fill';
             } else {
-                document.documentElement.classList.remove('dark');
+                html.classList.remove('dark');
                 themeIcon.className = 'bi bi-moon-fill';
             }
         }
@@ -140,8 +139,8 @@
         setTheme(savedTheme);
         
         themeToggle.addEventListener('click', () => {
-            const currentTheme = html.getAttribute('data-theme');
-            setTheme(currentTheme === 'dark' ? 'light' : 'dark');
+            const isDark = html.classList.contains('dark');
+            setTheme(isDark ? 'light' : 'dark');
         });
     </script>
 </body>
