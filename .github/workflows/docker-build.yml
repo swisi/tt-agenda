@@ -77,16 +77,3 @@ jobs:
           echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
           echo "docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.event.inputs.tag || 'latest' }}" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-
-  cleanup-untagged:
-    runs-on: ubuntu-latest
-    permissions:
-      packages: write
-    steps:
-      - name: Delete Packages (Keep 5 Latest Tagged))
-        uses: actions/delete-package-versions@v4
-        with:
-          package-name: 'tt-agenda'
-          package-type: 'container'
-          min-versions-to-keep: 5
-          delete-only-untagged-versions: true

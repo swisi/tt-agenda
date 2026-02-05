@@ -1,0 +1,31 @@
+name: Cleanup Container Packages
+
+on:
+  workflow_dispatch:
+    inputs:
+      keep_versions:
+        description: 'Anzahl der zu bewahrenden Versionen'
+        required: false
+        default: '5'
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    
+    steps:
+      - name: Delete untagged and old packages
+        uses: actions/delete-package-versions@v4
+        with:
+          package-name: 'tt-agenda'
+          package-type: 'container'
+          min-versions-to-keep: ${{ github.event.inputs.keep_versions || '5' }}
+          delete-only-untagged-versions: true
+      
+      - name: Cleanup Summary
+        run: |
+          echo "## Package Cleanup abgeschlossen! 🧹" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Bewahrte Versionen:** \`${{ github.event.inputs.keep_versions || '5' }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Gelöschte Versionen:** Alle ungetaggten Versionen außer den letzten ${{ github.event.inputs.keep_versions || '5' }}" >> $GITHUB_STEP_SUMMARY
