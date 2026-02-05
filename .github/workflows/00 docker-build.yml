@@ -1,4 +1,4 @@
-name: Docker Build and Push
+name: 00.) Docker Build and Push
 
 on:
   # Manueller Trigger über GitHub UI
