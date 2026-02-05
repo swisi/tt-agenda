@@ -28,23 +28,8 @@ def training_edit_url(training):
 @bp.route('/admin')
 @admin_required
 def admin_overview():
-    """Konsolidierte Admin-Übersicht mit allen Verwaltungsbereichen"""
-    trainings = Training.query.filter_by(is_hidden=False).all()
-    hidden_trainings = Training.query.filter_by(is_hidden=True).order_by(Training.start_date.desc()).all()
-    instances = TrainingInstance.query.order_by(TrainingInstance.date.desc()).all()
-    activity_types = ActivityType.query.order_by(ActivityType.sort_order).all()
-    
-    # Prüfe ob Datenbank existiert für Backup-Funktion
-    db_path = resolve_sqlite_db_path()
-    db_exists = db_path and os.path.exists(db_path)
-    
-    return render_template('admin_overview.html', 
-                         trainings=trainings,
-                         hidden_trainings=hidden_trainings,
-                         instances=instances,
-                         activity_types=activity_types,
-                         db_exists=db_exists,
-                         weekdays=WEEKDAYS)
+    """Redirect zur Trainings-Verwaltung (alte Overview-Seite wurde entfernt)"""
+    return redirect(url_for('admin.admin_trainings'))
 
 @bp.route('/admin/trainings')
 @admin_required
