@@ -14,15 +14,18 @@ Platziere hier deine App-Icons in folgenden Größen:
 ## Icon erstellen
 
 Du kannst Icons online generieren:
-- https://www.pwabuilder.com/imageGenerator
-- https://realfavicongenerator.net/
+
+- <https://www.pwabuilder.com/imageGenerator>
+- <https://realfavicongenerator.net/>
 
 Oder mit einem Design-Tool (Figma, Photoshop, etc.):
+
 1. Erstelle ein 512x512px Bild mit deinem Logo/Icon
 2. Exportiere in allen benötigten Größen
 3. Platziere sie hier im icons/ Ordner
 
 **Wichtig:** Das Icon sollte:
+
 - Quadratisch sein (512x512)
 - Einen transparenten oder farbigen Hintergrund haben
 - Gut sichtbar sein auf hellem und dunklem Hintergrund

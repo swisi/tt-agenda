@@ -5,6 +5,7 @@ Die TT-Agenda ist jetzt als Progressive Web App konfiguriert!
 ## ✨ Was ist eine PWA?
 
 Eine PWA verhält sich wie eine native App, läuft aber im Browser:
+
 - **Installierbar** auf Smartphone und Desktop
 - **Offline-Funktionalität** durch Service Worker
 - **App-Icon** auf dem Homescreen
@@ -21,18 +22,21 @@ Eine PWA verhält sich wie eine native App, läuft aber im Browser:
 
 ## 📱 Installation
 
-### Auf Android (Chrome/Edge):
+### Auf Android (Chrome/Edge)
+
 1. Öffne die App im Browser
 2. Klicke auf Menü (⋮) → "App installieren" oder "Zum Startbildschirm hinzufügen"
 3. Die App erscheint auf deinem Homescreen
 
-### Auf iOS (Safari):
+### Auf iOS (Safari)
+
 1. Öffne die App in Safari
 2. Tippe auf das Teilen-Symbol (↑)
 3. Scrolle und wähle "Zum Home-Bildschirm"
 4. Bestätige mit "Hinzufügen"
 
-### Auf Desktop (Chrome/Edge):
+### Auf Desktop (Chrome/Edge)
+
 1. Öffne die App im Browser
 2. Klicke auf das (+) Symbol in der Adressleiste
 3. Oder: Menü → "App installieren..."
@@ -43,7 +47,7 @@ Eine PWA verhält sich wie eine native App, läuft aber im Browser:
 
 Die App benötigt Icons in verschiedenen Größen. Platziere sie in `app/static/icons/`:
 
-```
+``` txt
 app/static/icons/
 ├── icon-72x72.png
 ├── icon-96x96.png
@@ -56,8 +60,9 @@ app/static/icons/
 ```
 
 **Icon-Generator Tools:**
-- https://www.pwabuilder.com/imageGenerator
-- https://realfavicongenerator.net/
+
+- <https://www.pwabuilder.com/imageGenerator>
+- <https://realfavicongenerator.net/>
 
 ### Manifest anpassen
 
@@ -76,10 +81,12 @@ Bearbeite `app/static/manifest.json`:
 ### Service Worker Cache-Strategie
 
 Der Service Worker in `app/static/service-worker.js` nutzt:
+
 - **Network First** für `/live` und API-Calls (immer aktuell)
 - **Cache First** für statische Ressourcen (schneller)
 
 **Cache leeren:**
+
 ```javascript
 // In Browser DevTools Console:
 caches.keys().then(keys => keys.forEach(key => caches.delete(key)))
@@ -87,21 +94,24 @@ caches.keys().then(keys => keys.forEach(key => caches.delete(key)))
 
 ## 🧪 Testen
 
-### Lokal testen:
+### Lokal testen
+
 ```bash
 flask run --host=0.0.0.0 --port=3000
 ```
 
 Öffne: `http://localhost:3000`
 
-### PWA-Kriterien prüfen:
+### PWA-Kriterien prüfen
 
 **Chrome DevTools:**
+
 1. F12 → Tab "Lighthouse"
 2. Wähle "Progressive Web App"
 3. Klicke "Analyze page load"
 
 **Oder manuell:**
+
 1. F12 → Tab "Application"
 2. Links: "Manifest" prüfen
 3. Links: "Service Workers" prüfen
@@ -120,26 +130,33 @@ flask run --host=0.0.0.0 --port=3000
 ## ⚠️ Wichtige Hinweise
 
 ### HTTPS erforderlich
+
 Service Worker funktionieren nur über HTTPS (außer localhost).
 Dein Server muss SSL/TLS konfiguriert haben.
 
 ### Browser-Unterstützung
+
 - ✅ Chrome/Edge Android: Vollständig
 - ✅ Safari iOS 16.4+: Vollständig
 - ✅ Firefox Android: Größtenteils
 - ⚠️ Safari iOS < 16.4: Eingeschränkt
 
 ### Cache-Updates
+
 Nach Code-Änderungen:
+
 1. Service Worker Version in `service-worker.js` ändern:
+
    ```javascript
    const CACHE_NAME = 'tt-agenda-v2'; // Version erhöhen
    ```
+
 2. User müssen die App neu laden (oder sie lädt automatisch beim nächsten Besuch)
 
 ## 🔄 Updates deployen
 
 Nach Änderungen am Service Worker:
+
 ```bash
 # Service Worker Cache-Version erhöhen
 sed -i "s/tt-agenda-v1/tt-agenda-v2/" app/static/service-worker.js
@@ -153,6 +170,7 @@ git push
 ## 📊 Analytics (optional)
 
 PWA-Installationen tracken:
+
 ```javascript
 window.addEventListener('appinstalled', () => {
   console.log('PWA wurde installiert');
@@ -163,17 +181,21 @@ window.addEventListener('appinstalled', () => {
 ## 🐛 Troubleshooting
 
 **Problem:** App wird nicht als installierbar erkannt
+
 - Lösung: Prüfe manifest.json und Icons
 - Chrome DevTools → Application → Manifest
 
 **Problem:** Service Worker registriert nicht
+
 - Lösung: Prüfe Console auf Fehler
 - Stelle sicher, dass HTTPS aktiv ist
 
 **Problem:** Alte Version wird gecacht
+
 - Lösung: Cache leeren oder Version erhöhen
 
 **Problem:** Icons werden nicht angezeigt
+
 - Lösung: Prüfe Pfade in manifest.json
 - Icons müssen über HTTP erreichbar sein
 
