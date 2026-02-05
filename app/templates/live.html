@@ -1,21 +1,93 @@
 {% extends "base.html" %}
 
+{% block extra_head %}
+<style>
+    @keyframes live-pulse {
+        0%, 100% {
+            border-color: rgb(239, 68, 68);
+            background-color: rgba(254, 226, 226, 0.5);
+        }
+        50% {
+            border-color: rgb(220, 38, 38);
+            background-color: rgba(254, 202, 202, 0.8);
+        }
+    }
+    
+    @media (prefers-color-scheme: dark) {
+        @keyframes live-pulse {
+            0%, 100% {
+                border-color: rgb(239, 68, 68);
+                background-color: rgba(127, 29, 29, 0.3);
+            }
+            50% {
+                border-color: rgb(220, 38, 38);
+                background-color: rgba(127, 29, 29, 0.5);
+            }
+        }
+    }
+    
+    .live-row {
+        animation: live-pulse 2s ease-in-out infinite;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 
 <!-- Live Training -->
 {% if current_training %}
 <div class="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden mb-6" id="live-training-widget">
     <!-- Header -->
-    <div class="{% if training_status == 'running' %}bg-gradient-to-r from-red-600 to-red-500 dark:from-red-700 dark:to-red-600{% else %}bg-gradient-to-r from-indigo-600 to-blue-600 dark:from-indigo-700 dark:to-blue-700{% endif %} text-white px-6 py-4">
-        <div class="flex items-center justify-between gap-4 flex-wrap">
+    <div class="{% if training_status == 'running' %}bg-gradient-to-r from-red-600 to-red-500 dark:from-red-700 dark:to-red-600{% else %}bg-gradient-to-r from-indigo-600 to-blue-600 dark:from-indigo-700 dark:to-blue-700{% endif %} text-white px-3 py-1.5">
+        <!-- Mobile Layout -->
+        <div class="lg:hidden flex items-center justify-between gap-3">
+            <!-- Left: Title, Date & Filter (stacked) -->
+            <div class="flex-grow flex flex-col gap-1.5">
+                <!-- Top: Training Name -->
+                <div class="flex items-center gap-1.5 min-w-0">
+                    {% if training_status == 'running' %}
+                        <i class="bi bi-broadcast-pin text-xs flex-shrink-0"></i>
+                    {% else %}
+                        <i class="bi bi-clock text-xs flex-shrink-0"></i>
+                    {% endif %}
+                    <div class="text-sm font-bold truncate">{{ current_training.name }}</div>
+                </div>
+                
+                <!-- Middle: Date -->
+                <div class="text-white/80 text-xs">{{ (current_date or now).strftime('%d.%m.%Y') }}</div>
+                
+                <!-- Bottom: Filter -->
+                <select 
+                    id="liveGroupFilter" 
+                    class="px-2 py-1 rounded-md bg-white/20 text-white text-xs focus:outline-none focus:ring-1 focus:ring-white/50 transition"
+                >
+                    <option value="all" class="text-slate-900">Alle</option>
+                    {% for group in position_groups %}
+                    <option value="{{ group }}" class="text-slate-900">{{ group }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <!-- Right: Countdown (3 lines, vertically centered) -->
+            <div class="flex-shrink-0 flex items-center">
+                {% if training_status == 'running' and current_activity %}
+                <div id="countdown-timer-compact-mobile" class="countdown-timer-compact px-3 py-2 bg-white/20 rounded-md">
+                    <div id="countdown-value-compact-mobile" class="text-4xl font-bold font-mono leading-tight tracking-tight">--:--</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Desktop Layout -->
+        <div class="hidden lg:flex items-center justify-between gap-4">
             <!-- Left: Back & Timer -->
-            <div class="flex items-center gap-4">
-                <a href="{{ url_for('main.index') }}" class="px-3 py-2 bg-white/20 hover:bg-white/30 rounded-lg transition flex items-center gap-2">
+            <div class="flex items-center gap-3">
+                <a href="{{ url_for('main.index') }}" class="px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg transition flex items-center gap-2 text-sm">
                     <i class="bi bi-arrow-left"></i>
-                    <span class="hidden sm:inline">Zurück</span>
+                    <span>Zurück</span>
                 </a>
                 {% if training_status == 'running' and current_activity %}
-                <div id="countdown-timer-compact" class="countdown-timer-compact flex items-center gap-2 px-3 py-2 bg-white/20 rounded-lg">
+                <div id="countdown-timer-compact" class="countdown-timer-compact flex items-center gap-2 px-3 py-1.5 bg-white/20 rounded-lg text-sm">
                     <i class="bi bi-hourglass-split"></i>
                     <span id="countdown-value-compact">--:--</span>
                 </div>
@@ -24,20 +96,20 @@
 
             <!-- Center: Training Name -->
             <div class="flex-grow text-center">
-                <h2 class="text-xl sm:text-2xl font-bold">
+                <h2 class="text-base font-bold">
                     {% if training_status == 'running' %}
                         <i class="bi bi-broadcast-pin mr-2"></i>{{ current_training.name }}
                     {% else %}
                         <i class="bi bi-clock mr-2"></i>{{ current_training.name }}
                     {% endif %}
                 </h2>
-                <p class="text-white/90 text-sm">{{ (current_date or now).strftime('%d.%m.%Y') }}</p>
+                <p class="text-white/90 text-xs">{{ (current_date or now).strftime('%d.%m.%Y') }}</p>
             </div>
 
             <!-- Right: Group Filter -->
             <select 
-                id="liveGroupFilter" 
-                class="px-3 py-2 rounded-lg bg-white/20 text-white focus:outline-none focus:ring-2 focus:ring-white/50 transition"
+                id="liveGroupFilterDesktop" 
+                class="px-3 py-1.5 rounded-lg bg-white/20 text-white text-sm focus:outline-none focus:ring-2 focus:ring-white/50 transition"
             >
                 <option value="all" class="text-slate-900">Alle</option>
                 {% for group in position_groups %}
@@ -48,7 +120,7 @@
     </div>
 
     <!-- Content -->
-    <div class="p-6">
+    <div class="p-3">
         {% if training_status == 'upcoming' %}
         <div class="mb-6 p-4 bg-blue-50 dark:bg-blue-900/30 border border-blue-300 dark:border-blue-700 rounded-lg flex items-center gap-3">
             <i class="bi bi-info-circle text-blue-600 dark:text-blue-400 text-lg"></i>
@@ -58,16 +130,16 @@
         </div>
         {% endif %}
 
-        <!-- Schedule Table -->
-        <div class="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-700">
+        <!-- Schedule Table - Desktop -->
+        <div class="hidden lg:block overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-700">
             <table class="w-full schedule-table" id="liveScheduleTable">
                 <thead class="bg-slate-100 dark:bg-slate-700 border-b border-slate-200 dark:border-slate-700">
                     <tr>
-                        <th class="px-4 py-3 text-left text-sm font-semibold text-slate-900 dark:text-white">Von</th>
-                        <th class="px-4 py-3 text-left text-sm font-semibold text-slate-900 dark:text-white">Bis</th>
-                        <th class="px-4 py-3 text-left text-sm font-semibold text-slate-900 dark:text-white">Min</th>
+                        <th class="px-3 py-2 text-left text-xs font-semibold text-slate-900 dark:text-white">Von</th>
+                        <th class="px-3 py-2 text-left text-xs font-semibold text-slate-900 dark:text-white">Bis</th>
+                        <th class="px-2 py-2 text-left text-xs font-semibold text-slate-900 dark:text-white">Min</th>
                         {% for group in position_groups %}
-                        <th class="px-4 py-3 text-left text-sm font-semibold text-slate-900 dark:text-white group-header" data-group="{{ group }}">{{ group }}</th>
+                        <th class="px-3 py-2 text-left text-xs font-semibold text-slate-900 dark:text-white group-header" data-group="{{ group }}">{{ group }}</th>
                         {% endfor %}
                     </tr>
                 </thead>
@@ -83,22 +155,62 @@
                     {% set is_next = training_status == 'running' and next_activity and next_activity.id == activity.id and not current_activity %}
                     {% set is_finished = activity.start_time < now.time() and activity_end_time <= now.time() and training_status == 'running' %}
                     
-                    <tr class="{% if is_current %}bg-red-50 dark:bg-red-900/30 border-l-4 border-red-500{% elif is_next %}bg-yellow-50 dark:bg-yellow-900/30 border-l-4 border-yellow-500{% elif is_finished %}bg-green-50 dark:bg-green-900/30 opacity-60{% else %}hover:bg-slate-50 dark:hover:bg-slate-700/50{% endif %} transition">
-                        <td class="px-4 py-3 text-sm font-medium text-slate-900 dark:text-white">{{ activity.start_time.strftime('%H:%M') }}</td>
-                        <td class="px-4 py-3 text-sm font-medium text-slate-900 dark:text-white">{{ '%02d:%02d'|format(end_hour, end_min) }}</td>
-                        <td class="px-4 py-3 text-sm font-medium text-slate-900 dark:text-white">
+                    <tr class="{% if is_current %}bg-red-50 dark:bg-red-900/30 border-l-4 border-red-500 live-row{% elif is_next %}bg-yellow-50 dark:bg-yellow-900/30 border-l-4 border-yellow-500{% elif is_finished %}bg-green-50 dark:bg-green-900/30 opacity-60{% else %}hover:bg-slate-50 dark:hover:bg-slate-700/50{% endif %} transition">
+                        <td class="px-3 py-2 text-xs font-medium text-slate-900 dark:text-white whitespace-nowrap">{{ activity.start_time.strftime('%H:%M') }}</td>
+                        <td class="px-3 py-2 text-xs font-medium text-slate-900 dark:text-white whitespace-nowrap">{{ '%02d:%02d'|format(end_hour, end_min) }}</td>
+                        <td class="px-2 py-2 text-xs font-medium text-slate-900 dark:text-white whitespace-nowrap">
                             {{ activity.duration }}
-                            {% if is_current %}
-                            <span class="ml-2 inline-flex items-center gap-1 px-2 py-1 bg-red-500 text-white text-xs font-bold rounded-full animate-pulse">
-                                <span class="w-1.5 h-1.5 bg-white rounded-full"></span>
-                                LIVE
-                            </span>
-                            {% endif %}
                         </td>
                         
                         {% set cells = activity|build_group_cells %}
                         {% for cell in cells %}
-                        <td class="px-4 py-3 text-sm font-medium text-center group-cell border-r border-slate-300 dark:border-slate-600 {% if loop.last %}border-r-0{% endif %} {% if cell.text_color %}font-semibold{% endif %}" 
+                        <td class="px-3 py-2 text-xs font-medium text-center group-cell border-r border-slate-300 dark:border-slate-600 {% if loop.last %}border-r-0{% endif %} {% if cell.text_color %}font-semibold{% endif %}" 
+                            {% if cell.colspan and cell.colspan > 1 %}colspan="{{ cell.colspan }}"{% endif %} 
+                            data-groups="{{ cell.groups|join(',') if cell.groups else '' }}"
+                            style="{% if cell.color %}background-color: var(--color-{{ activity.activity_type }});{% if cell.text_color %}color: {{ cell.text_color }} !important;{% endif %}{% endif %}"
+                        >
+                            {% if cell.content and cell.content.strip() %}{{ cell.content }}{% else %}<span class="text-slate-400 dark:text-slate-500">-</span>{% endif %}
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Schedule Table - Mobile -->
+        <div class="lg:hidden overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-700">
+            <table class="w-full schedule-table" id="liveScheduleTableMobile">
+                <thead class="bg-slate-100 dark:bg-slate-700 border-b border-slate-200 dark:border-slate-700">
+                    <tr>
+                        <th class="px-2 py-2 text-left text-xs font-semibold text-slate-900 dark:text-white">Von</th>
+                        <th class="px-2 py-2 text-left text-xs font-semibold text-slate-900 dark:text-white">Bis</th>
+                        <th class="px-1 py-2 text-left text-xs font-semibold text-slate-900 dark:text-white hidden">Min</th>
+                        {% for group in position_groups %}
+                        <th class="px-2 py-2 text-left text-xs font-semibold text-slate-900 dark:text-white group-header-mobile" data-group="{{ group }}">{{ group }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+                    {% set activities = (display_activities if display_activities is not none else current_training.activities)|sort(attribute='order_index') %}
+                    {% for activity in activities %}
+                    {% set start_datetime = activity.start_time %}
+                    {% set end_time_minutes = (activity.start_time.hour * 60 + activity.start_time.minute + activity.duration) %}
+                    {% set end_hour = (end_time_minutes // 60) %}
+                    {% set end_min = (end_time_minutes % 60) %}
+                    {% set activity_end_time = (now.replace(hour=activity.start_time.hour, minute=activity.start_time.minute, second=0, microsecond=0) + timedelta(minutes=activity.duration)).time() %}
+                    {% set is_current = training_status == 'running' and current_activity and current_activity.id == activity.id %}
+                    {% set is_next = training_status == 'running' and next_activity and next_activity.id == activity.id and not current_activity %}
+                    {% set is_finished = activity.start_time < now.time() and activity_end_time <= now.time() and training_status == 'running' %}
+                    
+                    <tr class="{% if is_current %}bg-red-50 dark:bg-red-900/30 border-l-4 border-red-500 live-row{% elif is_next %}bg-yellow-50 dark:bg-yellow-900/30 border-l-4 border-yellow-500{% elif is_finished %}bg-green-50 dark:bg-green-900/30 opacity-60{% else %}hover:bg-slate-50 dark:hover:bg-slate-700/50{% endif %} transition">
+                        <td class="px-2 py-2 text-xs font-medium text-slate-900 dark:text-white whitespace-nowrap text-left">{{ activity.start_time.strftime('%H:%M') }}</td>
+                        <td class="px-2 py-2 text-xs font-medium text-slate-900 dark:text-white whitespace-nowrap text-left">{{ '%02d:%02d'|format(end_hour, end_min) }}</td>
+                        <td class="px-1 py-2 text-xs font-medium text-slate-900 dark:text-white whitespace-nowrap text-left hidden">{{ activity.duration }}</td>
+                        
+                        {% set cells = activity|build_group_cells %}
+                        {% for cell in cells %}
+                        <td class="px-2 py-2 text-xs font-medium text-left group-cell-mobile border-r border-slate-300 dark:border-slate-600 {% if loop.last %}border-r-0{% endif %} {% if cell.text_color %}font-semibold{% endif %}" 
                             {% if cell.colspan and cell.colspan > 1 %}colspan="{{ cell.colspan }}"{% endif %} 
                             data-groups="{{ cell.groups|join(',') if cell.groups else '' }}"
                             style="{% if cell.color %}background-color: var(--color-{{ activity.activity_type }});{% if cell.text_color %}color: {{ cell.text_color }} !important;{% endif %}{% endif %}"
@@ -153,11 +265,18 @@
         function updateCountdown() {
             const now = new Date(new Date().getTime() + timeDiff);
             const diff = currentActivityEndTime - now;
-            const timer = document.getElementById('countdown-timer-compact');
+            const timerDesktop = document.getElementById('countdown-timer-compact');
+            const timerMobile = document.getElementById('countdown-timer-compact-mobile');
             
             if (diff <= 0) {
-                document.getElementById('countdown-value-compact').textContent = '00:00';
-                timer.classList.add('text-red-300');
+                if (document.getElementById('countdown-value-compact')) {
+                    document.getElementById('countdown-value-compact').textContent = '00:00';
+                }
+                if (document.getElementById('countdown-value-compact-mobile')) {
+                    document.getElementById('countdown-value-compact-mobile').textContent = '00:00';
+                }
+                if (timerDesktop) timerDesktop.classList.add('text-red-300');
+                if (timerMobile) timerMobile.classList.add('text-red-300');
                 setTimeout(function() {
                     location.reload();
                 }, 2000);
@@ -167,13 +286,21 @@
             const minutes = Math.floor(diff / 60000);
             const seconds = Math.floor((diff % 60000) / 1000);
             const display = String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
-            document.getElementById('countdown-value-compact').textContent = display;
+            
+            if (document.getElementById('countdown-value-compact')) {
+                document.getElementById('countdown-value-compact').textContent = display;
+            }
+            if (document.getElementById('countdown-value-compact-mobile')) {
+                document.getElementById('countdown-value-compact-mobile').textContent = display;
+            }
             
             if (diff < 120000) {
-                timer.classList.add('animate-pulse');
+                if (timerDesktop) timerDesktop.classList.add('animate-pulse');
+                if (timerMobile) timerMobile.classList.add('animate-pulse');
             }
             if (diff < 30000) {
-                timer.classList.add('bg-red-500/30');
+                if (timerDesktop) timerDesktop.classList.add('bg-red-500/30');
+                if (timerMobile) timerMobile.classList.add('bg-red-500/30');
             }
         }
         
@@ -182,16 +309,18 @@
     })();
     {% endif %}
 
-    // Group Filter
+    // Group Filter - Sync both desktop and mobile
     document.addEventListener('DOMContentLoaded', function() {
-        const filterSelect = document.getElementById('liveGroupFilter');
-        const table = document.getElementById('liveScheduleTable');
+        const filterMobile = document.getElementById('liveGroupFilter');
+        const filterDesktop = document.getElementById('liveGroupFilterDesktop');
+        const tableDesktop = document.getElementById('liveScheduleTable');
+        const tableMobile = document.getElementById('liveScheduleTableMobile');
         
-        if (filterSelect && table) {
-            filterSelect.addEventListener('change', function() {
-                const selectedGroup = this.value;
-                const headers = table.querySelectorAll('th.group-header');
-                const cells = table.querySelectorAll('td.group-cell');
+        function applyFilter(selectedGroup) {
+            // Filter Desktop Table
+            if (tableDesktop) {
+                const headers = tableDesktop.querySelectorAll('th.group-header');
+                const cells = tableDesktop.querySelectorAll('td.group-cell');
                 
                 if (selectedGroup === 'all') {
                     headers.forEach(header => header.style.display = '');
@@ -207,6 +336,45 @@
                         cell.style.display = groups.includes(selectedGroup) ? '' : 'none';
                     });
                 }
+            }
+            
+            // Filter Mobile Table
+            if (tableMobile) {
+                const headers = tableMobile.querySelectorAll('th.group-header-mobile');
+                const cells = tableMobile.querySelectorAll('td.group-cell-mobile');
+                
+                if (selectedGroup === 'all') {
+                    headers.forEach(header => header.style.display = '');
+                    cells.forEach(cell => cell.style.display = '');
+                } else {
+                    headers.forEach(header => {
+                        const group = header.getAttribute('data-group');
+                        header.style.display = (group === selectedGroup) ? '' : 'none';
+                    });
+                    cells.forEach(cell => {
+                        const groupsAttr = cell.getAttribute('data-groups');
+                        const groups = groupsAttr ? groupsAttr.split(',') : [];
+                        cell.style.display = groups.includes(selectedGroup) ? '' : 'none';
+                    });
+                }
+            }
+        }
+        
+        // Mobile filter change
+        if (filterMobile) {
+            filterMobile.addEventListener('change', function() {
+                const selectedGroup = this.value;
+                applyFilter(selectedGroup);
+                if (filterDesktop) filterDesktop.value = selectedGroup;
+            });
+        }
+        
+        // Desktop filter change
+        if (filterDesktop) {
+            filterDesktop.addEventListener('change', function() {
+                const selectedGroup = this.value;
+                applyFilter(selectedGroup);
+                if (filterMobile) filterMobile.value = selectedGroup;
             });
         }
     });

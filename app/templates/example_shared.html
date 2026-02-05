@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}Beispiel mit TT-Shared{% endblock %}
+
+{% block content %}
+<div class="container mx-auto">
+    <!-- Hero Section -->
+    <div class="hero text-center">
+        <h1 class="hero-title">Willkommen bei TT-Agenda</h1>
+        <p class="hero-subtitle">Trainingsplanung mit dem gemeinsamen Tigers Design-System</p>
+    </div>
+
+    <!-- Example Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
+        <div class="card p-6">
+            <div class="flex items-center gap-3 mb-4">
+                <i class="bi bi-calendar-check text-3xl text-indigo-600 dark:text-indigo-400"></i>
+                <h3 class="text-xl font-semibold">Trainings</h3>
+            </div>
+            <p class="text-muted mb-4">Verwalte alle Trainings und Aktivitäten zentral.</p>
+            <a href="/" class="btn btn-primary w-full justify-center">
+                Zu den Trainings
+            </a>
+        </div>
+
+        <div class="card p-6">
+            <div class="flex items-center gap-3 mb-4">
+                <i class="bi bi-people text-3xl text-green-600 dark:text-green-400"></i>
+                <h3 class="text-xl font-semibold">Teams</h3>
+            </div>
+            <p class="text-muted mb-4">Übersicht über alle Teams und deren Trainingszeiten.</p>
+            <a href="/" class="btn btn-secondary w-full justify-center">
+                Teams anzeigen
+            </a>
+        </div>
+
+        <div class="card p-6">
+            <div class="flex items-center gap-3 mb-4">
+                <i class="bi bi-gear text-3xl text-slate-600 dark:text-slate-400"></i>
+                <h3 class="text-xl font-semibold">Admin</h3>
+            </div>
+            <p class="text-muted mb-4">Konfiguration und Verwaltung der Anwendung.</p>
+            <a href="/admin" class="btn btn-secondary w-full justify-center">
+                Admin-Bereich
+            </a>
+        </div>
+    </div>
+
+    <!-- Example Badges -->
+    <div class="mt-12">
+        <h2 class="text-2xl font-bold mb-4">Status-Übersicht</h2>
+        <div class="flex flex-wrap gap-3">
+            <span class="badge badge-success">
+                <i class="bi bi-check-circle"></i>
+                System läuft
+            </span>
+            <span class="badge badge-primary">
+                <i class="bi bi-cloud-arrow-up"></i>
+                Synchronisiert
+            </span>
+            <span class="badge badge-warning">
+                <i class="bi bi-exclamation-triangle"></i>
+                Wartung geplant
+            </span>
+        </div>
+    </div>
+
+    <!-- Example Form -->
+    <div class="mt-12 max-w-md">
+        <h2 class="text-2xl font-bold mb-6">Beispiel-Formular</h2>
+        <form class="space-y-4">
+            <div class="form-group">
+                <label>Name</label>
+                <input type="text" placeholder="Dein Name">
+            </div>
+            
+            <div class="form-group">
+                <label>E-Mail</label>
+                <input type="email" placeholder="deine@email.ch">
+            </div>
+            
+            <div class="form-group">
+                <label>Nachricht</label>
+                <textarea rows="4" placeholder="Deine Nachricht..."></textarea>
+            </div>
+            
+            <div class="flex gap-3">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-send"></i>
+                    Absenden
+                </button>
+                <button type="reset" class="btn btn-secondary">
+                    Zurücksetzen
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

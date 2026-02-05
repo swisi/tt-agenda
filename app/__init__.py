@@ -12,6 +12,9 @@ import logging
 import secrets
 from sqlalchemy import text
 from sqlalchemy.exc import OperationalError
+import sys
+from pathlib import Path
+from jinja2 import ChoiceLoader, FileSystemLoader
 
 def create_app(config_class=Config):
     load_dotenv()  # Load .env file
@@ -26,7 +29,22 @@ def create_app(config_class=Config):
         root_logger.addHandler(handler)
     root_logger.setLevel(log_level)
     
+    # Create Flask app
     app = Flask(__name__)
+    
+    # Add shared templates using ChoiceLoader
+    shared_path = Path(__file__).parent.parent / "shared"
+    app.jinja_loader = ChoiceLoader([
+        FileSystemLoader(str(Path(__file__).parent / "templates")),
+        FileSystemLoader(str(shared_path / "templates"))
+    ])
+    
+    # Register shared static folder as additional static folder
+    @app.route('/shared/<path:filename>')
+    def shared_static(filename):
+        from flask import send_from_directory
+        return send_from_directory(shared_path / "static", filename)
+    
     app.config.from_object(config_class)
 
     if not app.config.get('SECRET_KEY'):

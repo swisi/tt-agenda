@@ -174,3 +174,8 @@ def live():
 @bp.route('/test')
 def test():
     return '<h1>Flask funktioniert!</h1><p>Gehe zu <a href="/login">/login</a></p>'
+
+@bp.route('/shared-example')
+def shared_example():
+    """Beispiel-Seite mit TT-Shared Design-System"""
+    return render_template('example_shared.html')
