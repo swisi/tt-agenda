@@ -28,8 +28,16 @@
     <!-- Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     
-    <!-- Tailwind CSS (compiled) -->
-    <link rel="stylesheet" href="{{ url_for('shared_static', filename='css/output.css') }}">
+    <!-- Tailwind CSS from CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwindcss.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {}
+            }
+        }
+    </script>
 
     <script>
         // Apply saved or system theme as early as possible to avoid flashes

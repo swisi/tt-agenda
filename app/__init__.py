@@ -32,15 +32,8 @@ def create_app(config_class=Config):
     # Create Flask app
     app = Flask(__name__)
     
-    # Use app templates only - shared is only for CSS compilation
-    shared_path = Path(__file__).parent.parent / "shared"
+    # Use app templates only
     app.jinja_loader = FileSystemLoader(str(Path(__file__).parent / "templates"))
-    
-    # Register shared static folder as additional static folder
-    @app.route('/shared/<path:filename>')
-    def shared_static(filename):
-        from flask import send_from_directory
-        return send_from_directory(shared_path / "static", filename)
     
     app.config.from_object(config_class)
 

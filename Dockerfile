@@ -1,9 +1,3 @@
-# Build Stage - Tailwind CSS kompilieren
-FROM node:20-slim AS builder
-WORKDIR /build
-COPY shared/ .
-RUN npm install && npm run build
-
 # Production Stage - Python Anwendung
 FROM python:3.12-slim
 
@@ -24,9 +18,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Kopiere Anwendungscode
 COPY . .
-
-# Überschreibe mit kompiliertem CSS aus Builder (MUSS nach COPY . . kommen!)
-COPY --from=builder /build/static/css/output.css ./shared/static/css/output.css
 
 # Erstelle Verzeichnis für die Datenbank
 RUN mkdir -p /app/instance
