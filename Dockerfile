@@ -25,8 +25,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Kopiere Anwendungscode
 COPY . .
 
-# Kopiere kompiliertes CSS aus Builder Stage
-COPY --from=builder /build/static/css/output.css ./shared/static/css/
+# Überschreibe mit kompiliertem CSS aus Builder (MUSS nach COPY . . kommen!)
+COPY --from=builder /build/static/css/output.css ./shared/static/css/output.css
 
 # Erstelle Verzeichnis für die Datenbank
 RUN mkdir -p /app/instance
