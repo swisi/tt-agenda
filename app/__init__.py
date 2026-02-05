@@ -14,7 +14,7 @@ from sqlalchemy import text
 from sqlalchemy.exc import OperationalError
 import sys
 from pathlib import Path
-from jinja2 import ChoiceLoader, FileSystemLoader
+from jinja2 import FileSystemLoader
 
 def create_app(config_class=Config):
     load_dotenv()  # Load .env file
@@ -32,12 +32,9 @@ def create_app(config_class=Config):
     # Create Flask app
     app = Flask(__name__)
     
-    # Add shared templates using ChoiceLoader
+    # Use app templates only - shared is only for CSS compilation
     shared_path = Path(__file__).parent.parent / "shared"
-    app.jinja_loader = ChoiceLoader([
-        FileSystemLoader(str(Path(__file__).parent / "templates")),
-        FileSystemLoader(str(shared_path / "templates"))
-    ])
+    app.jinja_loader = FileSystemLoader(str(Path(__file__).parent / "templates"))
     
     # Register shared static folder as additional static folder
     @app.route('/shared/<path:filename>')
