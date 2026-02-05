@@ -1,4 +1,10 @@
-# Verwende Python 3.12 als Basis-Image
+# Build Stage - Tailwind CSS kompilieren
+FROM node:20-slim AS builder
+WORKDIR /build
+COPY shared/ .
+RUN npm install && npm run build
+
+# Production Stage - Python Anwendung
 FROM python:3.12-slim
 
 # Setze Arbeitsverzeichnis
@@ -18,6 +24,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Kopiere Anwendungscode
 COPY . .
+
+# Kopiere kompiliertes CSS aus Builder Stage
+COPY --from=builder /build/static/css/output.css ./shared/static/css/
 
 # Erstelle Verzeichnis für die Datenbank
 RUN mkdir -p /app/instance
