@@ -5,6 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Trainingsverwaltung{% endblock %}</title>
     
+    <!-- PWA Meta Tags -->
+    <meta name="application-name" content="TT-Agenda">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="TT-Agenda">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#4f46e5">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    
+    <!-- Apple Touch Icons -->
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='icons/icon-192x192.png') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='icons/icon-192x192.png') }}">
+    
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -69,7 +84,7 @@
                 <!-- Logo -->
                 <a href="{{ url_for('main.index') }}" class="flex items-center gap-3 text-2xl font-bold text-indigo-600 dark:text-indigo-400 hover:opacity-80 transition">
                     <div class="p-2 bg-indigo-100 dark:bg-indigo-900/50 rounded-lg">
-                        <i class="bi bi-trophy-fill text-indigo-600 dark:text-indigo-400"></i>
+                        <img src="{{ url_for('static', filename='tigers-logo.png') }}" alt="Tigers Logo" class="w-6 h-6 object-contain">
                     </div>
                     <span class="hidden sm:inline">Tigers</span>
                 </a>
@@ -281,5 +296,29 @@
             animation: slideIn 0.3s ease-out;
         }
     </style>
+    
+    <!-- PWA Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/static/service-worker.js')
+                    .then(registration => {
+                        console.log('Service Worker registriert:', registration.scope);
+                    })
+                    .catch(error => {
+                        console.log('Service Worker Registrierung fehlgeschlagen:', error);
+                    });
+            });
+        }
+        
+        // PWA Install Prompt
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            // Hier könntest du einen "App installieren" Button anzeigen
+            console.log('PWA kann installiert werden');
+        });
+    </script>
 </body>
 </html>
