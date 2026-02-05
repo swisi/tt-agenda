@@ -13,12 +13,8 @@
     <!-- Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
-    <script>
-        // Tailwind CDN config: use class-based dark mode (must run after CDN load)
-        tailwind.config = { darkMode: 'class' };
-    </script>
+    <!-- Tailwind CSS (compiled) -->
+    <link rel="stylesheet" href="{{ url_for('shared_static', filename='css/output.css') }}">
 
     <script>
         // Apply saved or system theme as early as possible to avoid flashes
