@@ -5,24 +5,24 @@
 {% set activity_def = ACTIVITY_TYPE_DEFS.get(activity.activity_type, {}) if activity else {} %}
 {% set activity_behavior = activity_def.behavior if activity_def else '' %}
 
-<div class="max-w-4xl mx-auto">
-    <div class="mb-6 flex items-center gap-3">
-        <div class="h-11 w-11 rounded-full bg-indigo-600/15 text-indigo-600 dark:text-indigo-200 flex items-center justify-center">
-            <i class="bi bi-activity"></i>
+<div class="max-w-4xl mx-auto px-4 sm:px-0">
+    <div class="mb-4 sm:mb-6 flex items-center gap-2 sm:gap-3">
+        <div class="h-9 w-9 sm:h-11 sm:w-11 rounded-full bg-indigo-600/15 text-indigo-600 dark:text-indigo-200 flex items-center justify-center">
+            <i class="bi bi-activity text-sm sm:text-base"></i>
         </div>
         <div>
             <p class="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">{{ 'Training' if training else 'Instanz' }}</p>
-            <h1 class="text-2xl font-bold text-slate-900 dark:text-white">{{ 'Aktivität bearbeiten' if activity else 'Neue Aktivität' }}</h1>
+            <h1 class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">{{ 'Aktivität bearbeiten' if activity else 'Neue Aktivität' }}</h1>
         </div>
     </div>
 
-    <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-md p-6">
+    <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-md p-4 sm:p-6">
         <form method="POST" id="activityForm" onsubmit="return prepareFormSubmit()" action="{% if is_instance %}{{ url_for('admin.edit_instance_activity', id=activity.id) if activity else url_for('admin.add_instance_activity', instance_id=instance.id) }}{% else %}{{ url_for('admin.edit_activity', id=activity.id) if activity else url_for('admin.add_activity', training_id=training.id) }}{% endif %}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             {% if training %}<input type="hidden" name="training_id" value="{{ training.id }}">{% endif %}
             {% if is_instance %}<input type="hidden" name="training_instance_id" value="{{ instance.id }}">{% endif %}
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-5">
                 <div>
                     <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Typ</label>
                     <select name="activity_type" id="activity_type" required onchange="updateFormSections()" class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white px-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
@@ -39,14 +39,14 @@
             </div>
 
             <!-- Thema (Team/Prepractice) -->
-            <div class="mb-5" id="topic_section" style="display: {% if activity and activity.activity_type in TEAM_LIKE_TYPES %}block{% elif not activity %}block{% else %}none{% endif %};">
+            <div class="mb-4 sm:mb-5" id="topic_section" style="display: {% if activity and activity.activity_type in TEAM_LIKE_TYPES %}block{% elif not activity %}block{% else %}none{% endif %};">
                 <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Thema</label>
                 <input type="text" name="topic" value="{{ activity.topic if activity and activity.topic else '' }}" class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white px-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="z.B. Redzone Install">
             </div>
 
             <!-- Individual Section -->
-            <div class="mb-6" id="individual_section" style="display: {% if activity and activity_behavior == 'individual' %}block{% else %}none{% endif %};">
-                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">Themen pro Gruppe</label>
+            <div class="mb-4 sm:mb-6" id="individual_section" style="display: {% if activity and activity_behavior == 'individual' %}block{% else %}none{% endif %};">
+                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2 sm:mb-3">Themen pro Gruppe</label>
                 <div class="space-y-2">
                     <label class="flex items-center gap-2 text-sm text-slate-800 dark:text-slate-200">
                         <input type="radio" class="h-4 w-4 text-indigo-600" name="individual_mode" id="individual_same" value="same" {% if individual_mode_same %}checked{% endif %} onchange="updateIndividualMode()">

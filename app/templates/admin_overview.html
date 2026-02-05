@@ -1,70 +1,70 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="page-header mb-4">
-    <h1 class="page-title">
-        <i class="bi bi-gear-fill me-2"></i>Verwaltung
-    </h1>
-    <div class="page-actions">
-        <a href="{{ url_for('main.index') }}" class="btn btn-secondary">
+<div class="mb-4 sm:mb-6">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <h1 class="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <i class="bi bi-gear-fill"></i>Verwaltung
+        </h1>
+        <a href="{{ url_for('main.index') }}" class="btn btn-secondary w-full sm:w-auto text-center">
             <i class="bi bi-arrow-left me-1"></i>Zurück zur Übersicht
         </a>
     </div>
 </div>
 
 <!-- Tabs Navigation -->
-<ul class="nav nav-pills mb-4" id="adminTabs" role="tablist">
-    <li class="nav-item" role="presentation">
-        <button class="nav-link active" id="templates-tab" data-bs-toggle="pill" data-bs-target="#templates" type="button" role="tab">
-            <i class="bi bi-list-check me-2"></i>Templates
-        </button>
-    </li>
-    <li class="nav-item" role="presentation">
-        <button class="nav-link" id="einmalig-tab" data-bs-toggle="pill" data-bs-target="#einmalig" type="button" role="tab">
-            <i class="bi bi-calendar-plus me-2"></i>Einmalig
-        </button>
-    </li>
-    <li class="nav-item" role="presentation">
-        <button class="nav-link" id="angepasst-tab" data-bs-toggle="pill" data-bs-target="#angepasst" type="button" role="tab">
-            <i class="bi bi-calendar2-week me-2"></i>Angepasst
-        </button>
-    </li>
-    <li class="nav-item" role="presentation">
-        <button class="nav-link" id="aktivitaetstypen-tab" data-bs-toggle="pill" data-bs-target="#aktivitaetstypen" type="button" role="tab">
-            <i class="bi bi-tags me-2"></i>Aktivitätstypen
-        </button>
-    </li>
-    <li class="nav-item" role="presentation">
-        <button class="nav-link" id="backup-tab" data-bs-toggle="pill" data-bs-target="#backup" type="button" role="tab">
-            <i class="bi bi-database-down me-2"></i>Backup
-        </button>
-    </li>
-</ul>
+<div class="mb-4 overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+    <ul class="nav nav-pills flex-nowrap sm:flex-wrap min-w-max sm:min-w-0" id="adminTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active text-sm sm:text-base whitespace-nowrap" id="templates-tab" data-bs-toggle="pill" data-bs-target="#templates" type="button" role="tab">
+                <i class="bi bi-list-check me-1 sm:me-2"></i>Templates
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link text-sm sm:text-base whitespace-nowrap" id="einmalig-tab" data-bs-toggle="pill" data-bs-target="#einmalig" type="button" role="tab">
+                <i class="bi bi-calendar-plus me-1 sm:me-2"></i>Einmalig
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link text-sm sm:text-base whitespace-nowrap" id="angepasst-tab" data-bs-toggle="pill" data-bs-target="#angepasst" type="button" role="tab">
+                <i class="bi bi-calendar2-week me-1 sm:me-2"></i>Angepasst
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link text-sm sm:text-base whitespace-nowrap" id="aktivitaetstypen-tab" data-bs-toggle="pill" data-bs-target="#aktivitaetstypen" type="button" role="tab">
+                <i class="bi bi-tags me-1 sm:me-2"></i>Aktivitätstypen
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link text-sm sm:text-base whitespace-nowrap" id="backup-tab" data-bs-toggle="pill" data-bs-target="#backup" type="button" role="tab">
+                <i class="bi bi-database-down me-1 sm:me-2"></i>Backup
+            </button>
+        </li>
+    </ul>
+</div>
 
 <!-- Tab Content -->
 <div class="tab-content" id="adminTabsContent">
     <!-- Templates Tab -->
     <div class="tab-pane fade show active" id="templates" role="tabpanel">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h3><i class="bi bi-list-check me-2"></i>Trainings Templates</h3>
-            <a href="{{ url_for('admin.new_training') }}" class="btn btn-primary">
+        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-3">
+            <h3 class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <i class="bi bi-list-check"></i>Trainings Templates
+            </h3>
+            <a href="{{ url_for('admin.new_training') }}" class="btn btn-primary w-full sm:w-auto text-center">
                 <i class="bi bi-plus-circle me-1"></i>Neues Training
             </a>
         </div>
         
-        <form class="row g-2 align-items-center mb-3" 
+        <form class="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2 mb-3" 
               hx-get="{{ url_for('admin.trainings_partial') }}" 
               hx-target="#trainings-list" 
               hx-swap="innerHTML" 
               hx-push-url="false">
-            <div class="col-sm-8 col-md-6 col-lg-4">
-                <input type="search" name="q" value="{{ request.args.get('q', '') }}" class="form-control" placeholder="Suche nach Name…">
-            </div>
-            <div class="col-auto">
-                <button type="submit" class="btn btn-outline-primary">
-                    <i class="bi bi-search me-1"></i>Filtern
-                </button>
-            </div>
+            <input type="search" name="q" value="{{ request.args.get('q', '') }}" class="form-control" placeholder="Suche nach Name…">
+            <button type="submit" class="btn btn-outline-primary">
+                <i class="bi bi-search me-1"></i>Filtern
+            </button>
         </form>
 
         {% if trainings|length == 0 %}
