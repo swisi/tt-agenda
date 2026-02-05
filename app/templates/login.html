@@ -124,7 +124,7 @@
     </button>
     
     <script>
-        // Theme Toggle
+        // Theme Toggle with Tailwind CDN JIT Support
         const themeToggle = document.getElementById('themeToggle');
         const themeIcon = document.getElementById('themeIcon');
         const html = document.documentElement;
@@ -148,7 +148,16 @@
         
         themeToggle.addEventListener('click', () => {
             const isDark = html.classList.contains('dark');
-            setTheme(isDark ? 'light' : 'dark');
+            const newTheme = isDark ? 'light' : 'dark';
+            setTheme(newTheme);
+            
+            // Force Tailwind to reprocess styles
+            if (window.tailwind) {
+                window.tailwind.config = {
+                    darkMode: 'class',
+                    theme: { extend: {} }
+                };
+            }
         });
     </script>
 </body>
