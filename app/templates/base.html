@@ -126,6 +126,11 @@
                 
                 <!-- Right Section -->
                 <div class="flex items-center gap-2 sm:gap-4">
+                    <!-- PWA Install Button (Desktop) -->
+                    <button id="pwaInstallBtn" class="hidden p-2 text-slate-600 dark:text-slate-400 hover:text-green-600 dark:hover:text-green-400 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/30 transition" title="App installieren">
+                        <i class="bi bi-download"></i>
+                    </button>
+                    
                     <!-- Theme Toggle -->
                     <button id="themeToggle" class="p-2 text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition" title="Design-Modus wechseln">
                         <i class="bi bi-moon-fill" id="themeIcon"></i>
@@ -187,6 +192,14 @@
                     </a>
                 </div>
                 {% endif %}
+                
+                <!-- PWA Install Button (Mobile) -->
+                <div id="pwaInstallMobileContainer" class="hidden pt-3 mt-3 border-t border-slate-200 dark:border-slate-600">
+                    <button id="pwaInstallBtnMobile" class="w-full flex items-center gap-3 px-4 py-3 text-base font-medium text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded-lg transition active:bg-green-100 dark:active:bg-green-900/50">
+                        <i class="bi bi-download text-lg w-6 text-center"></i>
+                        <span>App installieren</span>
+                    </button>
+                </div>
                 
                 <!-- User Info in Mobile Menu (wenn eingeloggt) -->
                 {% if session.get('user_id') %}
@@ -349,8 +362,9 @@
         }
     </style>
     
-    <!-- PWA Service Worker Registration -->
+    <!-- PWA Service Worker Registration & Install Prompt -->
     <script>
+        // Service Worker Registration
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('/static/service-worker.js')
@@ -363,14 +377,85 @@
             });
         }
         
-        // PWA Install Prompt
+        // PWA Install Prompt Handler
         let deferredPrompt;
+        const pwaInstallBtn = document.getElementById('pwaInstallBtn');
+        const pwaInstallBtnMobile = document.getElementById('pwaInstallBtnMobile');
+        const pwaInstallMobileContainer = document.getElementById('pwaInstallMobileContainer');
+        
+        // Show install buttons when app is installable
+        function showInstallButtons() {
+            if (pwaInstallBtn) {
+                pwaInstallBtn.classList.remove('hidden');
+            }
+            if (pwaInstallMobileContainer) {
+                pwaInstallMobileContainer.classList.remove('hidden');
+            }
+        }
+        
+        // Hide install buttons after installation
+        function hideInstallButtons() {
+            if (pwaInstallBtn) {
+                pwaInstallBtn.classList.add('hidden');
+            }
+            if (pwaInstallMobileContainer) {
+                pwaInstallMobileContainer.classList.add('hidden');
+            }
+        }
+        
+        // Trigger PWA installation
+        async function triggerInstall() {
+            if (!deferredPrompt) {
+                console.log('Install prompt not available');
+                return;
+            }
+            
+            // Show the install prompt
+            deferredPrompt.prompt();
+            
+            // Wait for user response
+            const { outcome } = await deferredPrompt.userChoice;
+            console.log('Install prompt outcome:', outcome);
+            
+            // Clear the deferred prompt
+            deferredPrompt = null;
+            
+            // Hide buttons regardless of outcome (can't show prompt again)
+            hideInstallButtons();
+        }
+        
+        // Listen for beforeinstallprompt event
         window.addEventListener('beforeinstallprompt', (e) => {
+            // Prevent default browser install banner
             e.preventDefault();
+            
+            // Store the event for later use
             deferredPrompt = e;
-            // Hier könntest du einen "App installieren" Button anzeigen
+            
+            // Show install buttons
+            showInstallButtons();
             console.log('PWA kann installiert werden');
         });
+        
+        // Add click handlers to install buttons
+        if (pwaInstallBtn) {
+            pwaInstallBtn.addEventListener('click', triggerInstall);
+        }
+        if (pwaInstallBtnMobile) {
+            pwaInstallBtnMobile.addEventListener('click', triggerInstall);
+        }
+        
+        // Hide buttons when app is installed
+        window.addEventListener('appinstalled', () => {
+            console.log('PWA wurde installiert');
+            hideInstallButtons();
+            deferredPrompt = null;
+        });
+        
+        // Check if already installed (standalone mode)
+        if (window.matchMedia('(display-mode: standalone)').matches) {
+            hideInstallButtons();
+        }
     </script>
 </body>
 </html>
