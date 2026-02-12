@@ -451,7 +451,7 @@ def _find_consecutive_groups(start_group: str, all_groups: List[str], group_to_c
     return consecutive_groups
 
 def recalculate_times(training_id):
-    training = Training.query.get(training_id)
+    training = db.session.get(Training, training_id)
     activities = Activity.query.filter_by(training_id=training_id).order_by(Activity.order_index).all()
 
     if not activities:
@@ -480,7 +480,7 @@ def recalculate_times(training_id):
     db.session.commit()
 
 def recalculate_instance_times(instance_id):
-    instance = TrainingInstance.query.get(instance_id)
+    instance = db.session.get(TrainingInstance, instance_id)
     if not instance:
         return
     activities = ActivityInstance.query.filter_by(training_instance_id=instance_id).order_by(ActivityInstance.order_index).all()

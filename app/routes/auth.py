@@ -1,9 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from urllib.parse import urljoin, urlparse
 from ..models import User
-from ..extensions import db
-import requests
-from ..config import Config
 import logging
 
 bp = Blueprint('auth', __name__)
@@ -35,7 +32,7 @@ def login():
 
     return render_template('login.html')
 
-@bp.route('/logout')
+@bp.route('/logout', methods=['POST'])
 def logout():
     session.clear()
     flash('Sie wurden abgemeldet.', 'info')

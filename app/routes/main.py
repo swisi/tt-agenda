@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, request, session, current_app
 from datetime import datetime
 from ..models import Training, Activity, TrainingInstance, ActivityInstance
+from ..extensions import db
 from ..utils import login_required, get_current_training_status, get_upcoming_trainings, get_timeline_from_activities, WEEKDAYS, POSITION_GROUPS
 import logging
 import requests
@@ -116,7 +117,7 @@ def live():
 
         display_activities = None
         if selected_training_id and selected_date:
-            training = Training.query.get_or_404(selected_training_id)
+            training = db.get_or_404(Training, selected_training_id)
             if training.start_date <= selected_date <= training.end_date and training.weekday == selected_date.weekday():
                 instance = instances_by_key.get((training.id, selected_date))
                 if instance and instance.status == 'cancelled':
@@ -173,6 +174,8 @@ def live():
 
 @bp.route('/test')
 def test():
+    if not (current_app.debug or current_app.testing):
+        return render_template('error.html'), 404
     return '<h1>Flask funktioniert!</h1><p>Gehe zu <a href="/login">/login</a></p>'
 
 @bp.route('/shared-example')
