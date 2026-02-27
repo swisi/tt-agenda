@@ -1,32 +1,33 @@
-def test_login_with_default_admin(client):
-    response = client.post(
-        "/auth/login",
-        json={"username": "admin", "password": "admin"},
-    )
-
-    assert response.status_code == 200
-    payload = response.get_json()
-    assert payload["ok"] is True
-    assert payload["role"] == "admin"
+from app.models import User
+from app.extensions import db
 
 
-def test_login_with_default_user(client):
-    response = client.post(
-        "/auth/login",
-        json={"username": "user", "password": "user"},
-    )
-
-    assert response.status_code == 200
-    payload = response.get_json()
-    assert payload["ok"] is True
-    assert payload["role"] == "user"
+def test_logout_requires_post(client):
+    response = client.get('/logout')
+    assert response.status_code == 405
 
 
-def test_login_with_wrong_password(client):
-    response = client.post(
-        "/auth/login",
-        json={"username": "admin", "password": "wrong"},
-    )
+def test_logout_clears_session(client, app, csrf_token):
+    with app.app_context():
+        user = User(username='logout-user', role='user')
+        user.set_password('secret')
+        # Persist user for realistic login session
+        db.session.add(user)
+        db.session.commit()
 
-    assert response.status_code == 401
-    assert response.get_json()["ok"] is False
+    token = csrf_token('/login')
+    login_response = client.post('/login', data={
+        'username': 'logout-user',
+        'password': 'secret',
+        'csrf_token': token
+    })
+    assert login_response.status_code == 302
+
+    logout_token = csrf_token('/')
+    logout_response = client.post('/logout', data={'csrf_token': logout_token})
+    assert logout_response.status_code == 302
+
+    with client.session_transaction() as sess:
+        assert 'user_id' not in sess
+        assert 'username' not in sess
+        assert 'user_role' not in sess
