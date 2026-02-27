@@ -27,7 +27,32 @@
       ws.addEventListener('message', (ev)=>{
         try{
           const data = JSON.parse(ev.data);
-          if(data && data.items){ items = data.items; computeCurrent(); renderList(); }
+          if(!data) return;
+          // full snapshot
+          if(data.items){ items = data.items; computeCurrent(); renderList(); return; }
+
+          // diff message
+          if(data.type === 'diff' && data.diff){
+            const key = (it)=>`${it.date}|${it.start_time}|${it.name}|${it.source}`;
+            const removed = new Set(data.diff.removed || []);
+            // remove
+            items = items.filter(it => !removed.has(key(it)));
+            // update existing
+            const updates = (data.diff.updated || []);
+            for(const u of updates){
+              const k = key(u); const idx = items.findIndex(it=>key(it)===k);
+              if(idx !== -1) items[idx] = u;
+              else items.push(u);
+            }
+            // add new
+            const adds = (data.diff.added || []);
+            for(const a of adds){ items.push(a); }
+
+            // ensure deterministic order
+            items.sort((a,b)=> (a.date + a.start_time + a.name).localeCompare(b.date + b.start_time + b.name));
+            computeCurrent(); renderList();
+            return;
+          }
         }catch(e){}
       });
       ws.addEventListener('open', ()=>{ console.info('ws connected'); });
