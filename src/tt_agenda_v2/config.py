@@ -16,3 +16,7 @@ class Config:
     DEFAULT_COACH_PASSWORD = os.environ.get("DEFAULT_COACH_PASSWORD", os.environ.get("DEFAULT_USER_PASSWORD", "coach"))
     # Optional token required by clients to connect to WebSocket live channel
     WS_AUTH_TOKEN = os.environ.get("WS_AUTH_TOKEN")
+    # Optional API token to protect write endpoints (header `x-admin-token`)
+    ADMIN_API_TOKEN = os.environ.get("ADMIN_API_TOKEN")
+    # Optional enforcement of CSRF checks for form POSTs (disabled by default)
+    REQUIRE_CSRF = os.environ.get("REQUIRE_CSRF", "false").lower() == "true"
