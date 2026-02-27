@@ -1,0 +1,29 @@
+:root{
+  --bg:#0f1724;
+  --card:#0b1220;
+  --accent:#06b6d4;
+  --muted:#9aa4b2;
+  --danger:#ff6b6b;
+}
+body{
+  margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;background:linear-gradient(180deg,var(--bg),#071022);color:#e6eef6;
+}
+header{padding:1rem 1.25rem;border-bottom:1px solid rgba(255,255,255,0.03)}
+h1{margin:0;font-size:1.1rem}
+main{padding:1.25rem}
+
+#live-view{max-width:900px;margin:0 auto}
+.card{background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));padding:1rem;border-radius:8px;box-shadow:0 6px 18px rgba(2,6,23,0.6);}
+
+#current-activity{display:flex;align-items:center;justify-content:space-between;gap:1rem}
+#activity-name{font-size:1.25rem}
+#activity-timer{font-weight:700;font-size:1.4rem;padding:0.5rem 0.75rem;border-radius:6px;background:rgba(255,255,255,0.02)}
+
+.active {border:2px solid var(--accent);box-shadow:0 6px 30px rgba(6,182,212,0.12)}
+.warning{background:linear-gradient(90deg,rgba(255,107,107,0.12),rgba(255,107,107,0.05));color:var(--danger)}
+
+.activities{margin-top:1rem;display:grid;grid-template-columns:1fr;gap:0.5rem}
+.activity-row{display:flex;justify-content:space-between;padding:0.6rem;border-radius:6px;background:rgba(255,255,255,0.01)}
+.activity-row.current{background:linear-gradient(90deg,rgba(6,182,212,0.06),rgba(6,182,212,0.02));border-left:4px solid var(--accent)}
+
+@media(min-width:700px){.activities{grid-template-columns:1fr 1fr}}

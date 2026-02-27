@@ -26,29 +26,55 @@ Dieses Repository wurde für ein vollständiges Refactoring neu gestartet.
 - [Contribution](docs/CONTRIBUTING.md)
 - [Refactoring-Plan](docs/REFACTORING_PLAN.md)
 
-## v2 Skelett (aktuell)
+## v2 Struktur (aktuell)
 
 ```text
 src/
 	tt_agenda_v2/
-		domain/
-		application/
-		infrastructure/
+		database.py
+		models.py
+		services/
 		interface/http/
 tests/
 run.py
 requirements.txt
 ```
 
+- Backend: FastAPI
+- Persistenz: plain SQLAlchemy (ohne Flask-SQLAlchemy)
+
 ## Schnellstart
 
-```bash
-python -m venv .venv
-.venv\\Scripts\\activate
+```powershell
+py -3.12 -m venv .venv
+& .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 python -m pytest -q
 python run.py
+# öffne http://127.0.0.1:5000/ für die Live-Ansicht oder /docs für die API-Doku
 ```
+
+## UI / Live-Ansicht
+
+- Root (`/`): Server-gerenderte Live-Ansicht mit Countdown-Timer und Hervorhebung der aktuell aktiven Aktivität.
+- Trainingsverwaltung:
+	- `GET /templates` — Liste der Trainingsvorlagen
+	- `GET /templates/{id}/edit` — einfache Bearbeitungsseite (POST zum Speichern)
+- Statische Assets liegen unter `/static/` (CSS/JS). Die Live-Ansicht polled `/api/v1/schedule` regelmäßig und zeigt die nächste/aktive Aktivität an; bei 10 Sekunden verbleibend wird eine akustische Warnung ausgelöst.
+- Formular-POSTs werden serverseitig verarbeitet; für produktive Deployments empfiehlt es sich, `python-multipart` zu installieren, damit Starlette/FastAPI native Form-Parsing nutzen kann.
+
+### WebSocket-Authentifizierung (optional)
+
+- Die WebSocket-Endpunkte unterstützen eine einfache, optional aktivierbare Token-Prüfung.
+- Konfiguration: Setze `WS_AUTH_TOKEN` in der App-Konfiguration oder im Config-Klassen-Objekt, das du an `create_app()` übergibst.
+- Clients müssen den Token entweder als Query-Parameter `?token=...` oder als Header `x-ws-token: ...` mitsenden. Bei fehlendem/inkorrektem Token wird die Verbindung mit Close-Code 1008 abgewiesen.
+
+Beispiel (Query-Parameter): `/ws/live?token=mein-geheimnis`
+Beispiel (Header): `x-ws-token: mein-geheimnis`
+
+## Hinweise zur Entwicklung
+- Start: siehe Schnellstart oben.
+- Tests: `python -m pytest -q` — es gibt Frontend-Smoketests, die die gerenderten Seiten und statischen Assets prüfen.
 
 ## Legacy
 
@@ -57,3 +83,5 @@ Der bisherige Stand ist ausschließlich zum Nachschlagen verfügbar:
 - `archive/v1/`
 
 Bitte dort keine aktiven Änderungen mehr vornehmen.
+
+Hinweis: Frühere zusätzliche README-Dateien liegen nur noch im Archiv unter `archive/v1/`.
