@@ -5,21 +5,21 @@ def test_login_with_default_admin(client):
     )
 
     assert response.status_code == 200
-    payload = response.json()
+    payload = response.get_json()
     assert payload["ok"] is True
     assert payload["role"] == "admin"
 
 
-def test_login_with_default_coach(client):
+def test_login_with_default_user(client):
     response = client.post(
         "/auth/login",
-        json={"username": "coach", "password": "coach"},
+        json={"username": "user", "password": "user"},
     )
 
     assert response.status_code == 200
-    payload = response.json()
+    payload = response.get_json()
     assert payload["ok"] is True
-    assert payload["role"] == "coach"
+    assert payload["role"] == "user"
 
 
 def test_login_with_wrong_password(client):
@@ -29,4 +29,4 @@ def test_login_with_wrong_password(client):
     )
 
     assert response.status_code == 401
-    assert "Ungültiger Benutzername oder Passwort" in response.json()["detail"]
+    assert response.get_json()["ok"] is False
