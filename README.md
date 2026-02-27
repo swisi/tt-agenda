@@ -30,11 +30,11 @@ Dieses Repository wurde für ein vollständiges Refactoring neu gestartet.
 
 ```text
 src/
- tt_agenda_v2/
-  database.py
-  models.py
-  services/
-  interface/http/
+	tt_agenda_v2/
+		database.py
+		models.py
+		services/
+		interface/http/
 tests/
 run.py
 requirements.txt
@@ -58,8 +58,8 @@ python run.py
 
 - Root (`/`): Server-gerenderte Live-Ansicht mit Countdown-Timer und Hervorhebung der aktuell aktiven Aktivität.
 - Trainingsverwaltung:
-  - `GET /templates` — Liste der Trainingsvorlagen
-  - `GET /templates/{id}/edit` — einfache Bearbeitungsseite (POST zum Speichern)
+	- `GET /templates` — Liste der Trainingsvorlagen
+	- `GET /templates/{id}/edit` — einfache Bearbeitungsseite (POST zum Speichern)
 - Statische Assets liegen unter `/static/` (CSS/JS). Die Live-Ansicht polled `/api/v1/schedule` regelmäßig und zeigt die nächste/aktive Aktivität an; bei 10 Sekunden verbleibend wird eine akustische Warnung ausgelöst.
 - Formular-POSTs werden serverseitig verarbeitet; für produktive Deployments empfiehlt es sich, `python-multipart` zu installieren, damit Starlette/FastAPI native Form-Parsing nutzen kann.
 
@@ -72,59 +72,9 @@ python run.py
 Beispiel (Query-Parameter): `/ws/live?token=mein-geheimnis`
 Beispiel (Header): `x-ws-token: mein-geheimnis`
 
-### Deployment / Environment Beispiele für `WS_AUTH_TOKEN`
-
-- Lokales Starten (PowerShell):
-
-```powershell
-$env:WS_AUTH_TOKEN = "mein-geheimnis"
-python run.py
-```
-
-- Systemd service (Linux): setze EnvironmentFile oder `Environment=` in der Unit:
-
-```yaml
-[Service]
-Environment="WS_AUTH_TOKEN=mein-geheimnis"
-ExecStart=/usr/bin/python /srv/tt-agenda/run.py
-```
-
-- Docker Compose example:
-
-```yaml
-services:
-  tt-agenda:
-    image: your-image:latest
-    environment:
-      - WS_AUTH_TOKEN=mein-geheimnis
-    ports:
-      - "5000:5000"
-```
-
-- Kubernetes (Deployment env):
-
-```yaml
-env:
-  - name: WS_AUTH_TOKEN
-    value: "mein-geheimnis"
-```
-
-Client-Hinweis: Clients können den Token als Query-Parameter senden (`/ws/live?token=...`) oder als Header `x-ws-token: ...`.
-
 ## Hinweise zur Entwicklung
-
 - Start: siehe Schnellstart oben.
 - Tests: `python -m pytest -q` — es gibt Frontend-Smoketests, die die gerenderten Seiten und statischen Assets prüfen.
-
-### Security Hinweise für `WS_AUTH_TOKEN`
-
-- Vermeide Hardcoding: setze `WS_AUTH_TOKEN` über Umgebungsvariablen oder ein Secret-Manager (HashiCorp Vault, AWS Secrets Manager, Kubernetes Secrets).
-- TLS: Verwende `wss://` in Produktion und betreibe den Server hinter einem TLS-Terminator oder Reverse-Proxy.
-- Rotation & Länge: wähle lange, zufällige Tokens und rotiere sie regelmäßig. Plane einen einfachen Rollout/Revocation-Mechanismus.
-- Logging & Limits: protokolliere abgewiesene Verbindungsversuche und ziehe Ratenbegrenzung / IP-Filter in Betracht.
-- Least-privilege: beschränke Token-Zugriff auf notwendige Clients; nutze getrennte Tokens für interne Tools vs. öffentliche Clients.
-
-Diese Maßnahmen reduzieren Risiko bei der einfachen Token-basierten Absicherung der WebSocket-Verbindung.
 
 ## Legacy
 
