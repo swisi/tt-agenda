@@ -3,17 +3,13 @@ from __future__ import annotations
 import json
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 import pathlib
 from fastapi import WebSocket, WebSocketDisconnect
 import asyncio
 from hashlib import sha256
-try:
-    from itsdangerous import URLSafeTimedSerializer
-except Exception:  # itsdangerous is optional; fallback to simple HMAC
-    URLSafeTimedSerializer = None
 import json as _json
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
@@ -23,7 +19,6 @@ from tt_agenda_v2.database import get_db
 from tt_agenda_v2 import database
 from tt_agenda_v2.models import AdHocTrainingInstance, ActivityTemplate, PositionGroup, TrainingOverride, TrainingTemplate, User
 from tt_agenda_v2.services.schedule import build_schedule, parse_time
-from fastapi import Header
 
 router = APIRouter()
 
@@ -98,48 +93,6 @@ class ConnectionManager:
 
 manager = ConnectionManager()
 
-# last broadcast state (used to compute diffs)
-_last_broadcast_hash: str | None = None
-_last_broadcast_items: list[dict] = []
-
-
-def _item_key(item: dict) -> str:
-    return f"{item.get('date','')}|{item.get('start_time','')}|{item.get('name','')}|{item.get('source','')}"
-
-
-async def _broadcast_schedule_diff_if_changed():
-    global _last_broadcast_hash, _last_broadcast_items
-    if database.SessionLocal is None:
-        return
-    db = database.SessionLocal()
-    try:
-        today = datetime.utcnow().date()
-        items = build_schedule(db, today, today)
-        s = _json.dumps(items, sort_keys=True, ensure_ascii=False)
-        h = sha256(s.encode('utf-8')).hexdigest()
-        if h == _last_broadcast_hash:
-            return
-
-        # compute diffs between _last_broadcast_items and items
-        old_map = { _item_key(it): it for it in _last_broadcast_items }
-        new_map = { _item_key(it): it for it in items }
-
-        added = [it for k, it in new_map.items() if k not in old_map]
-        removed = [k for k in old_map.keys() if k not in new_map]
-        updated = []
-        for k in old_map.keys() & new_map.keys():
-            if _json.dumps(old_map[k], sort_keys=True, ensure_ascii=False) != _json.dumps(new_map[k], sort_keys=True, ensure_ascii=False):
-                updated.append(new_map[k])
-
-        msg = {"ok": True, "type": "diff", "diff": {"added": added, "removed": removed, "updated": updated}, "count": len(items)}
-
-        # update last state and broadcast
-        _last_broadcast_hash = h
-        _last_broadcast_items = items
-        await manager.broadcast(msg)
-    finally:
-        db.close()
-
 
 def _compute_today_schedule_serialized() -> str:
     """Return a canonical serialized representation of today's schedule."""
@@ -163,85 +116,6 @@ def _schedule_message_from_serialized(s: str) -> object:
         return {"ok": True, "items": [], "count": 0}
 
 
-def _make_session_token(username: str, secret: str, max_age: int = 7 * 24 * 3600) -> str:
-    # token: username|ts|sig
-    ts = str(int(datetime.utcnow().timestamp()))
-    payload = f"{username}|{ts}"
-    sig = sha256(f"{payload}|{secret}".encode("utf-8")).hexdigest()
-    return f"{payload}|{sig}"
-
-
-def _verify_session_token(token: str, secret: str, max_age: int = 7 * 24 * 3600) -> str | None:
-    try:
-        parts = token.split("|")
-        if len(parts) != 3:
-            return None
-        username, ts, sig = parts
-        payload = f"{username}|{ts}"
-        expected = sha256(f"{payload}|{secret}".encode("utf-8")).hexdigest()
-        if not expected == sig:
-            return None
-        if int(datetime.utcnow().timestamp()) - int(ts) > max_age:
-            return None
-        return username
-    except Exception:
-        return None
-
-
-def _make_signed_token_with_itsdangerous(username: str, secret: str, max_age: int = 7 * 24 * 3600) -> str:
-    if URLSafeTimedSerializer is None:
-        return _make_session_token(username, secret, max_age)
-    s = URLSafeTimedSerializer(secret)
-    return s.dumps({'username': username})
-
-
-def _verify_signed_token_with_itsdangerous(token: str, secret: str, max_age: int = 7 * 24 * 3600) -> str | None:
-    if URLSafeTimedSerializer is None:
-        return _verify_session_token(token, secret, max_age)
-    s = URLSafeTimedSerializer(secret)
-    try:
-        data = s.loads(token, max_age=max_age)
-        return data.get('username')
-    except Exception:
-        return None
-
-
-def _get_current_username(request: Request) -> str | None:
-    token = request.cookies.get('session')
-    if not token:
-        return None
-    secret = request.app.state.config.SECRET_KEY
-    return _verify_signed_token_with_itsdangerous(token, secret)
-
-
-def require_login_or_redirect(request: Request):
-    user = _get_current_username(request)
-    if not user:
-        raise HTTPException(status_code=307, detail="redirect to login")
-    return user
-
-
-def _ensure_admin(db: Session, request: Request, x_admin_token: str | None = Header(None)):
-    cfg = request.app.state.config
-    # if no ADMIN_API_TOKEN configured, do not enforce
-    required = getattr(cfg, "ADMIN_API_TOKEN", None)
-    if not required:
-        return True
-
-    # header token matches
-    if x_admin_token and x_admin_token == required:
-        return True
-
-    # session-based admin check
-    username = _get_current_username(request)
-    if username:
-        user = db.scalar(select(User).where(User.username == username))
-        if user and getattr(user, "role", None) == "admin":
-            return True
-
-    raise HTTPException(status_code=403, detail="Admin credentials required")
-
-
 @router.get("/health/live")
 def health_live():
     return {"status": "ok", "service": "tt-agenda-v2"}
@@ -258,70 +132,14 @@ def root_view(request: Request):
     return templates.TemplateResponse("live.html", {"request": request})
 
 
-@router.get("/login", include_in_schema=False)
-def login_page(request: Request):
-    return templates.TemplateResponse("login.html", {"request": request})
-
-
-@router.post("/login", include_in_schema=False)
-async def login_form(request: Request, db: Session = Depends(get_db)):
-    # parse urlencoded form body without requiring python-multipart
-    raw = await request.body()
-    try:
-        from urllib.parse import parse_qs
-
-        parsed = parse_qs(raw.decode())
-        form = {k: v[0] for k, v in parsed.items()}
-    except Exception:
-        form = {}
-
-    username = form.get("username", "")
-    password = form.get("password", "")
-
-    user = db.scalar(select(User).where(User.username == username))
-    if user is None or not user.check_password(password):
-        # render login with error
-        return templates.TemplateResponse("login.html", {"request": request, "error": "Ungültiger Benutzername oder Passwort."}, status_code=401)
-
-    # create session cookie
-    secret = request.app.state.config.SECRET_KEY
-    token = _make_signed_token_with_itsdangerous(user.username, secret)
-    response = RedirectResponse(url="/", status_code=303)
-    response.set_cookie("session", token, httponly=True, max_age=7 * 24 * 3600)
-    # set a CSRF cookie (double-submit); enforcement is opt-in via config.REQUIRE_CSRF
-    import secrets
-    csrf_token = secrets.token_urlsafe(16)
-    response.set_cookie("csrf", csrf_token, httponly=False, max_age=7 * 24 * 3600)
-    return response
-
-
-@router.get("/logout", include_in_schema=False)
-def logout(request: Request):
-    resp = RedirectResponse(url="/", status_code=303)
-    resp.delete_cookie("session")
-    return resp
-
-
 @router.get("/templates", include_in_schema=False)
 def templates_page(request: Request, db: Session = Depends(get_db)):
-    # require login for admin UI
-    try:
-        require_login_or_redirect(request)
-    except HTTPException:
-        # client expects HTML redirect
-        return RedirectResponse(url="/login")
-
     rows = db.scalars(select(TrainingTemplate).options(selectinload(TrainingTemplate.activities)).order_by(TrainingTemplate.name.asc())).all()
     return templates.TemplateResponse("templates_list.html", {"request": request, "templates": rows})
 
 
 @router.get("/templates/{template_id}/edit", include_in_schema=False)
 def template_edit(request: Request, template_id: int, db: Session = Depends(get_db)):
-    try:
-        require_login_or_redirect(request)
-    except HTTPException:
-        return RedirectResponse(url="/login")
-
     tpl = db.get(TrainingTemplate, template_id)
     if tpl is None:
         raise HTTPException(status_code=404, detail="Template nicht gefunden")
@@ -330,11 +148,6 @@ def template_edit(request: Request, template_id: int, db: Session = Depends(get_
 
 @router.post("/templates/{template_id}/edit", include_in_schema=False)
 async def template_edit_post(request: Request, template_id: int, db: Session = Depends(get_db)):
-    try:
-        require_login_or_redirect(request)
-    except HTTPException:
-        return RedirectResponse(url="/login")
-
     tpl = db.get(TrainingTemplate, template_id)
     if tpl is None:
         raise HTTPException(status_code=404, detail="Template nicht gefunden")
@@ -348,17 +161,6 @@ async def template_edit_post(request: Request, template_id: int, db: Session = D
         form = {k: v[0] for k, v in parsed.items()}
     except Exception:
         form = {}
-
-    # optional CSRF enforcement (double-submit cookie)
-    try:
-        require_csrf = bool(request.app.state.config.REQUIRE_CSRF)
-    except Exception:
-        require_csrf = False
-    if require_csrf:
-        cookie_csrf = request.cookies.get('csrf')
-        form_csrf = form.get('csrf') or request.headers.get('x-csrf-token')
-        if not cookie_csrf or cookie_csrf != form_csrf:
-            raise HTTPException(status_code=403, detail='CSRF token missing or invalid')
 
     def fv(key, default=None):
         val = form.get(key)
@@ -411,9 +213,7 @@ def list_position_groups(db: Session = Depends(get_db)):
 
 
 @router.post("/api/v1/position-groups", status_code=status.HTTP_201_CREATED)
-def create_position_group(payload: dict, request: Request, db: Session = Depends(get_db), x_admin_token: str | None = Header(None)):
-    # require admin when ADMIN_API_TOKEN is configured
-    _ensure_admin(db, request, x_admin_token)
+def create_position_group(payload: dict, db: Session = Depends(get_db)):
     group = PositionGroup(name=payload["name"].strip())
     group.position_codes = payload.get("position_codes", [])
     db.add(group)
@@ -425,8 +225,9 @@ def create_position_group(payload: dict, request: Request, db: Session = Depends
     db.refresh(group)
     try:
         if database.SessionLocal is not None:
+            h, serialized = _compute_today_schedule_serialized()
             loop = asyncio.get_event_loop()
-            loop.call_soon_threadsafe(asyncio.create_task, _broadcast_schedule_diff_if_changed())
+            loop.call_soon_threadsafe(asyncio.create_task, manager.broadcast(_schedule_message_from_serialized(serialized)))
     except Exception:
         pass
     return {"id": group.id, "name": group.name, "position_codes": group.position_codes}
@@ -439,8 +240,7 @@ def list_templates(db: Session = Depends(get_db)):
 
 
 @router.post("/api/v1/templates", status_code=status.HTTP_201_CREATED)
-def create_template(payload: dict, request: Request, db: Session = Depends(get_db), x_admin_token: str | None = Header(None)):
-    _ensure_admin(db, request, x_admin_token)
+def create_template(payload: dict, db: Session = Depends(get_db)):
     template = TrainingTemplate(
         name=payload["name"],
         valid_from=_parse_date(payload["valid_from"]),
@@ -470,16 +270,16 @@ def create_template(payload: dict, request: Request, db: Session = Depends(get_d
     # schedule changed -> trigger broadcast
     try:
         if database.SessionLocal is not None:
+            h, serialized = _compute_today_schedule_serialized()
             loop = asyncio.get_event_loop()
-            loop.call_soon_threadsafe(asyncio.create_task, _broadcast_schedule_diff_if_changed())
+            loop.call_soon_threadsafe(asyncio.create_task, manager.broadcast(_schedule_message_from_serialized(serialized)))
     except Exception:
         pass
     return _template_to_dict(template)
 
 
 @router.patch("/api/v1/templates/{template_id}")
-def patch_template(template_id: int, payload: dict, request: Request, db: Session = Depends(get_db), x_admin_token: str | None = Header(None)):
-    _ensure_admin(db, request, x_admin_token)
+def patch_template(template_id: int, payload: dict, db: Session = Depends(get_db)):
     template = _require_template(db, template_id)
 
     if "name" in payload:
@@ -500,16 +300,16 @@ def patch_template(template_id: int, payload: dict, request: Request, db: Sessio
     template = db.scalar(select(TrainingTemplate).options(selectinload(TrainingTemplate.activities)).where(TrainingTemplate.id == template.id))
     try:
         if database.SessionLocal is not None:
+            h, serialized = _compute_today_schedule_serialized()
             loop = asyncio.get_event_loop()
-            loop.call_soon_threadsafe(asyncio.create_task, _broadcast_schedule_diff_if_changed())
+            loop.call_soon_threadsafe(asyncio.create_task, manager.broadcast(_schedule_message_from_serialized(serialized)))
     except Exception:
         pass
     return _template_to_dict(template)
 
 
 @router.post("/api/v1/templates/{template_id}/overrides", status_code=status.HTTP_201_CREATED)
-def upsert_override(template_id: int, payload: dict, request: Request, db: Session = Depends(get_db), x_admin_token: str | None = Header(None)):
-    _ensure_admin(db, request, x_admin_token)
+def upsert_override(template_id: int, payload: dict, db: Session = Depends(get_db)):
     _require_template(db, template_id)
     override_date = _parse_date(payload["date"])
 
@@ -534,16 +334,16 @@ def upsert_override(template_id: int, payload: dict, request: Request, db: Sessi
     db.refresh(override)
     try:
         if database.SessionLocal is not None:
+            h, serialized = _compute_today_schedule_serialized()
             loop = asyncio.get_event_loop()
-            loop.call_soon_threadsafe(asyncio.create_task, _broadcast_schedule_diff_if_changed())
+            loop.call_soon_threadsafe(asyncio.create_task, manager.broadcast(_schedule_message_from_serialized(serialized)))
     except Exception:
         pass
     return {"id": override.id, "template_id": template_id, "date": override.date.isoformat()}
 
 
 @router.post("/api/v1/instances/adhoc", status_code=status.HTTP_201_CREATED)
-def create_adhoc_instance(payload: dict, request: Request, db: Session = Depends(get_db), x_admin_token: str | None = Header(None)):
-    _ensure_admin(db, request, x_admin_token)
+def create_adhoc_instance(payload: dict, db: Session = Depends(get_db)):
     row = AdHocTrainingInstance(
         name=payload["name"],
         date=_parse_date(payload["date"]),
@@ -555,8 +355,9 @@ def create_adhoc_instance(payload: dict, request: Request, db: Session = Depends
     db.refresh(row)
     try:
         if database.SessionLocal is not None:
+            h, serialized = _compute_today_schedule_serialized()
             loop = asyncio.get_event_loop()
-            loop.call_soon_threadsafe(asyncio.create_task, _broadcast_schedule_diff_if_changed())
+            loop.call_soon_threadsafe(asyncio.create_task, manager.broadcast(_schedule_message_from_serialized(serialized)))
     except Exception:
         pass
     return {"id": row.id, "name": row.name, "date": row.date.isoformat()}
@@ -590,7 +391,7 @@ async def websocket_live(websocket: WebSocket):
 
     await manager.connect(websocket)
     try:
-        # send initial schedule for today (full snapshot)
+        # send initial schedule for today
         if database.SessionLocal is not None:
             db = database.SessionLocal()
             try:
@@ -600,10 +401,23 @@ async def websocket_live(websocket: WebSocket):
             finally:
                 db.close()
 
-        # keep connection alive; diffs are broadcast globally by helper
+        # keep connection alive and periodically push updates
+        last_hash = None
         while True:
             try:
-                await asyncio.sleep(3600)
+                await asyncio.sleep(30)
+                # compute today's schedule and only send if changed
+                try:
+                    if database.SessionLocal is None:
+                        continue
+                    h, serialized = _compute_today_schedule_serialized()
+                    if h != last_hash:
+                        last_hash = h
+                        msg = _schedule_message_from_serialized(serialized)
+                        await manager.send_json(websocket, msg)
+                except Exception:
+                    # on error, continue loop
+                    continue
             except asyncio.CancelledError:
                 break
     except WebSocketDisconnect:

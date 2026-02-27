@@ -25,10 +25,6 @@ def create_sample_template(client: TestClient):
 def test_template_edit_post():
     app = create_app()
     client = TestClient(app)
-    # login as admin for UI edit
-    rlogin = client.post('/login', data={'username': 'admin', 'password': 'admin'})
-    assert rlogin.status_code in (302, 303, 307)
-    client.cookies.set('session', rlogin.cookies.get('session'))
     tid = create_sample_template(client)
 
     # GET edit page
