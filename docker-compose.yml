@@ -2,6 +2,7 @@ version: '3.8'
 
 services:
   web:
+    build: .
     image: ghcr.io/swisi/tt-agenda:latest
     container_name: tt-agenda
     ports:
@@ -12,6 +13,10 @@ services:
       - FLASK_APP=app.py
       - FLASK_ENV=production
       - SECRET_KEY=${SECRET_KEY}
+      - SSO_SHARED_SECRET=${SSO_SHARED_SECRET:-tt-sso-dev-secret-change-me}
+      - SSO_EXPECTED_AUDIENCE=${SSO_EXPECTED_AUDIENCE:-tt-agenda}
+      - SSO_AUTO_PROVISION_USERS=${SSO_AUTO_PROVISION_USERS:-true}
+      - SSO_SYNC_ROLE=${SSO_SYNC_ROLE:-true}
       - LOG_LEVEL=INFO
       - WEBHOOK_ENABLED=true
       - WEBHOOK_URL=https://n8n.3624.ch/webhook/messaging

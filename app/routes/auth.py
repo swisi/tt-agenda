@@ -1,7 +1,9 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session
+import secrets
+import jwt
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, current_app
 from urllib.parse import urljoin, urlparse
 from ..models import User
-from ..extensions import limiter
+from ..extensions import limiter, db
 import logging
 
 bp = Blueprint('auth', __name__)
@@ -39,3 +41,54 @@ def logout():
     session.clear()
     flash('Sie wurden abgemeldet.', 'info')
     return redirect(url_for('auth.login'))
+
+
+@bp.route('/auth/sso')
+@limiter.limit("60/minute")
+def sso_login():
+    token = request.args.get('token', '').strip()
+    if not token:
+        flash('SSO-Token fehlt.', 'danger')
+        return redirect(url_for('auth.login'))
+
+    try:
+        payload = jwt.decode(
+            token,
+            current_app.config.get('SSO_SHARED_SECRET') or current_app.config.get('SECRET_KEY'),
+            algorithms=['HS256'],
+            audience=current_app.config.get('SSO_EXPECTED_AUDIENCE', 'tt-agenda'),
+        )
+    except jwt.ExpiredSignatureError:
+        flash('SSO-Token ist abgelaufen. Bitte erneut starten.', 'warning')
+        return redirect(url_for('auth.login'))
+    except jwt.InvalidTokenError:
+        flash('Ungültiger SSO-Token.', 'danger')
+        return redirect(url_for('auth.login'))
+
+    username = (payload.get('username') or '').strip()
+    role = (payload.get('role') or 'user').strip().lower()
+    if role not in ('admin', 'user'):
+        role = 'user'
+
+    if not username:
+        flash('SSO-Token enthält keinen Benutzernamen.', 'danger')
+        return redirect(url_for('auth.login'))
+
+    user = User.query.filter_by(username=username).first()
+    if not user:
+        if not current_app.config.get('SSO_AUTO_PROVISION_USERS', True):
+            flash('SSO-Benutzer ist nicht freigeschaltet.', 'danger')
+            return redirect(url_for('auth.login'))
+        user = User(username=username, role=role)
+        user.set_password(secrets.token_urlsafe(32))
+        db.session.add(user)
+        db.session.commit()
+    elif current_app.config.get('SSO_SYNC_ROLE', True) and user.role != role:
+        user.role = role
+        db.session.commit()
+
+    session['user_id'] = user.id
+    session['username'] = user.username
+    session['user_role'] = user.role
+    flash('Erfolgreich via SSO angemeldet.', 'success')
+    return redirect(url_for('main.index'))

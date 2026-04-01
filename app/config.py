@@ -19,6 +19,10 @@ class Config:
     DEFAULT_ADMIN_PASSWORD = os.environ.get('DEFAULT_ADMIN_PASSWORD', 'admin')
     DEFAULT_USER_USERNAME = os.environ.get('DEFAULT_USER_USERNAME', 'user')
     DEFAULT_USER_PASSWORD = os.environ.get('DEFAULT_USER_PASSWORD', 'user')
+    SSO_SHARED_SECRET = os.environ.get('SSO_SHARED_SECRET') or SECRET_KEY
+    SSO_EXPECTED_AUDIENCE = os.environ.get('SSO_EXPECTED_AUDIENCE', 'tt-agenda')
+    SSO_AUTO_PROVISION_USERS = os.environ.get('SSO_AUTO_PROVISION_USERS', 'true').lower() == 'true'
+    SSO_SYNC_ROLE = os.environ.get('SSO_SYNC_ROLE', 'true').lower() == 'true'
     # Rate limiting: override with redis://host:port/0 for multi-worker production
     RATELIMIT_STORAGE_URI = os.environ.get('RATELIMIT_STORAGE_URI', 'memory://')
     

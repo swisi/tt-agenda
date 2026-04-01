@@ -1,28 +1,30 @@
-@startuml
+@startuml  
 !include <C4/C4_Container>
 
 title Tigers Coaching – Container Diagramm
 
-Person(coach, "Coach", "Benutzt die Plattform zur Spielvorbereitung")
+Person(coach, "Coach", "Benutzt die Plattform zur Spielvorbereitung")  
 Person(admin, "Admin", "Verwaltet Benutzer und Inhalte")
 
-System_Boundary(tc, "Tigers Coaching") {
-  Container(user, "User", "React", "Benutzeroberfläche für Coaches und Admins")
-  Container(agenda, "Agenda", "Flask", "Liefert und verwaltet Traininseinheit")
-  Container(analyse, "Analyse", "Spiel- und Systemanalyse", "Liefert LLM Antworten")
+System_Boundary(tc, "Tigers Coaching") {  
+Container(auth, "Auth", "Flask", "Login, Benutzerverwaltung und Service-Dashboard (JWT-Ausgabe)")  
+Container(agenda, "Agenda", "Flask", "Liefert und verwaltet Trainingseinheiten")  
+Container(analyse, "Analyse", "Flask", "Liefert LLM-Antworten")
 
-  ContainerDb(agendadb, "Agenda Datenbank", "SQLite3", "Speichert Trainingsdaten")
+ContainerDb(agendadb, "Agenda Datenbank", "SQLite3", "Speichert Trainingsdaten")  
+ContainerDb(authdb, "Auth Datenbank", "SQLite3", "Speichert Benutzer und Rollen")  
 }
 
-System_Ext(llm, "AI Interface", "Externe Quelle für analysen")
+System_Ext(llm, "AI Interface", "Externe Quelle für Analysen")
 
-Rel(coach, user, "Benutzt")
-Rel(admin, user, "Benutzt")
+Rel(coach, auth, "Benutzt")  
+Rel(admin, auth, "Benutzt")
 
-Rel(user, agenda, "zeigt")
-Rel(agenda, agendadb, "nutzt")
+Rel(auth, authdb, "verwendet")
+Rel(auth, agenda, "JWT-geschützt")  
+Rel(auth, analyse, "JWT-geschützt")
 
-Rel(user, analyse,"zeigt")
+Rel(agenda, agendadb, "nutzt")  
+Rel(analyse, llm, "nutzt")  
 
-Rel(analyse, llm, "nutzt")
 @enduml
