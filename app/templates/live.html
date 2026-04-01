@@ -45,7 +45,12 @@
 
 <!-- Live Training -->
 {% if current_training %}
-<div class="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden mb-6" id="live-training-widget">
+<div class="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden mb-6" id="live-training-widget"
+     hx-get="{{ url_for('main.live') }}{% if request.query_string %}?{{ request.query_string.decode() }}{% endif %}"
+     hx-trigger="every 60s"
+     hx-target="#live-training-widget"
+     hx-select="#live-training-widget"
+     hx-swap="outerHTML">
     <!-- Header -->
     <div class="{% if training_status == 'running' %}bg-gradient-to-r from-red-600 to-red-500 dark:from-red-700 dark:to-red-600{% else %}bg-gradient-to-r from-indigo-600 to-blue-600 dark:from-indigo-700 dark:to-blue-700{% endif %} text-white px-3 py-1.5">
         <!-- Mobile Layout -->
@@ -469,10 +474,7 @@
         }
     });
     
-    // Auto-Refresh alle 5 Minuten
-    setTimeout(function() {
-        location.reload();
-    }, 300000);
+    // Auto-Refresh wird von HTMX-Polling (every 60s) auf #live-training-widget übernommen
 </script>
 
 {% else %}

@@ -31,4 +31,4 @@ ENV TZ=Europe/Zurich
 EXPOSE 5000
 
 # Starte die Anwendung
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "4", "run:app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "4", "--timeout", "120", "--access-logfile", "-", "--error-logfile", "-", "run:app"]

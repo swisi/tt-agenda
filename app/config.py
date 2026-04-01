@@ -19,6 +19,8 @@ class Config:
     DEFAULT_ADMIN_PASSWORD = os.environ.get('DEFAULT_ADMIN_PASSWORD', 'admin')
     DEFAULT_USER_USERNAME = os.environ.get('DEFAULT_USER_USERNAME', 'user')
     DEFAULT_USER_PASSWORD = os.environ.get('DEFAULT_USER_PASSWORD', 'user')
+    # Rate limiting: override with redis://host:port/0 for multi-worker production
+    RATELIMIT_STORAGE_URI = os.environ.get('RATELIMIT_STORAGE_URI', 'memory://')
     
     logger.info(f"WEBHOOK_ENABLED env: {os.environ.get('WEBHOOK_ENABLED')}, parsed: {WEBHOOK_ENABLED}")
     logger.info(f"WEBHOOK_URL: {WEBHOOK_URL}")

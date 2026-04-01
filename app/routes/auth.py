@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from urllib.parse import urljoin, urlparse
 from ..models import User
+from ..extensions import limiter
 import logging
 
 bp = Blueprint('auth', __name__)
@@ -12,6 +13,7 @@ def is_safe_url(target):
     return test_url.scheme in ('http', 'https') and ref_url.netloc == test_url.netloc
 
 @bp.route('/login', methods=['GET', 'POST'])
+@limiter.limit("20/minute", methods=["POST"])
 def login():
     if request.method == 'POST':
         username = request.form['username']

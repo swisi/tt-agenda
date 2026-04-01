@@ -1,5 +1,31 @@
 from .extensions import db
 from werkzeug.security import generate_password_hash, check_password_hash
+import json
+from sqlalchemy.types import TypeDecorator, Text
+
+
+class JsonType(TypeDecorator):
+    """Speichert Python-Objekte (list/dict) als JSON-String in der Datenbank.
+    Bestehende JSON-Strings in der DB werden korrekt deserialisiert.
+    """
+    impl = Text
+    cache_ok = True
+
+    def process_bind_param(self, value, dialect):
+        if value is None:
+            return None
+        if isinstance(value, str):
+            # Bereits serialisiert (Rückwärtskompatibilität)
+            return value
+        return json.dumps(value, ensure_ascii=False)
+
+    def process_result_value(self, value, dialect):
+        if not value:
+            return None
+        try:
+            return json.loads(value)
+        except (json.JSONDecodeError, TypeError):
+            return None
 
 class Training(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -18,10 +44,10 @@ class Activity(db.Model):
     activity_type = db.Column(db.String(20), nullable=False)
     start_time = db.Column(db.Time, nullable=False)
     duration = db.Column(db.Integer, nullable=False)
-    position_groups = db.Column(db.String(500), nullable=False)
+    position_groups = db.Column(JsonType, nullable=False, default=list)
     topic = db.Column(db.String(200))
     order_index = db.Column(db.Integer, default=0)
-    topics_json = db.Column(db.Text)
+    topics_json = db.Column(JsonType)
     color = db.Column(db.String(7), default='#10b981')
 
 class TrainingInstance(db.Model):
@@ -39,10 +65,10 @@ class ActivityInstance(db.Model):
     activity_type = db.Column(db.String(20), nullable=False)
     start_time = db.Column(db.Time, nullable=False)
     duration = db.Column(db.Integer, nullable=False)
-    position_groups = db.Column(db.String(500), nullable=False)
+    position_groups = db.Column(JsonType, nullable=False, default=list)
     topic = db.Column(db.String(200))
     order_index = db.Column(db.Integer, default=0)
-    topics_json = db.Column(db.Text)
+    topics_json = db.Column(JsonType)
     color = db.Column(db.String(7), default='#10b981')
 
 class ActivityType(db.Model):

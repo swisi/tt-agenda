@@ -1,6 +1,6 @@
 from flask import Flask, abort, request, session
 from .config import Config
-from .extensions import db
+from .extensions import db, migrate, limiter
 from .utils import get_activity_color, ACTIVITY_TYPE_DEFAULTS, get_activity_type_defs, get_activity_type_order, get_team_like_types
 from .activity_colors import get_activity_color_map
 from datetime import timedelta
@@ -47,6 +47,8 @@ def create_app(config_class=Config):
     app.logger.info(f"Application started with LOG_LEVEL: {config_class.LOG_LEVEL}")
 
     db.init_app(app)
+    migrate.init_app(app, db)
+    limiter.init_app(app)
 
     # Register Blueprints
     app.register_blueprint(main.bp)
@@ -93,6 +95,8 @@ def create_app(config_class=Config):
 
     @app.template_filter('parse_groups')
     def parse_groups(groups_json):
+        if isinstance(groups_json, (list, dict)):
+            return groups_json
         try:
             return json.loads(groups_json)
         except (json.JSONDecodeError, TypeError):
@@ -100,6 +104,8 @@ def create_app(config_class=Config):
 
     @app.template_filter('from_json')
     def from_json(json_string):
+        if isinstance(json_string, (list, dict)):
+            return json_string
         try:
             return json.loads(json_string)
         except (json.JSONDecodeError, TypeError):
@@ -153,6 +159,8 @@ def create_app(config_class=Config):
                 if 'already exists' not in str(exc).lower():
                     raise
                 app.logger.warning('DB init race condition detected; continuing.')
+            # Backward-compat shim for existing deployments that do not run
+            # `flask db upgrade`. New installations use Alembic migrations.
             if db.engine.dialect.name == 'sqlite':
                 table_exists = db.session.execute(
                     text("SELECT name FROM sqlite_master WHERE type='table' AND name='activity_type'")
@@ -169,9 +177,7 @@ def create_app(config_class=Config):
                 existing_columns = {row[1] for row in result}
                 if 'is_hidden' not in existing_columns:
                     db.session.execute(text("ALTER TABLE training ADD COLUMN is_hidden BOOLEAN NOT NULL DEFAULT 0"))
-                    db.session.commit()
-                else:
-                    db.session.commit()
+                db.session.commit()
             ensure_activity_types()
         if app.config.get('CREATE_DEFAULT_USERS') and User.query.count() == 0:
             # Create default users if not exist

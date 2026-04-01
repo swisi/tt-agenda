@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, request, session, current_app
 from datetime import datetime
 from ..models import Training, Activity, TrainingInstance, ActivityInstance
 from ..extensions import db
-from ..utils import login_required, get_current_training_status, get_upcoming_trainings, get_timeline_from_activities, WEEKDAYS, POSITION_GROUPS
+from ..utils import login_required, get_current_training_status, get_upcoming_trainings, get_timeline_from_activities, load_training_data, WEEKDAYS, POSITION_GROUPS
 import logging
 import requests
 
@@ -80,24 +80,7 @@ def index():
 @login_required
 def live():
     try:
-        trainings = Training.query.all()
-        training_ids = [training.id for training in trainings]
-        activities_by_training = {training.id: [] for training in trainings}
-        if training_ids:
-            activities = Activity.query.filter(Activity.training_id.in_(training_ids)).order_by(Activity.training_id, Activity.order_index).all()
-            for activity in activities:
-                activities_by_training[activity.training_id].append(activity)
-
-        instances_by_key = {}
-        instance_activities_by_id = {}
-        if training_ids:
-            instances = TrainingInstance.query.filter(TrainingInstance.training_id.in_(training_ids)).all()
-            instance_ids = [instance.id for instance in instances]
-            instances_by_key = {(instance.training_id, instance.date): instance for instance in instances}
-            if instance_ids:
-                instance_activities = ActivityInstance.query.filter(ActivityInstance.training_instance_id.in_(instance_ids)).order_by(ActivityInstance.training_instance_id, ActivityInstance.order_index).all()
-                for activity in instance_activities:
-                    instance_activities_by_id.setdefault(activity.training_instance_id, []).append(activity)
+        trainings, activities_by_training, instances_by_key, instance_activities_by_id = load_training_data()
 
         now = datetime.now()
         today = now.date()

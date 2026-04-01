@@ -7,6 +7,7 @@ import tempfile
 from ..models import Training, Activity, TrainingInstance, ActivityInstance, ActivityType
 from ..extensions import db
 from ..utils import admin_required, WEEKDAYS, POSITION_GROUPS, get_activity_behavior, get_activity_color, recalculate_times, recalculate_instance_times
+from ..forms import validate_training_form, validate_hidden_training_form, sanitize_color
 
 bp = Blueprint('admin', __name__)
 
@@ -119,8 +120,12 @@ def admin_activity_types():
             activity_type.label = request.form.get(f'label_{activity_type.key}', activity_type.label).strip()
             activity_type.behavior = request.form.get(f'behavior_{activity_type.key}', activity_type.behavior).strip()
             activity_type.badge_class = request.form.get(f'badge_class_{activity_type.key}', activity_type.badge_class).strip()
-            activity_type.light_color = request.form.get(f'light_color_{activity_type.key}', activity_type.light_color).strip()
-            activity_type.dark_color = request.form.get(f'dark_color_{activity_type.key}', activity_type.dark_color).strip()
+            light = sanitize_color(request.form.get(f'light_color_{activity_type.key}', ''))
+            dark = sanitize_color(request.form.get(f'dark_color_{activity_type.key}', ''))
+            if light:
+                activity_type.light_color = light
+            if dark:
+                activity_type.dark_color = dark
             sort_order = request.form.get(f'sort_order_{activity_type.key}', str(activity_type.sort_order)).strip()
             if sort_order.isdigit():
                 activity_type.sort_order = int(sort_order)
@@ -141,6 +146,12 @@ def admin_backup():
 @admin_required
 def new_hidden_training():
     if request.method == 'POST':
+        ok, errors = validate_hidden_training_form(request.form)
+        if not ok:
+            for field_errors in errors.values():
+                for msg in field_errors:
+                    flash(msg, 'danger')
+            return render_template('hidden_training_form.html')
         date_value = datetime.strptime(request.form['date'], '%Y-%m-%d').date()
         training = Training(
             name=request.form['name'],
@@ -161,6 +172,13 @@ def new_hidden_training():
 def edit_hidden_training(id):
     training = db.get_or_404(Training, id)
     if request.method == 'POST':
+        ok, errors = validate_hidden_training_form(request.form)
+        if not ok:
+            for field_errors in errors.values():
+                for msg in field_errors:
+                    flash(msg, 'danger')
+            activities = Activity.query.filter_by(training_id=id).order_by(Activity.order_index).all()
+            return render_template('hidden_training_edit.html', training=training, activities=activities)
         date_value = datetime.strptime(request.form['date'], '%Y-%m-%d').date()
         training.name = request.form['name']
         training.weekday = date_value.weekday()
@@ -258,6 +276,12 @@ def admin_backup_restore():
 @admin_required
 def new_training():
     if request.method == 'POST':
+        ok, errors = validate_training_form(request.form)
+        if not ok:
+            for field_errors in errors.values():
+                for msg in field_errors:
+                    flash(msg, 'danger')
+            return render_template('training_form.html', weekdays=WEEKDAYS)
         training = Training(
             name=request.form['name'],
             weekday=int(request.form['weekday']),
@@ -278,6 +302,14 @@ def edit_training(id):
     if training.is_hidden:
         return redirect(url_for('admin.edit_hidden_training', id=id))
     if request.method == 'POST':
+        ok, errors = validate_training_form(request.form)
+        if not ok:
+            for field_errors in errors.values():
+                for msg in field_errors:
+                    flash(msg, 'danger')
+            activities = Activity.query.filter_by(training_id=id).order_by(Activity.order_index).all()
+            instances = TrainingInstance.query.filter_by(training_id=id).order_by(TrainingInstance.date.asc()).all()
+            return render_template('training_edit.html', training=training, activities=activities, instances=instances, activities_json=json.dumps([]), weekdays=WEEKDAYS, position_groups=POSITION_GROUPS)
         old_start_time = training.start_time
         new_start_time = datetime.strptime(request.form['start_time'], '%H:%M').time()
         
@@ -479,7 +511,7 @@ def add_instance_activity(instance_id):
             else:
                 for group in POSITION_GROUPS:
                     topics_per_group[group] = request.form.get(f'individual_topic_{group}', '')
-            topics_json = json.dumps(topics_per_group)
+            topics_json = topics_per_group
             topic = None
         elif behavior == 'group':
             combinations = []
@@ -507,7 +539,7 @@ def add_instance_activity(instance_id):
                 i += 1
 
             position_groups = list(all_selected_groups) if all_selected_groups else []
-            topics_json = json.dumps(combinations) if combinations else None
+            topics_json = combinations if combinations else None
             topic = None
 
         activity = ActivityInstance(
@@ -515,7 +547,7 @@ def add_instance_activity(instance_id):
             activity_type=activity_type,
             start_time=start_time,
             duration=duration,
-            position_groups=json.dumps(position_groups),
+            position_groups=position_groups,
             topic=topic,
             order_index=max_order + 1,
             topics_json=topics_json,
@@ -541,17 +573,14 @@ def edit_instance_activity(id):
     individual_common_topic = ''
     individual_topics = {}
     if activity and get_activity_behavior(activity.activity_type) == 'individual' and activity.topics_json:
-        try:
-            topics = json.loads(activity.topics_json)
-            if isinstance(topics, dict):
-                individual_topics = topics
-                topic_values = list(topics.values())
-                if topic_values:
-                    first_topic = topic_values[0]
-                    individual_mode_same = all(t == first_topic for t in topic_values)
-                    individual_common_topic = first_topic if individual_mode_same else ''
-        except:
-            pass
+        topics = activity.topics_json
+        if isinstance(topics, dict):
+            individual_topics = topics
+            topic_values = list(topics.values())
+            if topic_values:
+                first_topic = topic_values[0]
+                individual_mode_same = all(t == first_topic for t in topic_values)
+                individual_common_topic = first_topic if individual_mode_same else ''
 
     if request.method == 'POST':
         activity_type = request.form.get('activity_type')
@@ -575,7 +604,7 @@ def edit_instance_activity(id):
             else:
                 for group in POSITION_GROUPS:
                     topics_per_group[group] = request.form.get(f'individual_topic_{group}', '')
-            topics_json = json.dumps(topics_per_group)
+            topics_json = topics_per_group
             activity.topic = None
         elif behavior == 'group':
             combinations = []
@@ -604,12 +633,12 @@ def edit_instance_activity(id):
                 i += 1
 
             position_groups = list(all_selected_groups) if all_selected_groups else []
-            topics_json = json.dumps(combinations) if combinations else None
+            topics_json = combinations if combinations else None
             activity.topic = None
 
         activity.activity_type = activity_type
         activity.duration = duration
-        activity.position_groups = json.dumps(position_groups)
+        activity.position_groups = position_groups
         activity.topics_json = topics_json
         activity.color = get_activity_color(activity_type, 'light')
 
@@ -847,7 +876,7 @@ def add_activity():
             else:
                 for group in POSITION_GROUPS:
                     topics_per_group[group] = request.form.get(f'individual_topic_{group}', '')
-            topics_json = json.dumps(topics_per_group)
+            topics_json = topics_per_group
             topic = None
         elif behavior == 'group':
             combinations = []
@@ -875,7 +904,7 @@ def add_activity():
                 i += 1
             
             position_groups = list(all_selected_groups) if all_selected_groups else []
-            topics_json = json.dumps(combinations) if combinations else None
+            topics_json = combinations if combinations else None
             topic = None
 
         activity = Activity(
@@ -883,7 +912,7 @@ def add_activity():
             activity_type=activity_type,
             start_time=start_time,
             duration=duration,
-            position_groups=json.dumps(position_groups),
+            position_groups=position_groups,
             topic=topic,
             order_index=max_order + 1,
             topics_json=topics_json,
@@ -908,17 +937,14 @@ def edit_activity(id):
     individual_common_topic = ''
     individual_topics = {}
     if activity and get_activity_behavior(activity.activity_type) == 'individual' and activity.topics_json:
-        try:
-            topics = json.loads(activity.topics_json)
-            if isinstance(topics, dict):
-                individual_topics = topics
-                topic_values = list(topics.values())
-                if topic_values:
-                    first_topic = topic_values[0]
-                    individual_mode_same = all(t == first_topic for t in topic_values)
-                    individual_common_topic = first_topic if individual_mode_same else ''
-        except:
-            pass
+        topics = activity.topics_json
+        if isinstance(topics, dict):
+            individual_topics = topics
+            topic_values = list(topics.values())
+            if topic_values:
+                first_topic = topic_values[0]
+                individual_mode_same = all(t == first_topic for t in topic_values)
+                individual_common_topic = first_topic if individual_mode_same else ''
     
     if request.method == 'POST':
         activity_type = request.form.get('activity_type')
@@ -942,7 +968,7 @@ def edit_activity(id):
             else:
                 for group in POSITION_GROUPS:
                     topics_per_group[group] = request.form.get(f'individual_topic_{group}', '')
-            topics_json = json.dumps(topics_per_group)
+            topics_json = topics_per_group
             activity.topic = None
         elif behavior == 'group':
             combinations = []
@@ -971,12 +997,12 @@ def edit_activity(id):
                 i += 1
             
             position_groups = list(all_selected_groups) if all_selected_groups else []
-            topics_json = json.dumps(combinations) if combinations else None
+            topics_json = combinations if combinations else None
             activity.topic = None
 
         activity.activity_type = activity_type
         activity.duration = duration
-        activity.position_groups = json.dumps(position_groups)
+        activity.position_groups = position_groups
         activity.topics_json = topics_json
         activity.color = get_activity_color(activity_type, 'light')
 
@@ -995,16 +1021,16 @@ def update_activity(id):
 
     activity.activity_type = data['activity_type']
     activity.duration = int(data['duration'])
-    activity.position_groups = json.dumps(data['position_groups'])
+    activity.position_groups = data['position_groups']
     activity.topic = data.get('topic', '')
     activity.color = data.get('color', activity.color if hasattr(activity, 'color') else '#10b981')
 
     topics_json = None
     behavior = get_activity_behavior(data['activity_type'])
     if behavior == 'individual':
-        topics_json = json.dumps(data.get('topics_per_group', {}))
+        topics_json = data.get('topics_per_group', {})
     elif behavior == 'group':
-        topics_json = json.dumps(data.get('group_combinations', []))
+        topics_json = data.get('group_combinations', [])
     activity.topics_json = topics_json
 
     db.session.commit()
@@ -1034,16 +1060,17 @@ def reorder_activities():
 def delete_activity(id):
     activity = db.get_or_404(Activity, id)
     training_id = activity.training_id
-    
+    training = activity.training  # Referenz vor dem Löschen sichern
+
     db.session.delete(activity)
     db.session.commit()
 
     recalculate_times(training_id)
     flash('Aktivität erfolgreich gelöscht!', 'success')
-    
+
     if request.is_json:
         return jsonify({'success': True})
-    return redirect(training_edit_url(activity.training))
+    return redirect(training_edit_url(training))
 
 @bp.route('/activity/<int:id>/move_up', methods=['POST'])
 @admin_required

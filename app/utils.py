@@ -209,6 +209,39 @@ def resolve_activities_for_date(training: Training, date: datetime.date, activit
         return instance_activities_by_id.get(instance.id, []), False
     return activities_by_training.get(training.id, []), False
 
+def load_training_data():
+    """Lädt alle Trainings, Aktivitäten und Instanzen effizient aus der DB.
+
+    Gibt ein 4-Tuple zurück:
+      (trainings, activities_by_training, instances_by_key, instance_activities_by_id)
+    """
+    trainings = Training.query.all()
+    training_ids = [t.id for t in trainings]
+
+    activities_by_training: Dict[int, List[Activity]] = {t.id: [] for t in trainings}
+    if training_ids:
+        for activity in Activity.query.filter(
+            Activity.training_id.in_(training_ids)
+        ).order_by(Activity.training_id, Activity.order_index).all():
+            activities_by_training[activity.training_id].append(activity)
+
+    instances_by_key: Dict[tuple, TrainingInstance] = {}
+    instance_activities_by_id: Dict[int, List[ActivityInstance]] = {}
+    if training_ids:
+        instances = TrainingInstance.query.filter(
+            TrainingInstance.training_id.in_(training_ids)
+        ).all()
+        instance_ids = [i.id for i in instances]
+        instances_by_key = {(i.training_id, i.date): i for i in instances}
+        if instance_ids:
+            for activity in ActivityInstance.query.filter(
+                ActivityInstance.training_instance_id.in_(instance_ids)
+            ).order_by(ActivityInstance.training_instance_id, ActivityInstance.order_index).all():
+                instance_activities_by_id.setdefault(activity.training_instance_id, []).append(activity)
+
+    return trainings, activities_by_training, instances_by_key, instance_activities_by_id
+
+
 def get_current_training_status(trainings: List[Training], activities_by_training: Dict[int, List[Activity]], instances_by_key: Dict[tuple, TrainingInstance], instance_activities_by_id: Dict[int, List[ActivityInstance]], now: datetime):
     """Ermittelt laufendes oder nächstes Training basierend auf vorhandenen Aktivitäten."""
     today = now.date()
@@ -351,7 +384,7 @@ def build_group_cells(activity: Activity) -> List[Dict[str, Any]]:
 
     behavior = get_activity_behavior(activity.activity_type)
     if behavior == 'team':
-        position_groups_list = json.loads(activity.position_groups) if activity.position_groups else all_groups
+        position_groups_list = activity.position_groups if activity.position_groups else all_groups
         cells.append({
             'colspan': 8,
             'class': 'table-success text-center',
@@ -369,7 +402,7 @@ def build_group_cells(activity: Activity) -> List[Dict[str, Any]]:
 
 def _build_individual_cells(activity: Activity, all_groups: List[str], activity_color: str, text_color: str, with_tone_class) -> List[Dict[str, Any]]:
     cells = []
-    topics = json.loads(activity.topics_json) if activity.topics_json else {}
+    topics = activity.topics_json if activity.topics_json else {}
     for group in all_groups:
         if group == 'WR':
             cells.append({
@@ -402,7 +435,7 @@ def _build_individual_cells(activity: Activity, all_groups: List[str], activity_
 
 def _build_group_cells(activity: Activity, all_groups: List[str], activity_color: str, text_color: str, with_tone_class) -> List[Dict[str, Any]]:
     cells = []
-    combinations = json.loads(activity.topics_json) if activity.topics_json else []
+    combinations = activity.topics_json if activity.topics_json else []
     group_to_combo = {g: combo for combo in combinations for g in combo['groups']}
     rendered = set()
 
