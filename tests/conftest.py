@@ -53,12 +53,11 @@ def create_user(app):
 @pytest.fixture
 def login_as(client, create_user, csrf_token):
     def _login_as(username='test', password='test', role='user'):
-        create_user(username=username, password=password, role=role)
-        token = csrf_token('/login')
-        response = client.post('/login', data={
-            'username': username,
-            'password': password,
-            'csrf_token': token
-        })
-        return response
+        user = create_user(username=username, password=password, role=role)
+        client.get('/login')
+        with client.session_transaction() as sess:
+            sess['user_id'] = user.id
+            sess['username'] = username
+            sess['user_role'] = role
+        return client.get('/', follow_redirects=False)
     return _login_as

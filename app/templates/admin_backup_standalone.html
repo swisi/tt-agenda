@@ -10,7 +10,7 @@
                 </div>
                 <div>
                     <h1 class="text-2xl font-semibold text-slate-100">Backup &amp; Restore</h1>
-                    <p class="text-sm text-slate-400">Sichern und wiederherstellen Sie die Datenbank sicher.</p>
+                    <p class="text-sm text-slate-400">Sichern und wiederherstellen Sie die Datenbank sicher. Aktives Backend: {{ db_backend_label }}.</p>
                 </div>
             </div>
         </div>
@@ -32,7 +32,8 @@
                     Empfohlen
                 </span>
             </div>
-            <p class="text-sm text-slate-300 mb-4">Lädt eine verschlüsselte SQLite-Datei der aktuellen Datenbank herunter.</p>
+            {% if supports_file_backup %}
+            <p class="text-sm text-slate-300 mb-4">Laedt eine SQLite-Datei der aktuellen Datenbank herunter.</p>
             {% if db_exists %}
             <a href="{{ url_for('admin.admin_backup_download') }}" class="inline-flex items-center justify-center gap-2 w-full md:w-auto px-4 py-2.5 rounded-lg text-sm font-semibold text-white bg-gradient-to-r from-blue-500 via-cyan-500 to-emerald-400 hover:from-blue-400 hover:via-cyan-400 hover:to-emerald-300 shadow-lg shadow-cyan-900/40 transition">
                 <i class="bi bi-download"></i>
@@ -51,6 +52,15 @@
                 </div>
             </div>
             {% endif %}
+            {% else %}
+            <div class="flex items-start gap-3 rounded-lg border border-sky-500/40 bg-sky-500/10 px-4 py-3 text-sky-50">
+                <i class="bi bi-info-circle-fill text-lg"></i>
+                <div>
+                    <p class="font-semibold">Datei-Backups sind fuer {{ db_backend_label }} deaktiviert</p>
+                    <p class="text-sm text-sky-50/90">Fuer produktive Datenbanken sollten Backups ueber `pg_dump`, `pg_restore` oder einen externen Infrastruktur-Job laufen.</p>
+                </div>
+            </div>
+            {% endif %}
         </div>
 
         <div class="rounded-2xl border border-white/5 bg-slate-900/60 backdrop-blur px-6 py-6 shadow-xl shadow-black/30">
@@ -64,7 +74,8 @@
                     Kritisch
                 </span>
             </div>
-            <p class="text-sm text-slate-300">Lädt eine Backup-Datei hoch und ersetzt die aktuelle Datenbank.</p>
+            {% if supports_file_backup %}
+            <p class="text-sm text-slate-300">Laedt eine Backup-Datei hoch und ersetzt die aktuelle Datenbank.</p>
             <div class="flex items-start gap-3 rounded-lg border border-rose-500/40 bg-rose-500/10 px-4 py-3 text-rose-50 mt-3">
                 <i class="bi bi-exclamation-octagon-fill text-lg"></i>
                 <div>
@@ -84,6 +95,15 @@
                     Backup hochladen &amp; wiederherstellen
                 </button>
             </form>
+            {% else %}
+            <div class="flex items-start gap-3 rounded-lg border border-sky-500/40 bg-sky-500/10 px-4 py-3 text-sky-50 mt-3">
+                <i class="bi bi-terminal-fill text-lg"></i>
+                <div>
+                    <p class="font-semibold">Restore nur ueber Betriebsprozess</p>
+                    <p class="text-sm text-sky-50/90">Fuer {{ db_backend_label }} sollte ein Restore ausserhalb der Anwendung mit `pg_restore` oder einem DB-Admin-Prozess erfolgen.</p>
+                </div>
+            </div>
+            {% endif %}
         </div>
     </div>
 

@@ -179,24 +179,4 @@ def create_app(config_class=Config):
                     db.session.execute(text("ALTER TABLE training ADD COLUMN is_hidden BOOLEAN NOT NULL DEFAULT 0"))
                 db.session.commit()
             ensure_activity_types()
-        if app.config.get('CREATE_DEFAULT_USERS') and User.query.count() == 0:
-            # Create default users if not exist
-            try:
-                admin_user = User(
-                    username=app.config.get('DEFAULT_ADMIN_USERNAME', 'admin'),
-                    role='admin'
-                )
-                admin_user.set_password(app.config.get('DEFAULT_ADMIN_PASSWORD', 'admin'))
-                user = User(
-                    username=app.config.get('DEFAULT_USER_USERNAME', 'user'),
-                    role='user'
-                )
-                user.set_password(app.config.get('DEFAULT_USER_PASSWORD', 'user'))
-                db.session.add(admin_user)
-                db.session.add(user)
-                db.session.commit()
-                app.logger.info('Default users created from configuration.')
-            except Exception as e:
-                app.logger.error(f"Error creating default users: {e}")
-
     return app

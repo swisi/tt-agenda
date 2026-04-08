@@ -1,4 +1,3 @@
-import secrets
 import jwt
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, current_app
 from urllib.parse import urljoin, urlparse
@@ -14,33 +13,29 @@ def is_safe_url(target):
     test_url = urlparse(urljoin(request.host_url, target))
     return test_url.scheme in ('http', 'https') and ref_url.netloc == test_url.netloc
 
+
+def get_auth_login_url():
+    return f"{current_app.config.get('AUTH_BASE_URL', 'http://localhost:8086').rstrip('/')}/login"
+
+
 @bp.route('/login', methods=['GET', 'POST'])
 @limiter.limit("20/minute", methods=["POST"])
 def login():
+    auth_login_url = get_auth_login_url()
     if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-        user = User.query.filter_by(username=username).first()
+        flash('Die Anmeldung erfolgt zentral über tt-auth.', 'info')
+        return redirect(auth_login_url)
 
-        if user and user.check_password(password):
-            session['user_id'] = user.id
-            session['username'] = user.username
-            session['user_role'] = user.role
-            flash('Erfolgreich angemeldet!', 'success')
-            next_page = request.args.get('next')
-            if next_page and not is_safe_url(next_page):
-                next_page = None
-            return redirect(next_page or url_for('main.index'))
-        else:
-            flash('Ungültiger Benutzername oder Passwort.', 'danger')
-
-    return render_template('login.html')
+    next_page = request.args.get('next')
+    if next_page and not is_safe_url(next_page):
+        next_page = None
+    return render_template('login.html', auth_login_url=auth_login_url, next_page=next_page)
 
 @bp.route('/logout', methods=['POST'])
 def logout():
     session.clear()
     flash('Sie wurden abgemeldet.', 'info')
-    return redirect(url_for('auth.login'))
+    return redirect(get_auth_login_url())
 
 
 @bp.route('/auth/sso')
@@ -80,7 +75,7 @@ def sso_login():
             flash('SSO-Benutzer ist nicht freigeschaltet.', 'danger')
             return redirect(url_for('auth.login'))
         user = User(username=username, role=role)
-        user.set_password(secrets.token_urlsafe(32))
+        user.password_hash = 'sso-only'
         db.session.add(user)
         db.session.commit()
     elif current_app.config.get('SSO_SYNC_ROLE', True) and user.role != role:

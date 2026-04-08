@@ -11,6 +11,20 @@ from ..forms import validate_training_form, validate_hidden_training_form, sanit
 
 bp = Blueprint('admin', __name__)
 
+
+def get_database_backend():
+    engine = db.engine
+    return engine.dialect.name
+
+
+def get_database_backend_label(backend):
+    labels = {
+        'sqlite': 'SQLite',
+        'postgresql': 'PostgreSQL',
+    }
+    return labels.get(backend, backend.capitalize())
+
+
 def resolve_sqlite_db_path():
     uri = current_app.config.get('SQLALCHEMY_DATABASE_URI', '')
     if not uri.startswith('sqlite:'):
@@ -138,9 +152,18 @@ def admin_activity_types():
 @admin_required
 def admin_backup():
     """Backup & Restore Seite"""
+    db_backend = get_database_backend()
+    db_backend_label = get_database_backend_label(db_backend)
     db_path = resolve_sqlite_db_path()
-    db_exists = db_path and os.path.exists(db_path)
-    return render_template('admin_backup_standalone.html', db_exists=db_exists)
+    supports_file_backup = db_backend == 'sqlite'
+    db_exists = bool(db_path and os.path.exists(db_path))
+    return render_template(
+        'admin_backup_standalone.html',
+        db_backend=db_backend,
+        db_backend_label=db_backend_label,
+        db_exists=db_exists,
+        supports_file_backup=supports_file_backup,
+    )
 
 @bp.route('/admin/hidden-trainings/new', methods=['GET', 'POST'])
 @admin_required
@@ -206,6 +229,10 @@ def delete_hidden_training(id):
 @bp.route('/admin/backup/download', methods=['GET'])
 @admin_required
 def admin_backup_download():
+    if get_database_backend() != 'sqlite':
+        flash('Direkter Datei-Download wird nur fuer SQLite unterstuetzt. Fuer Postgres bitte pg_dump oder einen Infrastruktur-Backup-Job verwenden.', 'warning')
+        return redirect(url_for('admin.admin_backup'))
+
     db_path = resolve_sqlite_db_path()
     if not db_path or not os.path.exists(db_path):
         flash('Datenbank nicht gefunden.', 'danger')
@@ -235,6 +262,10 @@ def admin_backup_download():
 @bp.route('/admin/backup/restore', methods=['POST'])
 @admin_required
 def admin_backup_restore():
+    if get_database_backend() != 'sqlite':
+        flash('Der In-App-Restore ist nur fuer SQLite verfuegbar. Fuer Postgres bitte ein Restore ueber pg_restore oder den Betriebsprozess ausfuehren.', 'warning')
+        return redirect(url_for('admin.admin_backup'))
+
     db_path = resolve_sqlite_db_path()
     if not db_path:
         flash('Datenbank-Backend wird nicht unterstützt.', 'danger')

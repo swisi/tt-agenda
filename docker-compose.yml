@@ -1,18 +1,21 @@
-version: '3.8'
-
 services:
   web:
     build: .
     image: ghcr.io/swisi/tt-agenda:latest
     container_name: tt-agenda
     ports:
-      - "8085:5000"
+      - "8086:5000"
     volumes:
       - tt-agenda:/app/instance
+    depends_on:
+      tt-postgres-agenda:
+        condition: service_healthy
     environment:
       - FLASK_APP=app.py
       - FLASK_ENV=production
       - SECRET_KEY=${SECRET_KEY}
+      - SQLALCHEMY_DATABASE_URI=${SQLALCHEMY_DATABASE_URI:-postgresql+psycopg://tt_agenda:tt_agenda_password@tt-postgres-agenda:5432/tt_agenda}
+      - AUTH_BASE_URL=${AUTH_BASE_URL:-http://localhost:8086}
       - SSO_SHARED_SECRET=${SSO_SHARED_SECRET:-tt-sso-dev-secret-change-me}
       - SSO_EXPECTED_AUDIENCE=${SSO_EXPECTED_AUDIENCE:-tt-agenda}
       - SSO_AUTO_PROVISION_USERS=${SSO_AUTO_PROVISION_USERS:-true}
@@ -29,6 +32,25 @@ services:
       retries: 3
       start_period: 40s
 
+  tt-postgres-agenda:
+    image: postgres:16
+    container_name: tt-postgres-agenda
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-tt_agenda}
+      - POSTGRES_USER=${POSTGRES_USER:-tt_agenda}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-tt_agenda_password}
+      - TZ=${TZ:-Europe/Zurich}
+    volumes:
+      - tt-agenda-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-tt_agenda} -d ${POSTGRES_DB:-tt_agenda}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
 volumes:
   tt-agenda:
+    driver: local
+  tt-agenda-postgres-data:
     driver: local

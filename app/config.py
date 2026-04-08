@@ -7,18 +7,18 @@ load_dotenv()
 logger = logging.getLogger(__name__)
 
 class Config:
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///trainings.db'
+    SQLALCHEMY_DATABASE_URI = (
+        os.environ.get('SQLALCHEMY_DATABASE_URI')
+        or os.environ.get('DATABASE_URL')
+        or 'sqlite:///trainings.db'
+    )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SECRET_KEY = os.environ.get('SECRET_KEY')
+    AUTH_BASE_URL = os.environ.get('AUTH_BASE_URL', 'http://localhost:8086').rstrip('/')
     WEBHOOK_ENABLED = os.environ.get('WEBHOOK_ENABLED', 'false').lower() == 'true'
     WEBHOOK_URL = os.environ.get('WEBHOOK_URL', 'https://n8n.3624.ch/webhook/messaging')
     LOG_LEVEL = os.environ.get('LOG_LEVEL', 'INFO').upper()
     AUTO_CREATE_DB = os.environ.get('AUTO_CREATE_DB', 'true').lower() == 'true'
-    CREATE_DEFAULT_USERS = os.environ.get('CREATE_DEFAULT_USERS', 'false').lower() == 'true'
-    DEFAULT_ADMIN_USERNAME = os.environ.get('DEFAULT_ADMIN_USERNAME', 'admin')
-    DEFAULT_ADMIN_PASSWORD = os.environ.get('DEFAULT_ADMIN_PASSWORD', 'admin')
-    DEFAULT_USER_USERNAME = os.environ.get('DEFAULT_USER_USERNAME', 'user')
-    DEFAULT_USER_PASSWORD = os.environ.get('DEFAULT_USER_PASSWORD', 'user')
     SSO_SHARED_SECRET = os.environ.get('SSO_SHARED_SECRET') or SECRET_KEY
     SSO_EXPECTED_AUDIENCE = os.environ.get('SSO_EXPECTED_AUDIENCE', 'tt-agenda')
     SSO_AUTO_PROVISION_USERS = os.environ.get('SSO_AUTO_PROVISION_USERS', 'true').lower() == 'true'

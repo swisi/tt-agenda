@@ -7,13 +7,12 @@ def test_test_route(client):
     assert response.status_code == 200
     assert b'Flask funktioniert!' in response.data
 
-def test_login(client, create_user, csrf_token):
-    create_user(username='test', password='test', role='user')
+def test_login_redirects_to_auth(client, csrf_token):
     token = csrf_token('/login')
-    response = client.post('/login', data={'username': 'test', 'password': 'test', 'csrf_token': token})
+    response = client.post('/login', data={'csrf_token': token})
     assert response.status_code == 302  # Redirect after login
+    assert response.location.endswith('/login')
 
-def test_login_requires_csrf(client, create_user):
-    create_user(username='test', password='test', role='user')
+def test_login_requires_csrf(client):
     response = client.post('/login', data={'username': 'test', 'password': 'test'})
     assert response.status_code == 400
