@@ -61,7 +61,7 @@ def sso_login():
         return redirect(url_for('auth.login'))
 
     username = (payload.get('username') or '').strip()
-    role = (payload.get('role') or 'user').strip().lower()
+    role = (payload.get('service_role') or payload.get('role') or 'user').strip().lower()
     if role not in ('admin', 'user'):
         role = 'user'
 

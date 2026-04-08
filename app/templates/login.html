@@ -37,8 +37,8 @@
                     <div class="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 bg-indigo-100 dark:bg-indigo-900/50 rounded-2xl mb-3 sm:mb-4">
                         <img src="{{ url_for('static', filename='tigers-logo.png') }}" alt="Tigers Logo" class="w-8 h-8 sm:w-10 sm:h-10 object-contain">
                     </div>
-                    <h1 class="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mb-2">Thun Tigers</h1>
-                    <p class="text-sm sm:text-base text-slate-600 dark:text-slate-400">Trainingsverwaltung</p>
+                    <h1 class="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mb-2">Tigers Agenda</h1>
+                    <p class="text-sm sm:text-base text-slate-600 dark:text-slate-400">Trainingsverwaltung im Tigers Platform Stack</p>
                 </div>
                 
                 <!-- Flash Messages -->
@@ -67,6 +67,13 @@
                             Die Anmeldung für die Agenda erfolgt zentral über <strong>tt-auth</strong>. Benutzer, Rollen und Administratorrechte werden dort verwaltet.
                         </p>
                     </div>
+                    <a
+                        href="{{ auth_dashboard_url }}"
+                        class="w-full px-4 py-2.5 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition flex items-center justify-center gap-2"
+                    >
+                        <i class="bi bi-grid"></i>
+                        <span>Zum Plattform-Dashboard</span>
+                    </a>
                     <a
                         href="{{ auth_login_url }}"
                         class="w-full px-4 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 dark:from-indigo-500 dark:to-purple-500 dark:hover:from-indigo-600 dark:hover:to-purple-600 text-white font-medium rounded-lg transition shadow-lg hover:shadow-xl flex items-center justify-center gap-2"

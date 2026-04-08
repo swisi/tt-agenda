@@ -81,6 +81,14 @@ def create_app(config_class=Config):
     def inject_csrf_token():
         return {'csrf_token': generate_csrf_token}
 
+    @app.context_processor
+    def inject_platform_links():
+        auth_base_url = app.config.get('AUTH_BASE_URL', 'http://localhost:8085').rstrip('/')
+        return {
+            'auth_base_url': auth_base_url,
+            'auth_dashboard_url': f'{auth_base_url}/',
+        }
+
     @app.before_request
     def csrf_protect():
         if request.method in ('POST', 'PUT', 'PATCH', 'DELETE'):
