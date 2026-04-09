@@ -25,7 +25,3 @@ class Config:
     SSO_SYNC_ROLE = os.environ.get('SSO_SYNC_ROLE', 'true').lower() == 'true'
     # Rate limiting: override with redis://host:port/0 for multi-worker production
     RATELIMIT_STORAGE_URI = os.environ.get('RATELIMIT_STORAGE_URI', 'memory://')
-    
-    logger.info(f"WEBHOOK_ENABLED env: {os.environ.get('WEBHOOK_ENABLED')}, parsed: {WEBHOOK_ENABLED}")
-    logger.info(f"WEBHOOK_URL: {WEBHOOK_URL}")
-    logger.info(f"LOG_LEVEL: {LOG_LEVEL}")

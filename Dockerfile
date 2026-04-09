@@ -22,6 +22,11 @@ COPY . .
 # Erstelle Verzeichnis für die Datenbank
 RUN mkdir -p /app/instance
 
+# Non-root user
+RUN addgroup --system appgroup && adduser --system --ingroup appgroup --no-create-home appuser \
+    && chown -R appuser:appgroup /app
+USER appuser
+
 # Setze Umgebungsvariablen
 ENV FLASK_APP=run.py
 ENV PYTHONUNBUFFERED=1

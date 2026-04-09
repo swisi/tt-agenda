@@ -9,6 +9,12 @@ import requests
 bp = Blueprint('main', __name__)
 logger = logging.getLogger(__name__)
 
+
+@bp.route('/health')
+def health():
+    return {'status': 'ok'}, 200
+
+
 @bp.route('/')
 @login_required
 def index():

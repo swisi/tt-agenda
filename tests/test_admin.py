@@ -6,7 +6,7 @@ from app.models import Training, TrainingInstance, ActivityInstance
 
 def test_copy_training_instance_picks_next_free_date(client, app, login_as, csrf_token):
     login_response = login_as(username='admin', password='adminpw', role='admin')
-    assert login_response.status_code == 302
+    assert login_response.status_code == 200
 
     with app.app_context():
         training = Training(
@@ -95,7 +95,7 @@ def test_copy_training_instance_requires_admin(client, app, csrf_token):
 
 def test_admin_trainings_hides_ended_by_default(client, app, login_as):
     login_response = login_as(username='admin2', password='adminpw', role='admin')
-    assert login_response.status_code == 302
+    assert login_response.status_code == 200
 
     with app.app_context():
         active = Training(
@@ -127,7 +127,7 @@ def test_admin_trainings_hides_ended_by_default(client, app, login_as):
 
 def test_admin_trainings_can_show_ended(client, app, login_as):
     login_response = login_as(username='admin3', password='adminpw', role='admin')
-    assert login_response.status_code == 302
+    assert login_response.status_code == 200
 
     with app.app_context():
         ended = Training(

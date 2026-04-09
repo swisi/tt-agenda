@@ -2,9 +2,12 @@ from datetime import datetime, timedelta
 from flask import session, flash, redirect, url_for, request
 from functools import wraps
 import json
+import logging
 from typing import List, Tuple, Optional, Dict, Any
 from .models import Activity, ActivityInstance, Training, TrainingInstance, ActivityType
 from .extensions import db
+
+logger = logging.getLogger(__name__)
 
 WEEKDAYS = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag']
 POSITION_GROUPS = ['OL', 'DL', 'LB', 'RB', 'DB', 'TE', 'WR', 'QB']
@@ -55,6 +58,7 @@ def get_activity_type_defs():
     try:
         rows = ActivityType.query.order_by(ActivityType.sort_order).all()
     except Exception:
+        logger.warning("get_activity_type_defs: DB query failed, using defaults", exc_info=True)
         rows = []
 
     if not rows:
@@ -81,6 +85,7 @@ def get_activity_type_order():
     try:
         rows = ActivityType.query.order_by(ActivityType.sort_order).all()
     except Exception:
+        logger.warning("get_activity_type_order: DB query failed, using defaults", exc_info=True)
         rows = []
 
     if not rows:
@@ -96,6 +101,7 @@ def get_activity_behavior(activity_type: str) -> str:
     try:
         row = ActivityType.query.filter_by(key=activity_type).first()
     except Exception:
+        logger.warning("get_activity_behavior: DB query failed for '%s'", activity_type, exc_info=True)
         row = None
     if row and row.behavior:
         return row.behavior

@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, current_app, send_file, after_this_request
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 import json
 import os
 import sqlite3
@@ -50,11 +50,10 @@ def admin_overview():
 @admin_required
 def admin_trainings():
     """Alle Trainings in einer Ansicht: Templates, Einmalig, Angepasst"""
-    import datetime
     q = request.args.get('q', '').strip()
     type_filter = request.args.get('type', 'all')
     include_ended = request.args.get('include_ended') == '1'
-    today = datetime.date.today()
+    today = date.today()
     
     # Templates - sortiert nach start_date absteigend (neueste zuerst)
     trainings_query = Training.query.filter_by(is_hidden=False)
@@ -85,17 +84,16 @@ def admin_trainings():
                          hidden_trainings=hidden_trainings,
                          instances=instances,
                          weekdays=WEEKDAYS,
-                         datetime=datetime)
+                         date=date)
 
 @bp.route('/admin/trainings/partial')
 @admin_required
 def trainings_partial():
     """HTMX Partial für Trainings-Filter"""
-    import datetime
     q = request.args.get('q', '').strip()
     type_filter = request.args.get('type', 'all')
     include_ended = request.args.get('include_ended') == '1'
-    today = datetime.date.today()
+    today = date.today()
     
     trainings_query = Training.query.filter_by(is_hidden=False)
     if q:
@@ -123,7 +121,7 @@ def trainings_partial():
                          hidden_trainings=hidden_trainings,
                          instances=instances,
                          weekdays=WEEKDAYS,
-                         datetime=datetime)
+                         date=date)
 
 @bp.route('/admin/activity-types', methods=['GET', 'POST'])
 @admin_required

@@ -35,7 +35,7 @@
                         <i class="bi bi-clock mr-2"></i>{{ training.start_time.strftime('%H:%M') }}
                     </td>
                     <td class="px-4 lg:px-6 py-4">
-                        {% set today = datetime.date.today() %}
+                        {% set today = date.today() %}
                         {% if training.end_date >= today %}
                         <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300">
                             ✓ Aktiv
@@ -88,7 +88,7 @@
                         <i class="bi bi-clock mr-2"></i>{{ training.start_time.strftime('%H:%M') }}
                     </td>
                     <td class="px-4 lg:px-6 py-4">
-                        {% set today = datetime.date.today() %}
+                        {% set today = date.today() %}
                         {% if training.start_date >= today %}
                         <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300">
                             ✓ Aktiv
@@ -209,7 +209,7 @@
             
             <!-- Status und Aktionen -->
             <div class="flex items-center justify-between pt-3 border-t border-slate-200 dark:border-slate-700">
-                {% set today = datetime.date.today() %}
+                {% set today = date.today() %}
                 {% if training.end_date >= today %}
                 <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300">
                     ✓ Aktiv
@@ -270,7 +270,7 @@
             
             <!-- Status und Aktionen -->
             <div class="flex items-center justify-between pt-3 border-t border-slate-200 dark:border-slate-700">
-                {% set today = datetime.date.today() %}
+                {% set today = date.today() %}
                 {% if training.start_date >= today %}
                 <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300">
                     ✓ Aktiv

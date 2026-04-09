@@ -43,8 +43,9 @@ def create_app(config_class=Config):
         else:
             raise RuntimeError('SECRET_KEY must be set in production.')
     
-    # Log the configured log level
+    # Log startup config
     app.logger.info(f"Application started with LOG_LEVEL: {config_class.LOG_LEVEL}")
+    app.logger.info(f"WEBHOOK_ENABLED: {app.config.get('WEBHOOK_ENABLED', False)}, WEBHOOK_URL: {app.config.get('WEBHOOK_URL', '')}")
 
     db.init_app(app)
     migrate.init_app(app, db)

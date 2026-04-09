@@ -47,6 +47,8 @@ def create_user(app):
             user.set_password(password)
             db.session.add(user)
             db.session.commit()
+            db.session.refresh(user)
+            db.session.expunge(user)
             return user
     return _create_user
 
