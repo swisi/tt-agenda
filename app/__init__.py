@@ -12,7 +12,7 @@ from .utils import (
 )
 from .activity_colors import get_activity_color_map
 from datetime import timedelta
-from .routes import main, auth, admin
+from .routes import main, auth, admin, api
 from .models import User, ActivityType
 import json
 from dotenv import load_dotenv
@@ -63,6 +63,7 @@ def create_app(config_class=Config):
     app.register_blueprint(main.bp)
     app.register_blueprint(auth.bp)
     app.register_blueprint(admin.bp)
+    app.register_blueprint(api.bp)
 
     # Context processors and filters
     @app.context_processor
@@ -102,6 +103,8 @@ def create_app(config_class=Config):
 
     @app.before_request
     def csrf_protect():
+        if request.path.startswith('/api/internal/'):
+            return  # Interne Service-zu-Service APIs sind via Secret geschützt
         if request.method in ('POST', 'PUT', 'PATCH', 'DELETE'):
             token = session.get('_csrf_token')
             if request.is_json:

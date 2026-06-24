@@ -25,6 +25,11 @@ def get_auth_login_url(next_page=None):
     return f"{auth_base_url}/?{urlencode(query)}"
 
 
+def get_auth_logout_url():
+    auth_base_url = current_app.config.get('AUTH_BASE_URL', 'http://localhost:8085').rstrip('/')
+    return f"{auth_base_url}/logout"
+
+
 @bp.route('/login', methods=['GET', 'POST'])
 @limiter.limit("20/minute", methods=["POST"])
 def login():
@@ -41,8 +46,7 @@ def login():
 @bp.route('/logout', methods=['POST'])
 def logout():
     session.clear()
-    flash('Sie wurden abgemeldet.', 'info')
-    return redirect(get_auth_login_url())
+    return redirect(get_auth_logout_url())
 
 
 @bp.route('/auth/sso')

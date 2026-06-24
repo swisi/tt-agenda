@@ -40,13 +40,17 @@
     </script>
 
     <script>
-        // Apply saved or system theme as early as possible to avoid flashes
+        // Apply saved preference (system/light/dark) as early as possible to avoid flashes
         (function() {
-            const stored = localStorage.getItem('theme');
+            function readCookie(name) {
+                const match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
+                return match ? decodeURIComponent(match[1]) : null;
+            }
+            const stored = readCookie('tt_theme') || localStorage.getItem('theme') || 'system';
             const system = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-            const theme = stored || system;
+            const effective = stored === 'system' ? system : stored;
             const htmlEl = document.documentElement;
-            if (theme === 'dark') {
+            if (effective === 'dark') {
                 htmlEl.classList.add('dark');
             } else {
                 htmlEl.classList.remove('dark');
@@ -82,71 +86,66 @@
     
     {% block extra_head %}{% endblock %}
 </head>
-<body class="bg-gradient-to-br from-slate-50 via-white to-slate-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 text-slate-900 dark:text-slate-50">
+<body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 text-slate-900 dark:text-slate-50">
     <!-- Navigation -->
-    <header class="sticky top-0 z-50 bg-white dark:bg-slate-800 shadow-md border-b border-slate-200 dark:border-slate-700">
+    <header class="sticky top-0 z-50 border-b border-slate-200/80 dark:border-slate-700/80 bg-white/90 dark:bg-slate-800/90 backdrop-blur-xl shadow-sm">
         <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16">
+            <div class="flex min-h-[4.5rem] items-center justify-between gap-4 py-3">
+
                 <!-- Logo -->
-                <a href="{{ url_for('main.index') }}" class="flex items-center gap-3 text-xl font-bold text-indigo-600 dark:text-indigo-400 hover:opacity-80 transition">
-                    <div class="p-2 bg-indigo-100 dark:bg-indigo-900/50 rounded-lg">
+                <a href="{{ url_for('main.index') }}" class="flex items-center gap-3 text-slate-900 dark:text-white hover:opacity-90 transition">
+                    <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-[radial-gradient(circle_at_top_left,_#c7d2fe,_#6366f1_60%,_#1e1b4b)] text-white shadow-lg shadow-indigo-500/20">
                         <i class="bi bi-calendar-check text-lg"></i>
                     </div>
-                    <span class="hidden sm:inline">Tigers Agenda</span>
+                    <div>
+                        <div class="text-[0.7rem] font-semibold uppercase tracking-[0.22em] text-indigo-500 dark:text-indigo-300">Tigers</div>
+                        <div class="text-lg font-semibold leading-tight">Agenda</div>
+                    </div>
                 </a>
-                
-                <!-- Desktop Menu -->
-                <div class="hidden md:flex items-center gap-1">
-                    <a href="{{ auth_dashboard_url }}" class="px-3 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-lg hover:bg-indigo-50 dark:hover:bg-slate-700 transition">
-                        <i class="bi bi-grid mr-2"></i><span class="hidden lg:inline">Dashboard</span>
+
+                <!-- Desktop Pill Nav -->
+                <div class="hidden lg:flex items-center gap-2 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-900/50 p-1.5">
+                    {% set ep = request.endpoint %}
+                    <a href="{{ url_for('main.index') }}" class="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition {{ 'bg-white dark:bg-slate-800 text-indigo-700 dark:text-indigo-300 shadow-sm ring-1 ring-indigo-100 dark:ring-indigo-900/60' if ep == 'main.index' else 'text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white' }}">
+                        <i class="bi bi-house-door text-sm"></i><span>Übersicht</span>
                     </a>
-                    <a href="{{ url_for('main.index') }}" class="px-3 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-lg hover:bg-indigo-50 dark:hover:bg-slate-700 transition">
-                        <i class="bi bi-house-fill mr-2"></i><span class="hidden lg:inline">Übersicht</span>
-                    </a>
-                    <a href="{{ url_for('main.live') }}" class="px-3 py-2 text-sm font-medium {% if training_status == 'running' %}text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30{% else %}text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-700{% endif %} rounded-lg transition">
-                        <i class="bi bi-broadcast mr-2"></i><span class="hidden lg:inline">Live</span>
+                    <a href="{{ url_for('main.live') }}" class="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition {{ 'bg-red-500 text-white shadow-sm' if training_status == 'running' else ('bg-white dark:bg-slate-800 text-indigo-700 dark:text-indigo-300 shadow-sm ring-1 ring-indigo-100 dark:ring-indigo-900/60' if ep == 'main.live' else 'text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white') }}">
+                        <i class="bi bi-broadcast text-sm"></i><span>Live</span>
+                        {% if training_status == 'running' %}<span class="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span>{% endif %}
                     </a>
                     {% if can_manage_agenda() %}
-                    <div class="relative group">
-                        <button class="px-3 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-lg hover:bg-indigo-50 dark:hover:bg-slate-700 transition flex items-center gap-2">
-                            <i class="bi bi-gear-fill"></i><span class="hidden lg:inline">Admin</span>
-                            <i class="bi bi-chevron-down text-xs"></i>
-                        </button>
-                        <div class="absolute left-0 mt-1 w-48 bg-white dark:bg-slate-700 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 py-1 border border-slate-200 dark:border-slate-600">
-                            <a href="{{ url_for('admin.admin_trainings') }}" class="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-600 hover:text-indigo-600 dark:hover:text-indigo-400 transition">
-                                <i class="bi bi-calendar-check"></i>Trainings
-                            </a>
-                            <a href="{{ url_for('admin.admin_activity_types') }}" class="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-600 hover:text-indigo-600 dark:hover:text-indigo-400 transition">
-                                <i class="bi bi-tags"></i>Aktivitätstypen
-                            </a>
-                            <a href="{{ url_for('admin.admin_backup') }}" class="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-600 hover:text-indigo-600 dark:hover:text-indigo-400 transition">
-                                <i class="bi bi-database-down"></i>Backup
-                            </a>
-                        </div>
-                    </div>
+                    <a href="{{ url_for('admin.admin_trainings') }}" class="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition {{ 'bg-white dark:bg-slate-800 text-indigo-700 dark:text-indigo-300 shadow-sm ring-1 ring-indigo-100 dark:ring-indigo-900/60' if ep in ['admin.admin_trainings', 'admin.admin_activity_types', 'admin.admin_backup'] else 'text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white' }}">
+                        <i class="bi bi-gear-fill text-sm"></i><span>Admin</span>
+                    </a>
                     {% endif %}
                 </div>
-                
-                <!-- Right Section -->
+
+                <!-- Right -->
                 <div class="flex items-center gap-2 sm:gap-4">
-                    <!-- PWA Install Button (Desktop) -->
+                    <a href="{{ auth_dashboard_url }}" class="hidden md:inline-flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/60 px-3 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:border-indigo-200 dark:hover:border-indigo-700 transition">
+                        <i class="bi bi-grid"></i><span>Plattform</span>
+                    </a>
+
                     <button id="pwaInstallBtn" class="hidden p-2 text-slate-600 dark:text-slate-400 hover:text-green-600 dark:hover:text-green-400 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/30 transition" title="App installieren">
                         <i class="bi bi-download"></i>
                     </button>
-                    
-                    <!-- Theme Toggle -->
+
                     <button id="themeToggle" class="p-2 text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition" title="Design-Modus wechseln">
                         <i class="bi bi-moon-fill" id="themeIcon"></i>
                     </button>
-                    
-                    <!-- User Menu / Login -->
+
+                    <button id="mobileMenuBtn" class="lg:hidden p-2 text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition" aria-label="Menü öffnen">
+                        <i class="bi bi-list text-xl" id="mobileMenuIcon"></i>
+                    </button>
+
                     {% if session.get('user_id') %}
                     <div class="flex items-center gap-3 pl-3 border-l border-slate-200 dark:border-slate-600">
-                        <div class="hidden sm:block">
-                            <div class="text-sm font-medium text-slate-900 dark:text-white">{{ session.get('username') }}</div>
-                            {% if can_manage_agenda() %}
-                            <div class="text-xs text-indigo-600 dark:text-indigo-400">Administrator</div>
-                            {% endif %}
+                        <div class="hidden sm:block text-right">
+                            <div class="text-sm font-medium">{{ session.get('username') }}</div>
+                            <div class="text-xs text-indigo-500 dark:text-indigo-400">{% if can_manage_agenda() %}Administrator{% else %}Mitglied{% endif %}</div>
+                        </div>
+                        <div class="w-8 h-8 rounded-full bg-indigo-600 dark:bg-indigo-500 flex items-center justify-center text-white font-semibold text-sm">
+                            {{ session.get('username', '?')[0].upper() }}
                         </div>
                         <form method="POST" action="{{ url_for('auth.logout') }}">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -160,77 +159,44 @@
                         <i class="bi bi-box-arrow-in-right mr-2"></i>Anmelden
                     </a>
                     {% endif %}
-                    
-                    <!-- Mobile Menu Button -->
-                    <button id="mobileMenuBtn" class="md:hidden p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition" aria-label="Menü öffnen">
-                        <i class="bi bi-list text-xl" id="mobileMenuIcon"></i>
-                    </button>
                 </div>
             </div>
-            
+
             <!-- Mobile Menu -->
-            <div id="mobileMenu" class="hidden md:hidden py-4 border-t border-slate-200 dark:border-slate-700 mt-2 space-y-1">
-                <a href="{{ auth_dashboard_url }}" class="flex items-center gap-3 px-4 py-3 text-base font-medium text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-lg hover:bg-indigo-50 dark:hover:bg-slate-700 transition active:bg-indigo-100 dark:active:bg-slate-600">
-                    <i class="bi bi-grid text-lg w-6 text-center"></i>
-                    <span>Dashboard</span>
-                </a>
-                <a href="{{ url_for('main.index') }}" class="flex items-center gap-3 px-4 py-3 text-base font-medium text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-lg hover:bg-indigo-50 dark:hover:bg-slate-700 transition active:bg-indigo-100 dark:active:bg-slate-600">
-                    <i class="bi bi-house-fill text-lg w-6 text-center"></i>
-                    <span>Übersicht</span>
-                </a>
-                <a href="{{ url_for('main.live') }}" class="flex items-center gap-3 px-4 py-3 text-base font-medium {% if training_status == 'running' %}text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20{% else %}text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-700{% endif %} rounded-lg transition active:bg-indigo-100 dark:active:bg-slate-600">
-                    <i class="bi bi-broadcast text-lg w-6 text-center"></i>
-                    <span>Live</span>
-                    {% if training_status == 'running' %}
-                    <span class="ml-auto inline-block w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
-                    {% endif %}
-                </a>
-                {% if can_manage_agenda() %}
-                <div class="pt-3 mt-3 border-t border-slate-200 dark:border-slate-600">
-                    <div class="px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Administration</div>
-                    <a href="{{ url_for('admin.admin_trainings') }}" class="flex items-center gap-3 px-4 py-3 text-base font-medium text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-lg hover:bg-indigo-50 dark:hover:bg-slate-700 transition active:bg-indigo-100 dark:active:bg-slate-600">
-                        <i class="bi bi-calendar-check text-lg w-6 text-center"></i>
-                        <span>Trainings</span>
-                    </a>
-                    <a href="{{ url_for('admin.admin_activity_types') }}" class="flex items-center gap-3 px-4 py-3 text-base font-medium text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-lg hover:bg-indigo-50 dark:hover:bg-slate-700 transition active:bg-indigo-100 dark:active:bg-slate-600">
-                        <i class="bi bi-tags text-lg w-6 text-center"></i>
-                        <span>Aktivitätstypen</span>
-                    </a>
-                    <a href="{{ url_for('admin.admin_backup') }}" class="flex items-center gap-3 px-4 py-3 text-base font-medium text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-lg hover:bg-indigo-50 dark:hover:bg-slate-700 transition active:bg-indigo-100 dark:active:bg-slate-600">
-                        <i class="bi bi-database-down text-lg w-6 text-center"></i>
-                        <span>Backup</span>
-                    </a>
-                </div>
-                {% endif %}
-                
-                <!-- PWA Install Button (Mobile) -->
-                <div id="pwaInstallMobileContainer" class="hidden pt-3 mt-3 border-t border-slate-200 dark:border-slate-600">
-                    <button id="pwaInstallBtnMobile" class="w-full flex items-center gap-3 px-4 py-3 text-base font-medium text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded-lg transition active:bg-green-100 dark:active:bg-green-900/50">
-                        <i class="bi bi-download text-lg w-6 text-center"></i>
-                        <span>App installieren</span>
-                    </button>
-                </div>
-                
-                <!-- User Info in Mobile Menu (wenn eingeloggt) -->
-                {% if session.get('user_id') %}
-                <div class="pt-3 mt-3 border-t border-slate-200 dark:border-slate-600">
-                    <div class="px-4 py-2 flex items-center justify-between">
-                        <div>
-                            <div class="text-sm font-medium text-slate-900 dark:text-white">{{ session.get('username') }}</div>
-                            {% if can_manage_agenda() %}
-                            <div class="text-xs text-indigo-600 dark:text-indigo-400">Administrator</div>
-                            {% endif %}
-                        </div>
-                        <form method="POST" action="{{ url_for('auth.logout') }}">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <button type="submit" class="px-4 py-2 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition flex items-center gap-2">
-                                <i class="bi bi-box-arrow-right"></i>
-                                <span>Abmelden</span>
+            <div id="mobileMenu" class="hidden lg:hidden pb-4">
+                <div class="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white/90 dark:bg-slate-900/70 shadow-sm overflow-hidden">
+                    <div class="grid grid-cols-1 gap-2 p-3 border-b border-slate-200 dark:border-slate-700 sm:grid-cols-2">
+                        {% set ep = request.endpoint %}
+                        <a href="{{ url_for('main.index') }}" class="inline-flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium transition {{ 'bg-indigo-600 text-white shadow-sm' if ep == 'main.index' else 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700' }}">
+                            <i class="bi bi-house-door"></i><span>Übersicht</span>
+                        </a>
+                        <a href="{{ url_for('main.live') }}" class="inline-flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium transition {{ 'bg-red-500 text-white shadow-sm' if training_status == 'running' else ('bg-indigo-600 text-white shadow-sm' if ep == 'main.live' else 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700') }}">
+                            <i class="bi bi-broadcast"></i><span>Live</span>
+                            {% if training_status == 'running' %}<span class="ml-auto w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span>{% endif %}
+                        </a>
+                        {% if can_manage_agenda() %}
+                        <a href="{{ url_for('admin.admin_trainings') }}" class="inline-flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium transition {{ 'bg-indigo-600 text-white shadow-sm' if ep in ['admin.admin_trainings', 'admin.admin_activity_types', 'admin.admin_backup'] else 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700' }}">
+                            <i class="bi bi-calendar-check"></i><span>Trainings</span>
+                        </a>
+                        <a href="{{ url_for('admin.admin_activity_types') }}" class="inline-flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium transition {{ 'bg-indigo-600 text-white shadow-sm' if ep == 'admin.admin_activity_types' else 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700' }}">
+                            <i class="bi bi-tags"></i><span>Aktivitätstypen</span>
+                        </a>
+                        <a href="{{ url_for('admin.admin_backup') }}" class="inline-flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium transition {{ 'bg-indigo-600 text-white shadow-sm' if ep == 'admin.admin_backup' else 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700' }}">
+                            <i class="bi bi-database-down"></i><span>Backup</span>
+                        </a>
+                        {% endif %}
+                    </div>
+                    <div class="p-3 flex items-center gap-2">
+                        <a href="{{ auth_dashboard_url }}" class="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition">
+                            <i class="bi bi-grid"></i><span>Zur Plattform</span>
+                        </a>
+                        <div id="pwaInstallMobileContainer" class="hidden">
+                            <button id="pwaInstallBtnMobile" class="inline-flex items-center gap-2 rounded-xl border border-green-200 dark:border-green-800 px-3 py-2.5 text-sm font-medium text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 transition">
+                                <i class="bi bi-download"></i><span>App installieren</span>
                             </button>
-                        </form>
+                        </div>
                     </div>
                 </div>
-                {% endif %}
             </div>
         </nav>
     </header>
@@ -282,42 +248,66 @@
     {% block scripts %}{% endblock %}
     
     <script>
-        // Theme Toggle with Tailwind CDN JIT Support
+        // Theme Toggle (system -> light -> dark) with cookie sync across services
         const themeToggle = document.getElementById('themeToggle');
         const themeIcon = document.getElementById('themeIcon');
         const html = document.documentElement;
-        
-        // Load saved theme or use system preference
-        const savedTheme = localStorage.getItem('theme') || 
-            (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-        
-        function setTheme(theme) {
-            localStorage.setItem('theme', theme);
-            
-            if (theme === 'dark') {
+
+        function readCookie(name) {
+            const match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
+            return match ? decodeURIComponent(match[1]) : null;
+        }
+
+        function resolveTheme(preference) {
+            if (preference === 'system') {
+                return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            }
+            return preference;
+        }
+
+        function applyTheme(preference) {
+            const effective = resolveTheme(preference);
+
+            if (effective === 'dark') {
                 html.classList.add('dark');
-                themeIcon.className = 'bi bi-sun-fill';
             } else {
                 html.classList.remove('dark');
+            }
+
+            if (preference === 'system') {
+                themeIcon.className = 'bi bi-circle-half';
+                themeToggle.title = 'Design-Modus: System';
+            } else if (preference === 'dark') {
+                themeIcon.className = 'bi bi-sun-fill';
+                themeToggle.title = 'Design-Modus: Dunkel';
+            } else {
                 themeIcon.className = 'bi bi-moon-fill';
+                themeToggle.title = 'Design-Modus: Hell';
             }
         }
-        
-        // Initialize theme
-        setTheme(savedTheme);
-        
-        // Toggle theme on click
+
+        function saveTheme(preference) {
+            localStorage.setItem('theme', preference);
+            document.cookie = 'tt_theme=' + encodeURIComponent(preference) + '; path=/; max-age=31536000; samesite=lax';
+            applyTheme(preference);
+        }
+
+        let currentTheme = readCookie('tt_theme') || localStorage.getItem('theme') || 'system';
+        if (!['light', 'dark', 'system'].includes(currentTheme)) {
+            currentTheme = 'system';
+        }
+        applyTheme(currentTheme);
+
         themeToggle.addEventListener('click', () => {
-            const isDark = html.classList.contains('dark');
-            const newTheme = isDark ? 'light' : 'dark';
-            setTheme(newTheme);
-            
-            // Force Tailwind to reprocess styles
-            if (window.tailwind) {
-                window.tailwind.config = {
-                    darkMode: 'class',
-                    theme: { extend: {} }
-                };
+            const order = ['system', 'light', 'dark'];
+            const idx = order.indexOf(currentTheme);
+            currentTheme = order[(idx + 1) % order.length];
+            saveTheme(currentTheme);
+        });
+
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+            if (currentTheme === 'system') {
+                applyTheme('system');
             }
         });
         // Mobile menu toggle
